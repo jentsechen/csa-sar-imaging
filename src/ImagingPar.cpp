@@ -41,3 +41,58 @@ void ImagingPar::gen_azimuth_time_axis_sec()
         this->azimuth_time_axis_sec[i] = (double)(i - azimuth_time_axis_sec_len / 2) / sig_par.pulse_rep_freq_hz;
     }
 }
+
+double ImagingPar::calc_slant_range_m(double azimuth_time_sec)
+{
+    return sqrt(square(this->closest_slant_range_m) + square(this->sensor_speed_m_s * azimuth_time_sec));
+}
+
+double ImagingPar::calc_round_trip_time_sec(double slant_range_m)
+{
+    return 2.0 * slant_range_m / this->sig_par.light_speed_m_s;
+}
+
+std::vector<bool> ImagingPar::apply_range_window(double round_trip_time_sec)
+{
+    std::vector<bool> output(this->range_time_axis_sec.size());
+    for (auto i = 0; i < this->range_time_axis_sec.size(); i++)
+    {
+        double relative_time = this->range_time_axis_sec[i] - round_trip_time_sec;
+        output[i] = (relative_time < this->sig_par.pulse_width_sec / 2.0) && (relative_time > -this->sig_par.pulse_width_sec / 2.0);
+    }
+    return output;
+}
+
+std::vector<std::vector<std::complex<double>>> ImagingPar::gen_point_target_echo_signal()
+{
+    size_t azi_n_smp = this->azimuth_time_axis_sec.size();
+    size_t rng_n_smp = this->range_time_axis_sec.size();
+    std::vector<std::vector<std::complex<double>>> point_target_echo_signal(azi_n_smp, std::vector<std::complex<double>>(rng_n_smp, std::complex<double>(0.0, 0.0)));
+    // slant_range_m = obj.slant_range_m(obj.azimuth_time_axis_sec(i));
+    // round_trip_time_sec = obj.round_trip_time_sec(slant_range_m);
+    // echo_signal = obj.range_window(round_trip_time_sec).*...
+    // exp(1j * pi * obj.sig_par.range_fm_rate_hz_s * (obj.range_time_axis_sec - round_trip_time_sec).^ 2).*...
+    // exp(-1j * 4 * pi * slant_range_m / obj.sig_par.wavelength_m);
+    // point_target_echo_signal(i, :) = echo_signal;
+    for (auto i = 0; i < azi_n_smp; i++)
+    {
+        double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i]);
+        double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
+        std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);
+        for (auto j = 0; j < rng_n_smp; j++)
+        {
+            auto echo_signal_sample = [&]()
+            {
+                if (range_window[j])
+                {
+                    std::complex<double> chirp_term = std::exp(std::complex<double>(0.0, PI) * this->sig_par.range_fm_rate_hz_s * square(this->range_time_axis_sec[j] - round_trip_time_sec));
+                    std::complex<double> carrier_term = std::exp(std::complex<double>(0.0, -PI) * 4.0 * slant_range_m / this->sig_par.wavelength_m);
+                    return chirp_term * carrier_term;
+                }
+                return std::complex<double>(0.0, 0.0);
+            };
+            point_target_echo_signal[i][j] = echo_signal_sample();
+        }
+    }
+    return point_target_echo_signal;
+}

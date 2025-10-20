@@ -44,17 +44,20 @@ def get_result():
     azm_f = np.array(result["azimuth_freq_axis_hz"])
     return rng_t, rng_f, azm_t, azm_f
 
+
 def col2row(col_arr):
     row_arr = []
     for c in col_arr:
         row_arr.append(c[0])
     return row_arr
 
+
 def str2float(str_arr):
     float_arr = []
     for s in str_arr:
         float_arr.append(float(s))
     return np.array(float_arr)
+
 
 def get_golden():
     rng_t = str2float(read_csv("range_time_axis_sec.csv")[0])
@@ -63,11 +66,13 @@ def get_golden():
     azm_f = str2float(read_csv("azimuth_freq_axis_hz.csv")[0])
     return rng_t, rng_f, azm_t, azm_f
 
+
 def check(result, golden):
     print("error of range_time_axis_sec: {}".format(sum(abs(result[0] - golden[0]))))
     print("error of range_freq_axis_hz: {}".format(sum(abs(result[1] - golden[1]))))
     print("error of azimuth_time_axis_sec: {}".format(sum(abs(result[2] - golden[2]))))
     print("error of azimuth_freq_axis_hz: {}".format(sum(abs(result[3] - golden[3]))))
+
 
 if __name__ == "__main__":
     gen_input_par()

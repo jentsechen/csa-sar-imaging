@@ -1,5 +1,7 @@
 #include "../include/util.h"
+#include "../include/util.cpp"
 #include "ImagingPar.h"
+#include "../cnpy/cnpy.h"
 
 int main()
 {
@@ -13,5 +15,10 @@ int main()
                     {"azimuth_time_axis_sec", imaging_par.azimuth_time_axis_sec},
                     {"azimuth_freq_axis_hz", imaging_par.azimuth_freq_axis_hz}};
     save_json("output_par.json", output_par);
+    // echo signal generation
+    std::vector<std::vector<std::complex<double>>> single_point_echo_signal = imaging_par.gen_point_target_echo_signal();
+    std::cout << "size: (" << single_point_echo_signal.size() << ", " << single_point_echo_signal[0].size() << ")" << std::endl;
+    std::cout << single_point_echo_signal[5555][2560] << std::endl;
+    cnpy::npz_save("out.npz", "myVar1", &single_point_echo_signal, {1});
     return 0;
 }
