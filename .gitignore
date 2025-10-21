@@ -1,4 +1,5 @@
-build/
+/build/
 /.vscode/*.json
 /TestImagingPar/*.json
+/TestImagingPar/*.npy
 /TestImagingPar/__pycache__/

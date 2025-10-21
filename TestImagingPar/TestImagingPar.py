@@ -2,6 +2,7 @@ import csv
 import numpy as np
 import json
 import subprocess
+import scipy.io
 
 
 def read_csv(file_name):
@@ -26,16 +27,22 @@ def gen_input_par():
         json.dump(input_par, f)
 
 
-def get_result():
-    # subprocess.run executes the command
+def run_cpp(test_echo_sig_en=False):
+    if test_echo_sig_en == True:
+        arg = "test_echo_sig"
+    else:
+        arg = ""
     proc = subprocess.run(
-        "../build/bin/Debug/TestImagingPar.exe",
+        "../build/bin/Debug/TestImagingPar.exe {}".format(arg),
         capture_output=True,  # Capture stdout and stderr
         text=True,  # Decode output as text (string)
         check=True,  # Raise an exception for non-zero exit codes (errors)
     )
     print("\n--- C++ Program Output (STDOUT) ---")
     print(proc.stdout)
+
+
+def get_constructor_result():
     with open("output_par.json", "r", encoding="utf-8") as f:
         result = json.load(f)
     rng_t = np.array(result["range_time_axis_sec"])
@@ -59,7 +66,7 @@ def str2float(str_arr):
     return np.array(float_arr)
 
 
-def get_golden():
+def get_constructor_golden():
     rng_t = str2float(read_csv("range_time_axis_sec.csv")[0])
     rng_f = str2float(read_csv("range_freq_axis_hz.csv")[0])
     azm_t = str2float(col2row(read_csv("azimuth_time_axis_sec.csv")))
@@ -67,15 +74,25 @@ def get_golden():
     return rng_t, rng_f, azm_t, azm_f
 
 
-def check(result, golden):
+def check_constructor():
+    result = get_constructor_result()
+    golden = get_constructor_golden()
     print("error of range_time_axis_sec: {}".format(sum(abs(result[0] - golden[0]))))
     print("error of range_freq_axis_hz: {}".format(sum(abs(result[1] - golden[1]))))
     print("error of azimuth_time_axis_sec: {}".format(sum(abs(result[2] - golden[2]))))
     print("error of azimuth_freq_axis_hz: {}".format(sum(abs(result[3] - golden[3]))))
 
 
+def check_gen_point_target_echo_signal():
+    golden = scipy.io.loadmat("echo_signal_golden.mat")["point_target_echo_signal"]
+    result = np.load("./echo_signal_result.npy")
+    print(
+        "error of point_target_echo_signal: {}".format(sum(sum(abs(result - golden))))
+    )
+
+
 if __name__ == "__main__":
     gen_input_par()
-    rng_t_r, rng_f_r, azm_t_r, azm_f_r = get_result()
-    rng_t_g, rng_f_g, azm_t_g, azm_f_g = get_golden()
-    check((rng_t_r, rng_f_r, azm_t_r, azm_f_r), (rng_t_g, rng_f_g, azm_t_g, azm_f_g))
+    run_cpp(test_echo_sig_en=True)
+    check_constructor()
+    check_gen_point_target_echo_signal()
