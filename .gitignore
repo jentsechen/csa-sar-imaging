@@ -3,3 +3,4 @@
 /TestImagingPar/*.json
 /TestImagingPar/*.npy
 /TestImagingPar/__pycache__/
+/TestChirpScalingAlgo/*.html

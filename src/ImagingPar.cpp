@@ -68,12 +68,6 @@ std::vector<std::vector<std::complex<double>>> ImagingPar::gen_point_target_echo
     size_t azi_n_smp = this->azimuth_time_axis_sec.size();
     size_t rng_n_smp = this->range_time_axis_sec.size();
     std::vector<std::vector<std::complex<double>>> point_target_echo_signal(azi_n_smp, std::vector<std::complex<double>>(rng_n_smp, std::complex<double>(0.0, 0.0)));
-    // slant_range_m = obj.slant_range_m(obj.azimuth_time_axis_sec(i));
-    // round_trip_time_sec = obj.round_trip_time_sec(slant_range_m);
-    // echo_signal = obj.range_window(round_trip_time_sec).*...
-    // exp(1j * pi * obj.sig_par.range_fm_rate_hz_s * (obj.range_time_axis_sec - round_trip_time_sec).^ 2).*...
-    // exp(-1j * 4 * pi * slant_range_m / obj.sig_par.wavelength_m);
-    // point_target_echo_signal(i, :) = echo_signal;
     for (auto i = 0; i < azi_n_smp; i++)
     {
         double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i]);

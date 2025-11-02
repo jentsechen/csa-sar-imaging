@@ -35,8 +35,3 @@ json load_json(const std::string &file_name)
         return nullptr;
     }
 }
-
-double square(double x)
-{
-    return x * x;
-}

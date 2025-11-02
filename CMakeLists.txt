@@ -18,3 +18,9 @@ target_include_directories(TestImagingPar PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/in
 target_include_directories(TestImagingPar PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
 set_target_properties(TestImagingPar PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(TestImagingPar PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB)
+
+add_executable(TestChirpScalingAlgo src/TestChirpScalingAlgo.cpp src/SigPar src/ImagingPar src/ChirpScalingAlgo)
+target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
+set_target_properties(TestChirpScalingAlgo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(TestChirpScalingAlgo PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB)
