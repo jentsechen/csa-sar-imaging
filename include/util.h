@@ -13,10 +13,10 @@ void save_json(std::string file_name, const json &j);
 json load_json(const std::string &file_name);
 
 template <typename T>
-T square(T x) { return x * x; }
+inline T square(T x) { return x * x; }
 
 template <typename T>
-T cube(T x) { return x * x * x; }
+inline T cube(T x) { return x * x * x; }
 
 template <typename T>
 void resize_mat(std::vector<std::vector<T>> &mat, size_t n_row, size_t n_col)

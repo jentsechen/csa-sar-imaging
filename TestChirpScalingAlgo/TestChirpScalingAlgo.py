@@ -30,7 +30,7 @@ def check(par_name, data_type):
             "{}".format(par_name)
         ]
     result = np.load("./result/{}.npy".format(par_name))
-    print(golden.shape, result.shape)
+    # print(golden.shape, result.shape)
     if data_type == CheckDataType.ColVec:
         print("error of {}: {}".format(par_name, sum(abs(result - golden))))
     elif data_type == CheckDataType.Mat:
@@ -53,14 +53,22 @@ if __name__ == "__main__":
     check("migr_par", CheckDataType.ColVec)
     check("modified_range_fm_rate_hz_s", CheckDataType.ColVec)
     check("chirp_scaling", CheckDataType.Mat)
+    check("range_comp_filt", CheckDataType.Mat)
+    check("second_comp_filt", CheckDataType.Mat)
+    check("azimuth_comp_filt", CheckDataType.Mat)
+    check("third_comp_filt", CheckDataType.Mat)
 
-    # par_name = "chirp_scaling"
-    # result = np.load("./result/{}.npy".format(par_name))
-    # golden = scipy.io.loadmat("./golden/{}.mat".format(par_name))["{}".format(par_name)]
+    check("azimuth_fft_out", CheckDataType.Mat)
+    check("chirp_scaling_out", CheckDataType.Mat)
+    check("range_fft_out", CheckDataType.Mat)
+    check("second_phase_func_out", CheckDataType.Mat)
+    check("range_ifft_out", CheckDataType.Mat)
+    check("third_phase_func_out", CheckDataType.Mat)
+    check("csa_out", CheckDataType.Mat)
 
+    # par_name = "azimuth_comp_filt".format(par_name))["{}".format(par_name)]
     # figure = make_subplots(rows=1, cols=1)
-    # figure.add_trace(go.Scatter(y=golden[(0+3000), :].real), row=1, col=1)
-    # figure.add_trace(go.Scatter(y=result[(5555+3000), :].real), row=1, col=1)
+    # figure.add_trace(go.Scatter(y=golden[:, 1280].real), row=1, col=1)
+    # figure.add_trace(go.Scatter(y=result[:, 1280].real), row=1, col=1)
     # # figure.write_html("data.html")
     # pof.iplot(figure)
-
