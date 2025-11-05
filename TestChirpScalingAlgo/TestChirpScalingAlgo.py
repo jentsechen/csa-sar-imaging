@@ -30,7 +30,6 @@ def check(par_name, data_type):
             "{}".format(par_name)
         ]
     result = np.load("./result/{}.npy".format(par_name))
-    # print(golden.shape, result.shape)
     if data_type == CheckDataType.ColVec:
         print("error of {}: {}".format(par_name, sum(abs(result - golden))))
     elif data_type == CheckDataType.Mat:
@@ -39,6 +38,10 @@ def check(par_name, data_type):
         print("data type is not supported")
     return golden, result
 
+def check_inverse_csa():
+    golden = np.load("./echo_signal.npy")
+    result = np.load("./result/inverse_csa_out.npy")
+    print("error of inverse_csa_out: {}".format(sum(sum(abs(result - golden)))))
 
 if __name__ == "__main__":
     proc = subprocess.run(
@@ -65,10 +68,4 @@ if __name__ == "__main__":
     check("range_ifft_out", CheckDataType.Mat)
     check("third_phase_func_out", CheckDataType.Mat)
     check("csa_out", CheckDataType.Mat)
-
-    # par_name = "azimuth_comp_filt".format(par_name))["{}".format(par_name)]
-    # figure = make_subplots(rows=1, cols=1)
-    # figure.add_trace(go.Scatter(y=golden[:, 1280].real), row=1, col=1)
-    # figure.add_trace(go.Scatter(y=result[:, 1280].real), row=1, col=1)
-    # # figure.write_html("data.html")
-    # pof.iplot(figure)
+    check_inverse_csa()

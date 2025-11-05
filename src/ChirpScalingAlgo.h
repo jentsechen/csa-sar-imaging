@@ -30,6 +30,8 @@ public:
     std::vector<std::vector<std::complex<double>>> apply_chirp_scaling(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
     std::vector<std::vector<std::complex<double>>> apply_second_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
     std::vector<std::vector<std::complex<double>>> apply_third_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
+    std::vector<std::vector<std::complex<double>>> apply_csa(const std::vector<std::vector<std::complex<double>>> &input);
+    std::vector<std::vector<std::complex<double>>> apply_inverse_csa(const std::vector<std::vector<std::complex<double>>> &input);
     ChirpScalingAlgo(const ImagingPar &imaging_par);
 };
 

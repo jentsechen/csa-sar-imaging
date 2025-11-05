@@ -256,3 +256,27 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_third_pha
     }
     return output;
 }
+
+std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_csa(const std::vector<std::vector<std::complex<double>>> &input)
+{
+    std::vector<std::vector<std::complex<double>>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::vector<std::vector<std::complex<double>>> chirp_scaling_out = this->apply_chirp_scaling(azimuth_fft_out);
+    std::vector<std::vector<std::complex<double>>> range_fft_out = this->apply_range_fft(chirp_scaling_out);
+    std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out);
+    std::vector<std::vector<std::complex<double>>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::vector<std::vector<std::complex<double>>> third_phase_func_out = this->apply_third_phase_func(range_ifft_out);
+    std::vector<std::vector<std::complex<double>>> output = this->apply_azimuth_fft(third_phase_func_out, true);
+    return output;
+}
+
+std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_inverse_csa(const std::vector<std::vector<std::complex<double>>> &input)
+{
+    std::vector<std::vector<std::complex<double>>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::vector<std::vector<std::complex<double>>> third_phase_func_out = this->apply_third_phase_func(azimuth_fft_out, true);
+    std::vector<std::vector<std::complex<double>>> range_fft_out = this->apply_range_fft(third_phase_func_out);
+    std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out, true);
+    std::vector<std::vector<std::complex<double>>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::vector<std::vector<std::complex<double>>> chirp_scaling_out = this->apply_chirp_scaling(range_ifft_out, true);
+    std::vector<std::vector<std::complex<double>>> output = this->apply_azimuth_fft(chirp_scaling_out, true);
+    return output;
+}
