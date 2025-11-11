@@ -34,15 +34,24 @@ set_target_properties(FFTW3::fftw3 PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${FFTW_INCLUDE_DIR}"
 )
 
+find_package(OpenMP REQUIRED)
+
 add_executable(TestImagingPar src/TestImagingPar.cpp src/SigPar src/ImagingPar)
 target_include_directories(TestImagingPar PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(TestImagingPar PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
 set_target_properties(TestImagingPar PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-target_link_libraries(TestImagingPar PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3)
+target_link_libraries(TestImagingPar PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3 OpenMP::OpenMP_CXX)
 
 add_executable(TestChirpScalingAlgo src/TestChirpScalingAlgo.cpp src/SigPar src/ImagingPar src/ChirpScalingAlgo)
 target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
 target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/fftw")
 set_target_properties(TestChirpScalingAlgo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-target_link_libraries(TestChirpScalingAlgo PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3)
+target_link_libraries(TestChirpScalingAlgo PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3 OpenMP::OpenMP_CXX)
+
+add_executable(TestIterRecovAlgo src/TestIterRecovAlgo.cpp src/SigPar src/ImagingPar src/ChirpScalingAlgo)
+target_include_directories(TestIterRecovAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(TestIterRecovAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
+target_include_directories(TestIterRecovAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/fftw")
+set_target_properties(TestIterRecovAlgo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(TestIterRecovAlgo PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3 OpenMP::OpenMP_CXX)

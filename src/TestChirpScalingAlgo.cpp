@@ -42,21 +42,21 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::vector<std::vector<std::complex<double>>> azimuth_fft_out = chirp_scaling_algo.apply_azimuth_fft(echo_signal);
-    std::vector<std::vector<std::complex<double>>> chirp_scaling_out = chirp_scaling_algo.apply_chirp_scaling(azimuth_fft_out);
-    std::vector<std::vector<std::complex<double>>> range_fft_out = chirp_scaling_algo.apply_range_fft(chirp_scaling_out);
-    std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = chirp_scaling_algo.apply_second_phase_func(range_fft_out);
-    std::vector<std::vector<std::complex<double>>> range_ifft_out = chirp_scaling_algo.apply_range_fft(second_phase_func_out_out, true);
-    std::vector<std::vector<std::complex<double>>> third_phase_func_out = chirp_scaling_algo.apply_third_phase_func(range_ifft_out);
-    std::vector<std::vector<std::complex<double>>> csa_out = chirp_scaling_algo.apply_azimuth_fft(third_phase_func_out, true);
+    // std::vector<std::vector<std::complex<double>>> azimuth_fft_out = chirp_scaling_algo.apply_azimuth_fft(echo_signal);
+    // std::vector<std::vector<std::complex<double>>> chirp_scaling_out = chirp_scaling_algo.apply_chirp_scaling(azimuth_fft_out);
+    // std::vector<std::vector<std::complex<double>>> range_fft_out = chirp_scaling_algo.apply_range_fft(chirp_scaling_out);
+    // std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = chirp_scaling_algo.apply_second_phase_func(range_fft_out);
+    // std::vector<std::vector<std::complex<double>>> range_ifft_out = chirp_scaling_algo.apply_range_fft(second_phase_func_out_out, true);
+    // std::vector<std::vector<std::complex<double>>> third_phase_func_out = chirp_scaling_algo.apply_third_phase_func(range_ifft_out);
+    // std::vector<std::vector<std::complex<double>>> csa_out = chirp_scaling_algo.apply_azimuth_fft(third_phase_func_out, true);
     
-    save_mat_to_npy(azimuth_fft_out, "./result/azimuth_fft_out.npy");
-    save_mat_to_npy(chirp_scaling_out, "./result/chirp_scaling_out.npy");
-    save_mat_to_npy(range_fft_out, "./result/range_fft_out.npy");
-    save_mat_to_npy(second_phase_func_out_out, "./result/second_phase_func_out.npy");
-    save_mat_to_npy(range_ifft_out, "./result/range_ifft_out.npy");
-    save_mat_to_npy(third_phase_func_out, "./result/third_phase_func_out.npy");
-    save_mat_to_npy(csa_out, "./result/csa_out.npy");
+    // save_mat_to_npy(azimuth_fft_out, "./result/azimuth_fft_out.npy");
+    // save_mat_to_npy(chirp_scaling_out, "./result/chirp_scaling_out.npy");
+    // save_mat_to_npy(range_fft_out, "./result/range_fft_out.npy");
+    // save_mat_to_npy(second_phase_func_out_out, "./result/second_phase_func_out.npy");
+    // save_mat_to_npy(range_ifft_out, "./result/range_ifft_out.npy");
+    // save_mat_to_npy(third_phase_func_out, "./result/third_phase_func_out.npy");
+    // save_mat_to_npy(csa_out, "./result/csa_out.npy");
 
     std::vector<std::vector<std::complex<double>>> csa_out = chirp_scaling_algo.apply_csa(echo_signal);
     std::vector<std::vector<std::complex<double>>> inverse_csa_out = chirp_scaling_algo.apply_inverse_csa(csa_out);
