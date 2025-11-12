@@ -23,4 +23,10 @@ if __name__ == "__main__":
     print("Execution time: {} seconds".format(exe_time_sec))
 
     # echo_signal = np.load("./echo_signal.npy")
-    # print(echo_signal.shape)
+    csa_out_iter_0 = np.load("./result/csa_out_iter_0.npy")
+    csa_out_iter_1 = np.load("./result/csa_out_iter_1.npy")
+    # print(csa_out_iter_0.shape, csa_out_iter_1.shape)
+    figure = make_subplots(rows=1, cols=1)
+    figure.add_trace(go.Scatter(y=csa_out_iter_0[5555, :].real), row=1, col=1)
+    figure.add_trace(go.Scatter(y=csa_out_iter_1[5555, :].real), row=1, col=1)
+    pof.iplot(figure)
