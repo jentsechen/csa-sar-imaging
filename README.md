@@ -100,3 +100,8 @@ error of third_phase_func_out: 0.0007553784833669586
 error of csa_out: 1.1978915985926695e-05
 error of inverse_csa_out: 1.3658552034473888e-08
 ```
+
+```bash
+python "C:\Users\user\Desktop\imaging_alg_dev\csa-sar-imaging\TestIterRecovAlgo\TestIterRecovAlgo.py"
+python ./TestIterRecovAlgo.py
+```

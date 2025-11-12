@@ -40,6 +40,10 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &mat_in)
     return vec_out;
 }
 
+using cpx_mat = std::vector<std::vector<std::complex<double>>>;
+cpx_mat operator+(const cpx_mat &left, const cpx_mat &right);
+cpx_mat operator-(const cpx_mat &left, const cpx_mat &right);
+
 const double PI = 3.14159265358979323846;
 
 #endif

@@ -14,7 +14,7 @@ ChirpScalingAlgo::ChirpScalingAlgo(const ImagingPar &imaging_par) : imaging_par(
 void ChirpScalingAlgo::gen_migr_par()
 {
     this->migr_par.resize(this->imaging_par.azimuth_freq_axis_hz.size());
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < this->imaging_par.azimuth_freq_axis_hz.size(); i++)
     {
         double num = this->imaging_par.sig_par.light_speed_m_s * this->imaging_par.azimuth_freq_axis_hz[i];
@@ -26,7 +26,7 @@ void ChirpScalingAlgo::gen_migr_par()
 void ChirpScalingAlgo::modify_range_fm_rate_hz_s()
 {
     this->modified_range_fm_rate_hz_s.resize(this->imaging_par.azimuth_freq_axis_hz.size());
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < this->imaging_par.azimuth_freq_axis_hz.size(); i++)
     {
         double num = this->imaging_par.sig_par.light_speed_m_s * this->imaging_par.closest_slant_range_m * square(this->imaging_par.azimuth_freq_axis_hz[i]);
@@ -42,7 +42,7 @@ void ChirpScalingAlgo::gen_chirp_scaling()
     const size_t half_n_row = n_row / 2;
     resize_mat(this->chirp_scaling, n_row, n_col);
     std::complex<double> common_term(0.0, PI);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
@@ -64,7 +64,7 @@ void ChirpScalingAlgo::gen_range_comp_filt()
     const size_t half_n_row = n_row / 2, half_n_col = n_col / 2;
     resize_mat(this->range_comp_filt, n_row, n_col);
     std::complex<double> cmmon_term(0.0, PI);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
@@ -85,7 +85,7 @@ void ChirpScalingAlgo::gen_second_comp_filt()
     const size_t half_n_row = n_row / 2, half_n_col = n_col / 2;
     resize_mat(this->second_comp_filt, n_row, n_col);
     std::complex<double> common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
@@ -106,7 +106,7 @@ void ChirpScalingAlgo::gen_azimuth_comp_filt()
     const size_t half_n_row = n_row / 2;
     resize_mat(this->azimuth_comp_filt, n_row, n_col);
     std::complex<double> common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.wavelength_m);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
@@ -126,7 +126,7 @@ void ChirpScalingAlgo::gen_third_comp_filt()
     const size_t half_n_row = n_row / 2;
     resize_mat(this->third_comp_filt, n_row, n_col);
     std::complex<double> common_term(0.0, -4.0 * PI * square(this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s));
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
@@ -153,7 +153,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_azimuth_f
     const size_t n_col = this->imaging_par.range_time_axis_sec.size();
     std::vector<std::vector<std::complex<double>>> output;
     resize_mat(output, n_row, n_col);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto col_idx = 0; col_idx < n_col; col_idx++)
     {
         for (auto i = 0; i < n_row; i++)
@@ -191,7 +191,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_range_fft
     const size_t n_col = this->imaging_par.range_freq_axis_hz.size();
     std::vector<std::vector<std::complex<double>>> output;
     resize_mat(output, n_row, n_col);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto row_idx = 0; row_idx < n_row; row_idx++)
     {
         for (auto i = 0; i < n_col; i++)
@@ -221,7 +221,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_chirp_sca
     const size_t n_col = this->imaging_par.range_time_axis_sec.size();
     std::vector<std::vector<std::complex<double>>> output;
     resize_mat(output, n_row, n_col);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         for (auto j = 0; j < n_col; j++)
@@ -239,7 +239,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_second_ph
     const size_t n_col = this->imaging_par.range_time_axis_sec.size();
     std::vector<std::vector<std::complex<double>>> output;
     resize_mat(output, n_row, n_col);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         for (auto j = 0; j < n_col; j++)
@@ -257,7 +257,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_third_pha
     const size_t n_col = this->imaging_par.range_time_axis_sec.size();
     std::vector<std::vector<std::complex<double>>> output;
     resize_mat(output, n_row, n_col);
-#pragma omp parallel for
+// #pragma omp parallel for
     for (auto i = 0; i < n_row; i++)
     {
         for (auto j = 0; j < n_col; j++)

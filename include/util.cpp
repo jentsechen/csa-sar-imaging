@@ -35,3 +35,39 @@ json load_json(const std::string &file_name)
         return nullptr;
     }
 }
+
+cpx_mat operator+(const cpx_mat &left, const cpx_mat &right)
+{
+    assert(left.size() == right.size());
+    size_t n_row = left.size(), n_col = left[0].size();
+    cpx_mat result(n_row);
+#pragma omp parallel for
+    for (auto i = 0; i < n_row; i++)
+    {
+        result[i].resize(n_col);
+        assert(left[i].size() == right[i].size());
+        for (auto j = 0; j < n_col; j++)
+        {
+            result[i][j] = left[i][j] + right[i][j];
+        }
+    }
+    return result;
+}
+
+cpx_mat operator-(const cpx_mat &left, const cpx_mat &right)
+{
+    assert(left.size() == right.size());
+    size_t n_row = left.size(), n_col = left[0].size();
+    cpx_mat result(n_row);
+#pragma omp parallel for
+    for (auto i = 0; i < n_row; i++)
+    {
+        result[i].resize(n_col);
+        assert(left[i].size() == right[i].size());
+        for (auto j = 0; j < n_col; j++)
+        {
+            result[i][j] = left[i][j] - right[i][j];
+        }
+    }
+    return result;
+}
