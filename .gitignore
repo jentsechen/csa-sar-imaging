@@ -4,3 +4,6 @@
 /TestImagingPar/*.npy
 /TestImagingPar/__pycache__/
 /TestChirpScalingAlgo/*.html
+/TestChirpScalingAlgo/result/
+/TestChirpScalingAlgo/golden/
+/TestIterRecovAlgo/result

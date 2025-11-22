@@ -34,6 +34,7 @@ set_target_properties(FFTW3::fftw3 PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${FFTW_INCLUDE_DIR}"
 )
 
+option(ENABLE_OPENMP "Enable OpenMP parallelization for this project" ON)
 find_package(OpenMP REQUIRED)
 
 add_executable(TestImagingPar src/TestImagingPar.cpp src/SigPar src/ImagingPar)
@@ -48,6 +49,9 @@ target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_D
 target_include_directories(TestChirpScalingAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/fftw")
 set_target_properties(TestChirpScalingAlgo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(TestChirpScalingAlgo PRIVATE ${CNPY_LIBRARY} ZLIB::ZLIB FFTW3::fftw3 OpenMP::OpenMP_CXX)
+if(ENABLE_OPENMP)
+    target_compile_definitions(TestChirpScalingAlgo PRIVATE USE_PARALLEL_FOR)
+endif()
 
 add_executable(TestIterRecovAlgo src/TestIterRecovAlgo.cpp src/SigPar src/ImagingPar src/ChirpScalingAlgo)
 target_include_directories(TestIterRecovAlgo PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")

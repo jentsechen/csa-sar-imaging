@@ -5,8 +5,15 @@
 #include <string>
 #include <vector>
 #include <complex>
+#include <chrono>
 #include "json.hpp"
 using json = nlohmann::json;
+
+#ifdef USE_PARALLEL_FOR
+#define OMP_FOR _Pragma("omp parallel for")
+#else
+#define OMP_FOR
+#endif
 
 void save_json(std::string file_name, const json &j);
 

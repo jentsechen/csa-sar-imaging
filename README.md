@@ -1,8 +1,8 @@
 ## How to Build (Windows)
 ```bash
-mkdir build
+mkdir build # if build not exists
 cd build
-rm ./CMakeCache.txt
+rm ./CMakeCache.txt # if CMakeCache.txt needs to be updated
 cmake ..
 cmake --build .
 cmake --build . -j 4
@@ -12,6 +12,17 @@ cmake --build . -j 4
     * Download json.hpp
     * Add include path to `c_cpp_properties.json`
     * Add `target_include_directories()` to `CMakeLists.txt`
+
+## How to Enable OpenMP
+```bash
+cd build
+rm ./CMakeCache.txt
+cmake .. -DENABLE_OPENMP=OFF
+cmake --build .
+```
+* Performance of OpenMP acceleration
+    * Time requirement of `ChirpScalingAlgo` constructor from 42 seconds to 9 seconds
+
 
 ## How to use CNPY
 * Pre-request: ZLIB
