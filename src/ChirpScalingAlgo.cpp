@@ -2,6 +2,8 @@
 
 ChirpScalingAlgo::ChirpScalingAlgo(const ImagingPar &imaging_par) : imaging_par(imaging_par)
 {
+    this->n_row = this->imaging_par.azimuth_freq_axis_hz.size();
+    this->n_col = this->imaging_par.range_time_axis_sec.size();
     auto start = std::chrono::steady_clock::now();
     gen_migr_par();
     modify_range_fm_rate_hz_s();
@@ -12,7 +14,7 @@ ChirpScalingAlgo::ChirpScalingAlgo(const ImagingPar &imaging_par) : imaging_par(
     gen_third_comp_filt();
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Time taken for gen_chirp_scaling(): "
+    std::cout << "Time taken for constructor: "
               << duration.count() / 1e6
               << " seconds" << std::endl;
 }
@@ -43,104 +45,96 @@ void ChirpScalingAlgo::modify_range_fm_rate_hz_s()
 
 void ChirpScalingAlgo::gen_chirp_scaling()
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    const size_t half_n_row = n_row / 2;
-    resize_mat(this->chirp_scaling, n_row, n_col);
+    const size_t half_n_row = this->n_row / 2;
+    this->chirp_scaling.resize(this->n_row * this->n_col);
     std::complex<double> common_term(0.0, PI);
     OMP_FOR
-    for (auto i = 0; i < n_row; i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
         double first_order_col_term = this->modified_range_fm_rate_hz_s[i] * (1.0 / this->migr_par[i] - 1.0);
         double second_order_col_term = -2.0 * this->imaging_par.closest_slant_range_m / (this->imaging_par.sig_par.light_speed_m_s * this->migr_par[i]);
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             double first_order_term = first_order_col_term;
             double second_order_term = square(this->imaging_par.range_time_axis_sec[j] + second_order_col_term);
-            chirp_scaling[i_sft][j] = std::exp(common_term * first_order_term * second_order_term);
+            chirp_scaling[i_sft * this->n_col + j] = std::exp(common_term * first_order_term * second_order_term);
         }
     }
 }
 
 void ChirpScalingAlgo::gen_range_comp_filt()
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_freq_axis_hz.size();
-    const size_t half_n_row = n_row / 2, half_n_col = n_col / 2;
-    resize_mat(this->range_comp_filt, n_row, n_col);
-    std::complex<double> cmmon_term(0.0, PI);
+    const size_t half_n_row = this->n_row / 2, half_n_col = this->n_col / 2;
+    this->range_comp_filt.resize(this->n_row * this->n_col);
+    std::complex<double>
+        cmmon_term(0.0, PI);
     OMP_FOR
-    for (auto i = 0; i < n_row; i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
         double col_term = this->migr_par[i] / this->modified_range_fm_rate_hz_s[i];
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             size_t j_sft = fft_shift_index(j, half_n_col);
             double row_term = square(this->imaging_par.range_freq_axis_hz[j]);
-            this->range_comp_filt[i_sft][j_sft] = std::exp(cmmon_term * col_term * row_term);
+            this->range_comp_filt[i_sft * this->n_col + j_sft] = std::exp(cmmon_term * col_term * row_term);
         }
     }
 }
 
 void ChirpScalingAlgo::gen_second_comp_filt()
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_freq_axis_hz.size();
-    const size_t half_n_row = n_row / 2, half_n_col = n_col / 2;
-    resize_mat(this->second_comp_filt, n_row, n_col);
-    std::complex<double> common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s);
+    const size_t half_n_row = this->n_row / 2, half_n_col = this->n_col / 2;
+    this->second_comp_filt.resize(this->n_row * this->n_col);
+    std::complex<double>
+        common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s);
     OMP_FOR
-    for (auto i = 0; i < n_row; i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
         double col_term = 1.0 / this->migr_par[i] - 1.0;
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             size_t j_sft = fft_shift_index(j, half_n_col);
             double row_term = this->imaging_par.range_freq_axis_hz[j];
-            this->second_comp_filt[i_sft][j_sft] = std::exp(common_term * col_term * row_term);
+            this->second_comp_filt[i_sft * this->n_col + j_sft] = std::exp(common_term * col_term * row_term);
         }
     }
 }
 
 void ChirpScalingAlgo::gen_azimuth_comp_filt()
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    const size_t half_n_row = n_row / 2;
-    resize_mat(this->azimuth_comp_filt, n_row, n_col);
+    const size_t half_n_row = this->n_row / 2;
+    this->azimuth_comp_filt.resize(this->n_row * this->n_col);
     std::complex<double> common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.wavelength_m);
     OMP_FOR
-    for (auto i = 0; i < n_row; i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
         double col_term = this->migr_par[i];
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             double row_term = 1.0;
-            this->azimuth_comp_filt[i_sft][j] = std::exp(common_term * col_term * row_term);
+            this->azimuth_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }
     }
 }
 
 void ChirpScalingAlgo::gen_third_comp_filt()
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    const size_t half_n_row = n_row / 2;
-    resize_mat(this->third_comp_filt, n_row, n_col);
+    const size_t half_n_row = this->n_row / 2;
+    this->third_comp_filt.resize(this->n_row * this->n_col);
     std::complex<double> common_term(0.0, -4.0 * PI * square(this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s));
     OMP_FOR
-    for (auto i = 0; i < n_row; i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
         double col_term = this->modified_range_fm_rate_hz_s[i] / this->migr_par[i] * (1.0 / this->migr_par[i] - 1.0);
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             double row_term = 1.0;
-            this->third_comp_filt[i_sft][j] = std::exp(common_term * col_term * row_term);
+            this->third_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }
     }
 }
@@ -232,7 +226,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_chirp_sca
     {
         for (auto j = 0; j < n_col; j++)
         {
-            std::complex<double> mult = this->chirp_scaling[i][j];
+            std::complex<double> mult = this->chirp_scaling[i * this->n_col + j];
             output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
         }
     }
@@ -250,7 +244,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_second_ph
     {
         for (auto j = 0; j < n_col; j++)
         {
-            std::complex<double> mult = this->range_comp_filt[i][j] * this->second_comp_filt[i][j];
+            std::complex<double> mult = this->range_comp_filt[i * this->n_col + j] * this->second_comp_filt[i * this->n_col + j];
             output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
         }
     }
@@ -268,7 +262,7 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_third_pha
     {
         for (auto j = 0; j < n_col; j++)
         {
-            std::complex<double> mult = this->azimuth_comp_filt[i][j];
+            std::complex<double> mult = this->azimuth_comp_filt[i * this->n_col + j];
             output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
         }
     }
