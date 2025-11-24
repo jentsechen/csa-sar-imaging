@@ -21,8 +21,9 @@ cmake .. -DENABLE_OPENMP=OFF
 cmake --build .
 ```
 * Performance of OpenMP acceleration
-    * Time requirement of `ChirpScalingAlgo` constructor from 42 seconds to 9 seconds
-
+    * Time requirement of `ChirpScalingAlgo::ChirpScalingAlgo()` (constructor) from 42 seconds to 9 seconds
+    * Time requirement of `ChirpScalingAlgo::apply_csa()` from 45 seconds to 30 seconds
+    * Note that `fftw_execute()` can not be accelerated by directly using OpenMP 
 
 ## How to use CNPY
 * Pre-request: ZLIB

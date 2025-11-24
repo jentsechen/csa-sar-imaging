@@ -24,16 +24,13 @@ public:
     std::vector<double> modified_range_fm_rate_hz_s; // K_m
     std::vector<std::complex<double>> chirp_scaling, range_comp_filt, azimuth_comp_filt, second_comp_filt, third_comp_filt;
     size_t n_row, n_col;
-    // std::vector<std::vector<std::complex<double>>> chirp_scaling;
-    // std::vector<std::vector<std::complex<double>>> range_comp_filt, azimuth_comp_filt;
-    // std::vector<std::vector<std::complex<double>>> second_comp_filt, third_comp_filt;
-    std::vector<std::vector<std::complex<double>>> apply_azimuth_fft(const std::vector<std::vector<std::complex<double>>> &input, bool is_ifft = false);
-    std::vector<std::vector<std::complex<double>>> apply_range_fft(const std::vector<std::vector<std::complex<double>>> &input, bool is_ifft = false);
-    std::vector<std::vector<std::complex<double>>> apply_chirp_scaling(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
-    std::vector<std::vector<std::complex<double>>> apply_second_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
-    std::vector<std::vector<std::complex<double>>> apply_third_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj = false);
-    std::vector<std::vector<std::complex<double>>> apply_csa(const std::vector<std::vector<std::complex<double>>> &input);
-    std::vector<std::vector<std::complex<double>>> apply_inverse_csa(const std::vector<std::vector<std::complex<double>>> &input);
+    std::vector<std::complex<double>> apply_azimuth_fft(const std::vector<std::complex<double>> &input, bool is_ifft = false);
+    std::vector<std::complex<double>> apply_range_fft(const std::vector<std::complex<double>> &input, bool is_ifft = false);
+    std::vector<std::complex<double>> apply_chirp_scaling(const std::vector<std::complex<double>> &input, bool is_conj = false);
+    std::vector<std::complex<double>> apply_second_phase_func(const std::vector<std::complex<double>> &input, bool is_conj = false);
+    std::vector<std::complex<double>> apply_third_phase_func(const std::vector<std::complex<double>> &input, bool is_conj = false);
+    std::vector<std::complex<double>> apply_csa(const std::vector<std::complex<double>> &input);
+    std::vector<std::complex<double>> apply_inverse_csa(const std::vector<std::complex<double>> &input);
     ChirpScalingAlgo(const ImagingPar &imaging_par);
 };
 

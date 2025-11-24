@@ -4,7 +4,7 @@ ChirpScalingAlgo::ChirpScalingAlgo(const ImagingPar &imaging_par) : imaging_par(
 {
     this->n_row = this->imaging_par.azimuth_freq_axis_hz.size();
     this->n_col = this->imaging_par.range_time_axis_sec.size();
-    auto start = std::chrono::steady_clock::now();
+    // auto start = std::chrono::steady_clock::now();
     gen_migr_par();
     modify_range_fm_rate_hz_s();
     gen_chirp_scaling();
@@ -12,11 +12,11 @@ ChirpScalingAlgo::ChirpScalingAlgo(const ImagingPar &imaging_par) : imaging_par(
     gen_second_comp_filt();
     gen_azimuth_comp_filt();
     gen_third_comp_filt();
-    auto end = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Time taken for constructor: "
-              << duration.count() / 1e6
-              << " seconds" << std::endl;
+    // auto end = std::chrono::steady_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "Time taken for constructor: "
+    //           << duration.count() / 1e6
+    //           << " seconds" << std::endl;
 }
 
 void ChirpScalingAlgo::gen_migr_par()
@@ -139,35 +139,31 @@ void ChirpScalingAlgo::gen_third_comp_filt()
     }
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_azimuth_fft(const std::vector<std::vector<std::complex<double>>> &input, bool is_ifft)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_azimuth_fft(const std::vector<std::complex<double>> &input, bool is_ifft)
 {
-    assert(input.size() == this->imaging_par.azimuth_freq_axis_hz.size());
-    const size_t fft_size = this->imaging_par.azimuth_freq_axis_hz.size();
+    const size_t fft_size = this->n_row;
     fftw_complex *input_ptr, *output_ptr;
     input_ptr = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fft_size);
     output_ptr = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fft_size);
     fftw_plan p;
     p = fftw_plan_dft_1d(fft_size, input_ptr, output_ptr, is_ifft ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE);
 
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    std::vector<std::vector<std::complex<double>>> output;
-    resize_mat(output, n_row, n_col);
-    // #pragma omp parallel for
-    for (auto col_idx = 0; col_idx < n_col; col_idx++)
+    std::vector<std::complex<double>> output(this->n_row * this->n_col);
+    // OMP_FOR
+    for (auto col_idx = 0; col_idx < this->n_col; col_idx++)
     {
-        for (auto i = 0; i < n_row; i++)
+        for (auto i = 0; i < this->n_row; i++)
         {
-            input_ptr[i][0] = input[i][col_idx].real();
-            input_ptr[i][1] = input[i][col_idx].imag();
+            input_ptr[i][0] = input[i * this->n_col + col_idx].real();
+            input_ptr[i][1] = input[i * this->n_col + col_idx].imag();
         }
         fftw_execute(p);
-        for (auto i = 0; i < n_row; i++)
+        for (auto i = 0; i < this->n_row; i++)
         {
-            output[i][col_idx] = std::complex<double>(output_ptr[i][0], output_ptr[i][1]);
+            output[i * this->n_col + col_idx] = std::complex<double>(output_ptr[i][0], output_ptr[i][1]);
             if (is_ifft)
             {
-                output[i][col_idx] /= static_cast<double>(fft_size);
+                output[i * this->n_col + col_idx] /= static_cast<double>(fft_size);
             }
         }
     }
@@ -177,35 +173,31 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_azimuth_f
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_range_fft(const std::vector<std::vector<std::complex<double>>> &input, bool is_ifft)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_range_fft(const std::vector<std::complex<double>> &input, bool is_ifft)
 {
-    assert(input[0].size() == this->imaging_par.range_freq_axis_hz.size());
-    const size_t fft_size = this->imaging_par.range_freq_axis_hz.size();
+    const size_t fft_size = this->n_col;
     fftw_complex *input_ptr, *output_ptr;
     input_ptr = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fft_size);
     output_ptr = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fft_size);
     fftw_plan p;
     p = fftw_plan_dft_1d(fft_size, input_ptr, output_ptr, is_ifft ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE);
 
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_freq_axis_hz.size();
-    std::vector<std::vector<std::complex<double>>> output;
-    resize_mat(output, n_row, n_col);
-    // #pragma omp parallel for
-    for (auto row_idx = 0; row_idx < n_row; row_idx++)
+    std::vector<std::complex<double>> output(this->n_row * this->n_col);
+    // OMP_FOR
+    for (auto row_idx = 0; row_idx < this->n_row; row_idx++)
     {
-        for (auto i = 0; i < n_col; i++)
+        for (auto i = 0; i < this->n_col; i++)
         {
-            input_ptr[i][0] = input[row_idx][i].real();
-            input_ptr[i][1] = input[row_idx][i].imag();
+            input_ptr[i][0] = input[row_idx * this->n_col + i].real();
+            input_ptr[i][1] = input[row_idx * this->n_col + i].imag();
         }
         fftw_execute(p);
-        for (auto i = 0; i < n_col; i++)
+        for (auto i = 0; i < this->n_col; i++)
         {
-            output[row_idx][i] = std::complex<double>(output_ptr[i][0], output_ptr[i][1]);
+            output[row_idx * this->n_col + i] = std::complex<double>(output_ptr[i][0], output_ptr[i][1]);
             if (is_ifft)
             {
-                output[row_idx][i] /= static_cast<double>(fft_size);
+                output[row_idx * this->n_col + i] /= static_cast<double>(fft_size);
             }
         }
     }
@@ -215,80 +207,71 @@ std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_range_fft
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_chirp_scaling(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_chirp_scaling(const std::vector<std::complex<double>> &input, bool is_conj)
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    std::vector<std::vector<std::complex<double>>> output;
-    resize_mat(output, n_row, n_col);
-    // #pragma omp parallel for
-    for (auto i = 0; i < n_row; i++)
+    std::vector<std::complex<double>> output(this->n_row * this->n_col);
+    OMP_FOR
+    for (auto i = 0; i < this->n_row; i++)
     {
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             std::complex<double> mult = this->chirp_scaling[i * this->n_col + j];
-            output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
+            output[i * this->n_col + j] = input[i * this->n_col + j] * (is_conj ? std::conj(mult) : mult);
         }
     }
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_second_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_second_phase_func(const std::vector<std::complex<double>> &input, bool is_conj)
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    std::vector<std::vector<std::complex<double>>> output;
-    resize_mat(output, n_row, n_col);
-    // #pragma omp parallel for
-    for (auto i = 0; i < n_row; i++)
+    std::vector<std::complex<double>> output(this->n_row * this->n_col);
+    OMP_FOR
+    for (auto i = 0; i < this->n_row; i++)
     {
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             std::complex<double> mult = this->range_comp_filt[i * this->n_col + j] * this->second_comp_filt[i * this->n_col + j];
-            output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
+            output[i * this->n_col + j] = input[i * this->n_col + j] * (is_conj ? std::conj(mult) : mult);
         }
     }
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_third_phase_func(const std::vector<std::vector<std::complex<double>>> &input, bool is_conj)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_third_phase_func(const std::vector<std::complex<double>> &input, bool is_conj)
 {
-    const size_t n_row = this->imaging_par.azimuth_freq_axis_hz.size();
-    const size_t n_col = this->imaging_par.range_time_axis_sec.size();
-    std::vector<std::vector<std::complex<double>>> output;
-    resize_mat(output, n_row, n_col);
-    // #pragma omp parallel for
-    for (auto i = 0; i < n_row; i++)
+    std::vector<std::complex<double>> output(this->n_row * this->n_col);
+    OMP_FOR
+    for (auto i = 0; i < this->n_row; i++)
     {
-        for (auto j = 0; j < n_col; j++)
+        for (auto j = 0; j < this->n_col; j++)
         {
             std::complex<double> mult = this->azimuth_comp_filt[i * this->n_col + j];
-            output[i][j] = input[i][j] * (is_conj ? std::conj(mult) : mult);
+            output[i * this->n_col + j] = input[i * this->n_col + j] * (is_conj ? std::conj(mult) : mult);
         }
     }
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_csa(const std::vector<std::vector<std::complex<double>>> &input)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_csa(const std::vector<std::complex<double>> &input)
 {
-    std::vector<std::vector<std::complex<double>>> azimuth_fft_out = this->apply_azimuth_fft(input);
-    std::vector<std::vector<std::complex<double>>> chirp_scaling_out = this->apply_chirp_scaling(azimuth_fft_out);
-    std::vector<std::vector<std::complex<double>>> range_fft_out = this->apply_range_fft(chirp_scaling_out);
-    std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out);
-    std::vector<std::vector<std::complex<double>>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
-    std::vector<std::vector<std::complex<double>>> third_phase_func_out = this->apply_third_phase_func(range_ifft_out);
-    std::vector<std::vector<std::complex<double>>> output = this->apply_azimuth_fft(third_phase_func_out, true);
+    std::vector<std::complex<double>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::vector<std::complex<double>> chirp_scaling_out = this->apply_chirp_scaling(azimuth_fft_out);
+    std::vector<std::complex<double>> range_fft_out = this->apply_range_fft(chirp_scaling_out);
+    std::vector<std::complex<double>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out);
+    std::vector<std::complex<double>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::vector<std::complex<double>> third_phase_func_out = this->apply_third_phase_func(range_ifft_out);
+    std::vector<std::complex<double>> output = this->apply_azimuth_fft(third_phase_func_out, true);
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ChirpScalingAlgo::apply_inverse_csa(const std::vector<std::vector<std::complex<double>>> &input)
+std::vector<std::complex<double>> ChirpScalingAlgo::apply_inverse_csa(const std::vector<std::complex<double>> &input)
 {
-    std::vector<std::vector<std::complex<double>>> azimuth_fft_out = this->apply_azimuth_fft(input);
-    std::vector<std::vector<std::complex<double>>> third_phase_func_out = this->apply_third_phase_func(azimuth_fft_out, true);
-    std::vector<std::vector<std::complex<double>>> range_fft_out = this->apply_range_fft(third_phase_func_out);
-    std::vector<std::vector<std::complex<double>>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out, true);
-    std::vector<std::vector<std::complex<double>>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
-    std::vector<std::vector<std::complex<double>>> chirp_scaling_out = this->apply_chirp_scaling(range_ifft_out, true);
-    std::vector<std::vector<std::complex<double>>> output = this->apply_azimuth_fft(chirp_scaling_out, true);
+    std::vector<std::complex<double>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::vector<std::complex<double>> third_phase_func_out = this->apply_third_phase_func(azimuth_fft_out, true);
+    std::vector<std::complex<double>> range_fft_out = this->apply_range_fft(third_phase_func_out);
+    std::vector<std::complex<double>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out, true);
+    std::vector<std::complex<double>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::vector<std::complex<double>> chirp_scaling_out = this->apply_chirp_scaling(range_ifft_out, true);
+    std::vector<std::complex<double>> output = this->apply_azimuth_fft(chirp_scaling_out, true);
     return output;
 }
