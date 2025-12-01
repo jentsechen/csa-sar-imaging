@@ -117,3 +117,7 @@ error of inverse_csa_out: 1.3658552034473888e-08
 python "C:\Users\user\Desktop\imaging_alg_dev\csa-sar-imaging\TestIterRecovAlgo\TestIterRecovAlgo.py"
 python ./TestIterRecovAlgo.py
 ```
+
+## Multi-Point Target
+![](./image/single_point_target.png)
+![](./image/multi_point_target.png)

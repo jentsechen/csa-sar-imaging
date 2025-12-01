@@ -7,6 +7,7 @@
 #include <complex>
 #include <chrono>
 #include <thread>
+#include "../cnpy/cnpy.h"
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -51,6 +52,12 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &mat_in)
 using cpx_mat = std::vector<std::vector<std::complex<double>>>;
 cpx_mat operator+(const cpx_mat &left, const cpx_mat &right);
 cpx_mat operator-(const cpx_mat &left, const cpx_mat &right);
+
+template <typename T>
+void save_mat_to_npy(std::string file_path, const std::vector<T> &mat, size_t n_row, size_t n_col)
+{
+    cnpy::npy_save(file_path, mat.data(), {n_row, n_col}, "w");
+}
 
 const double PI = 3.14159265358979323846;
 

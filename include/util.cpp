@@ -71,3 +71,8 @@ cpx_mat operator-(const cpx_mat &left, const cpx_mat &right)
     }
     return result;
 }
+
+// void save_mat_to_npy(std::string file_path, const std::vector<std::complex<double>> &mat, size_t n_row, size_t n_col)
+// {
+//     cnpy::npy_save(file_path, mat.data(), {n_row, n_col}, "w");
+// }

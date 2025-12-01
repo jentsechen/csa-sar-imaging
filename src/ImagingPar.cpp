@@ -20,6 +20,10 @@ ImagingPar::ImagingPar(const SigPar &sig_par, double closest_slant_range_m, doub
     };
     this->range_freq_axis_hz = gen_freq_axis(sig_par.sampling_freq_hz, static_cast<int>(range_time_axis_sec.size()));
     this->azimuth_freq_axis_hz = gen_freq_axis(sig_par.pulse_rep_freq_hz, static_cast<int>(azimuth_time_axis_sec.size()));
+    assert(this->azimuth_time_axis_sec.size() == this->azimuth_freq_axis_hz.size());
+    assert(this->range_time_axis_sec.size() == this->range_freq_axis_hz.size());
+    this->n_row = this->azimuth_time_axis_sec.size();
+    this->n_col = this->range_time_axis_sec.size();
 }
 
 void ImagingPar::gen_range_time_axis_sec()
@@ -42,9 +46,9 @@ void ImagingPar::gen_azimuth_time_axis_sec()
     }
 }
 
-double ImagingPar::calc_slant_range_m(double azimuth_time_sec)
+double ImagingPar::calc_slant_range_m(double azimuth_time_sec, double azimuth_offset_sec, double range_offset_m)
 {
-    return sqrt(square(this->closest_slant_range_m) + square(this->sensor_speed_m_s * azimuth_time_sec));
+    return sqrt(square(this->closest_slant_range_m + range_offset_m) + square(this->sensor_speed_m_s * (azimuth_time_sec + azimuth_offset_sec)));
 }
 
 double ImagingPar::calc_round_trip_time_sec(double slant_range_m)
@@ -63,29 +67,33 @@ std::vector<bool> ImagingPar::apply_range_window(double round_trip_time_sec)
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> ImagingPar::gen_point_target_echo_signal()
+std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const std::vector<PointTarget> &point_target_list)
 {
     size_t azi_n_smp = this->azimuth_time_axis_sec.size();
     size_t rng_n_smp = this->range_time_axis_sec.size();
-    std::vector<std::vector<std::complex<double>>> point_target_echo_signal(azi_n_smp, std::vector<std::complex<double>>(rng_n_smp, std::complex<double>(0.0, 0.0)));
-    for (auto i = 0; i < azi_n_smp; i++)
+    std::vector<std::complex<double>> point_target_echo_signal(azi_n_smp * rng_n_smp, std::complex<double>(0.0));
+    OMP_FOR
+    for (auto target_index = 0; target_index < point_target_list.size(); target_index++)
     {
-        double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i]);
-        double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
-        std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);
-        for (auto j = 0; j < rng_n_smp; j++)
+        for (auto i = 0; i < azi_n_smp; i++)
         {
-            auto echo_signal_sample = [&]()
+            double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i], point_target_list[target_index].azimuth_offset_sec, point_target_list[target_index].range_offset_m);
+            double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
+            std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);
+            for (auto j = 0; j < rng_n_smp; j++)
             {
-                if (range_window[j])
+                auto echo_signal_sample = [&]()
                 {
-                    std::complex<double> chirp_term = std::exp(std::complex<double>(0.0, PI) * this->sig_par.range_fm_rate_hz_s * square(this->range_time_axis_sec[j] - round_trip_time_sec));
-                    std::complex<double> carrier_term = std::exp(std::complex<double>(0.0, -PI) * 4.0 * slant_range_m / this->sig_par.wavelength_m);
-                    return chirp_term * carrier_term;
-                }
-                return std::complex<double>(0.0, 0.0);
-            };
-            point_target_echo_signal[i][j] = echo_signal_sample();
+                    if (range_window[j])
+                    {
+                        std::complex<double> chirp_term = std::exp(std::complex<double>(0.0, PI) * this->sig_par.range_fm_rate_hz_s * square(this->range_time_axis_sec[j] - round_trip_time_sec));
+                        std::complex<double> carrier_term = std::exp(std::complex<double>(0.0, -PI) * 4.0 * slant_range_m / this->sig_par.wavelength_m);
+                        return chirp_term * carrier_term;
+                    }
+                    return std::complex<double>(0.0, 0.0);
+                };
+                point_target_echo_signal[i * rng_n_smp + j] += echo_signal_sample();
+            }
         }
     }
     return point_target_echo_signal;

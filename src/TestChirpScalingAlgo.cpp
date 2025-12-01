@@ -2,32 +2,20 @@
 #include "../include/util.cpp"
 #include "ImagingPar.h"
 #include "ChirpScalingAlgo.h"
-#include "../cnpy/cnpy.h"
 
-void save_mat_to_npy_(const std::vector<std::vector<std::complex<double>>> &mat, std::string file_path)
-{
-    std::vector<std::complex<double>> vec = flatten(mat);
-    cnpy::npy_save(file_path, vec.data(), {mat.size(), mat[0].size()}, "w");
-}
-
-void save_mat_to_npy(std::string file_path, const std::vector<std::complex<double>> &mat, size_t n_row, size_t n_col)
-{
-    cnpy::npy_save(file_path, mat.data(), {n_row, n_col}, "w");
-}
-
-void parallel_save_matrices(const ChirpScalingAlgo &algo)
-{
-    std::thread t1(save_mat_to_npy, "./result/chirp_scaling.npy", std::ref(algo.chirp_scaling), algo.n_row, algo.n_col);
-    std::thread t2(save_mat_to_npy, "./result/range_comp_filt.npy", std::ref(algo.range_comp_filt), algo.n_row, algo.n_col);
-    std::thread t3(save_mat_to_npy, "./result/second_comp_filt.npy", std::ref(algo.second_comp_filt), algo.n_row, algo.n_col);
-    std::thread t4(save_mat_to_npy, "./result/azimuth_comp_filt.npy", std::ref(algo.azimuth_comp_filt), algo.n_row, algo.n_col);
-    std::thread t5(save_mat_to_npy, "./result/third_comp_filt.npy", std::ref(algo.third_comp_filt), algo.n_row, algo.n_col);
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
-    t5.join();
-}
+// void parallel_save_matrices(const ChirpScalingAlgo &algo)
+// {
+//     std::thread t1(save_mat_to_npy, "./result/chirp_scaling.npy", std::ref(algo.chirp_scaling), algo.n_row, algo.n_col);
+//     std::thread t2(save_mat_to_npy, "./result/range_comp_filt.npy", std::ref(algo.range_comp_filt), algo.n_row, algo.n_col);
+//     std::thread t3(save_mat_to_npy, "./result/second_comp_filt.npy", std::ref(algo.second_comp_filt), algo.n_row, algo.n_col);
+//     std::thread t4(save_mat_to_npy, "./result/azimuth_comp_filt.npy", std::ref(algo.azimuth_comp_filt), algo.n_row, algo.n_col);
+//     std::thread t5(save_mat_to_npy, "./result/third_comp_filt.npy", std::ref(algo.third_comp_filt), algo.n_row, algo.n_col);
+//     t1.join();
+//     t2.join();
+//     t3.join();
+//     t4.join();
+//     t5.join();
+// }
 
 int main(int argc, char *argv[])
 {
