@@ -52,6 +52,8 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &mat_in)
 using cpx_mat = std::vector<std::vector<std::complex<double>>>;
 cpx_mat operator+(const cpx_mat &left, const cpx_mat &right);
 cpx_mat operator-(const cpx_mat &left, const cpx_mat &right);
+std::vector<std::complex<double>> operator+(const std::vector<std::complex<double>> &left, const std::vector<std::complex<double>> &right);
+std::vector<std::complex<double>> operator-(const std::vector<std::complex<double>> &left, const std::vector<std::complex<double>> &right);
 
 template <typename T>
 void save_mat_to_npy(std::string file_path, const std::vector<T> &mat, size_t n_row, size_t n_col)

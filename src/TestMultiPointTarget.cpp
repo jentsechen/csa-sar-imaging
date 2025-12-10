@@ -2,6 +2,41 @@
 #include "../include/util.cpp"
 #include "ImagingPar.h"
 #include "ChirpScalingAlgo.h"
+#include <random>
+
+double thresholding(double input)
+{
+    const double threshold = 2;
+    double mag = std::abs(input);
+    if (mag > threshold)
+        return (input > 0) ? (mag - threshold) : (threshold - mag);
+    return 0.0;
+}
+
+std::complex<double> thresholding(const std::complex<double> &input)
+{
+    return std::complex<double>(thresholding(input.real()), thresholding(input.imag()));
+}
+
+std::vector<std::complex<double>> thresholding(const std::vector<std::complex<double>> &input)
+{
+    std::vector<std::complex<double>> output(input.size());
+    for (auto i = 0; i < input.size(); i++)
+    {
+        output[i] = thresholding(input[i]);
+    }
+    return output;
+}
+
+std::vector<std::vector<std::complex<double>>> thresholding(const std::vector<std::vector<std::complex<double>>> &input)
+{
+    std::vector<std::vector<std::complex<double>>> output(input.size());
+    for (auto i = 0; i < input.size(); i++)
+    {
+        output[i] = thresholding(input[i]);
+    }
+    return output;
+}
 
 int main(int argc, char *argv[])
 {
@@ -24,7 +59,7 @@ int main(int argc, char *argv[])
         }
         if (std::string(argv[2]) == "multi_point_target")
         {
-            save_mat_to_npy("./echo_signal/multi_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(), PointTarget(0.05, 10)})), imaging_par.n_row, imaging_par.n_col);
+            save_mat_to_npy("./echo_signal/multi_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(), PointTarget(0.005, 0.0), PointTarget(0.0, 3.0)})), imaging_par.n_row, imaging_par.n_col);
         }
     }
     if (std::string(argv[1]) == "focus")
@@ -38,7 +73,7 @@ int main(int argc, char *argv[])
     }
     if (std::string(argv[1]) == "calc_mag")
     {
-        cnpy::NpyArray arr = cnpy::npy_load("./focused_image/" + std::string(argv[2]) + ".npy");
+        cnpy::NpyArray arr = cnpy::npy_load(std::string(argv[2]) + ".npy");
         const std::vector<size_t> &shape_vec = arr.shape;
         assert(shape_vec.size() == 2);
         size_t n_row = shape_vec[0], n_col = shape_vec[1];
@@ -53,7 +88,72 @@ int main(int argc, char *argv[])
                 focused_image_mag_db[i * n_col + j] = std::log10(square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag()));
             }
         }
-        save_mat_to_npy("./focused_image/" + std::string(argv[2]) + "_mag_db.npy", focused_image_mag_db, n_row, n_col);
+        save_mat_to_npy(std::string(argv[2]) + "_mag_db.npy", focused_image_mag_db, n_row, n_col);
     }
+    if (std::string(argv[1]) == "iter_recov")
+    {
+        cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/multi_point_target.npy");
+        // cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/single_point_target.npy");
+        const std::vector<size_t> &shape_vec = echo_sig_npy.shape;
+        size_t n_row = shape_vec[0], n_col = shape_vec[1];
+        std::complex<double> *echo_signal_ptr = echo_sig_npy.data<std::complex<double>>();
+        std::vector<std::complex<double>> echo_signal(echo_signal_ptr, echo_signal_ptr + n_row * n_col);
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        auto gen_down_smp_idx = [&](size_t n_total, size_t n_rand)
+        {
+            std::uniform_int_distribution<> distrib(0, n_total - 1);
+            std::vector<size_t> down_smp_idx(n_rand);
+            for (auto i = 0; i < down_smp_idx.size(); i++)
+            {
+                down_smp_idx[i] = distrib(gen);
+                std::cout << down_smp_idx[i] << std::endl;
+            }
+            return down_smp_idx;
+        };
+        std::vector<size_t> row_down_smp_idx = gen_down_smp_idx(11110, 3333);
+        for (size_t row_idx : row_down_smp_idx)
+        {
+            size_t start_idx = row_idx * n_col;
+            for (auto col_idx = 0; col_idx < n_col; col_idx++)
+            {
+                echo_signal[start_idx + col_idx] = std::complex(0.0);
+            }
+        }
+        std::vector<size_t> col_down_smp_idx = gen_down_smp_idx(2560, 768);
+        for (size_t col_idx : col_down_smp_idx)
+        {
+            for (auto row_idx = 0; row_idx < n_row; row_idx++)
+            {
+                echo_signal[row_idx * n_col + col_idx] = std::complex(0.0);
+            }
+        }
+
+        ChirpScalingAlgo chirp_scaling_algo(imaging_par);
+        std::vector<std::complex<double>> csa_out(n_row * n_col);
+
+        // std::vector<std::complex<double>> diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
+        // csa_out = csa_out + diff_csa_out;
+        // csa_out = thresholding(csa_out);
+        // // std::vector<std::complex<double>> csa_out = chirp_scaling_algo.apply_csa(echo_signal);
+        // // save_mat_to_npy("./iter_result/csa_out_iter_0.npy", csa_out, n_row, n_col);
+        // save_mat_to_npy("./iter_result_down_smp/csa_out_iter_0.npy", csa_out, n_row, n_col);
+
+        // diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
+        // csa_out = csa_out + diff_csa_out;
+        // csa_out = thresholding(csa_out);
+        // // save_mat_to_npy("./iter_result/csa_out_iter_1.npy", csa_out, n_row, n_col);
+        // save_mat_to_npy("./iter_result_down_smp/csa_out_iter_1.npy", csa_out, n_row, n_col);
+
+        std::vector<std::complex<double>> diff_csa_out(n_row * n_col);
+        for (auto iter_idx = 0; iter_idx < 5; iter_idx++)
+        {
+            diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
+            csa_out = csa_out + diff_csa_out;
+            csa_out = thresholding(csa_out);
+            save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
+        }
+    }
+
     return 0;
 }
