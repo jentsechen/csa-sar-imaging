@@ -7,3 +7,6 @@
 /TestChirpScalingAlgo/result/
 /TestChirpScalingAlgo/golden/
 /TestIterRecovAlgo/result
+/TestMultiPointTarget/iter_result*
+/TestMultiPointTarget/echo_signal
+/TestMultiPointTarget/focused_image
