@@ -4,7 +4,6 @@ import json
 import subprocess
 import scipy.io
 
-
 def read_csv(file_name):
     data = []
     with open(file_name, "r", newline="", encoding="utf-8") as file:
@@ -28,15 +27,14 @@ def gen_input_par():
 
 
 def run_cpp(test_echo_sig_en=False):
-    if test_echo_sig_en == True:
-        arg = "test_echo_sig"
-    else:
-        arg = ""
+    cmd = ["../build/TestImagingPar"]
+    if test_echo_sig_en:
+        cmd.append("test_echo_sig")
     proc = subprocess.run(
-        "../build/bin/Debug/TestImagingPar.exe {}".format(arg),
-        capture_output=True,  # Capture stdout and stderr
-        text=True,  # Decode output as text (string)
-        check=True,  # Raise an exception for non-zero exit codes (errors)
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     print("\n--- C++ Program Output (STDOUT) ---")
     print(proc.stdout)

@@ -1,17 +1,26 @@
-## How to Build (Windows)
-```bash
-mkdir build # if build not exists
-cd build
-rm ./CMakeCache.txt # if CMakeCache.txt needs to be updated
-cmake ..
-cmake --build .
-cmake --build . -j 4
-```
-* How to download CMake: https://hackmd.io/@YjqyYeVWSh27d4c92Ha5aw/r1LYBtiqL
+## Unsorted Notes
 * How to use json: https://github.com/nlohmann/json
     * Download json.hpp
     * Add include path to `c_cpp_properties.json`
     * Add `target_include_directories()` to `CMakeLists.txt`
+
+## How to Build (Linux)
+```bash
+git clone https://github.com/rogersce/cnpy.git
+cd cnpy
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
+make
+make install DESTDIR=$HOME/.local
+
+cd ..
+mkdir build # if build not exists
+cd build
+rm ./CMakeCache.txt # if CMakeCache.txt needs to be updated
+cmake .. -DCNPY_LIBRARY=$HOME/.local/lib/libcnpy.so -DCNPY_INCLUDE_DIR=$HOME/.local/include
+make
+```
 
 ## How to Enable OpenMP
 ```bash
@@ -58,17 +67,15 @@ python "C:\Users\user\Desktop\imaging_alg_dev\csa-sar-imaging\TestImagingPar\Tes
 * Expected result
 ```
 --- C++ Program Output (STDOUT) ---
+--- C++ Program Output (STDOUT) ---
 Successfully parsed JSON from input_par.json
 Successfully saved JSON to output_par.json
-test_echo_sig
-run gen echo sig.
-size: (11110, 5120)
 
 error of range_time_axis_sec: 1.3206826705950846e-16
 error of range_freq_axis_hz: 0.0
 error of azimuth_time_axis_sec: 0.0
 error of azimuth_freq_axis_hz: 2.2724534198825808e-09
-error of point_target_echo_signal: 6.589860984223574e-11
+error of point_target_echo_signal: 9.769240521361663e-11
 ```
 
 ## How to Run Unit Test of ChirpScalingAlgo
@@ -116,6 +123,11 @@ error of inverse_csa_out: 1.3658552034473888e-08
 ```bash
 python "C:\Users\user\Desktop\imaging_alg_dev\csa-sar-imaging\TestIterRecovAlgo\TestIterRecovAlgo.py"
 python ./TestIterRecovAlgo.py
+```
+
+## File Not Upload to GitHub List
+```
+/csa-sar-imaging/TestImagingPar/echo_signal_golden.mat
 ```
 
 ## Multi-Point Target
