@@ -39,33 +39,43 @@ def check(par_name, data_type):
     return golden, result
 
 def check_inverse_csa():
-    golden = np.load("./echo_signal.npy")
+    golden = np.load("../TestImagingPar/echo_signal_result.npy")
     result = np.load("./result/inverse_csa_out.npy")
     print("error of inverse_csa_out: {}".format(sum(sum(abs(result - golden)))))
 
+def run_cpp(mode="par"):
+    cmd = ["../build/TestChirpScalingAlgo", mode]
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,  # Capture stdout and stderr
+        text=True,  # Decode output as text (string)
+        check=True,  # Raise an exception for non-zero exit codes (errors)
+    )
+    print("\n--- C++ Program Output (STDOUT) ---")
+    print(proc.stdout)
+
 if __name__ == "__main__":
-    # proc = subprocess.run(
-    #     "../build/TestChirpScalingAlgo",
-    #     capture_output=True,  # Capture stdout and stderr
-    #     text=True,  # Decode output as text (string)
-    #     check=True,  # Raise an exception for non-zero exit codes (errors)
-    # )
-    # print("\n--- C++ Program Output (STDOUT) ---")
-    # print(proc.stdout)
+    mode = "par"
+    run_cpp(mode=mode)
+    
+    if mode == "par":
+        check("migr_par", CheckDataType.ColVec)
+        check("modified_range_fm_rate_hz_s", CheckDataType.ColVec)
+        check("chirp_scaling", CheckDataType.Mat)
+        check("range_comp_filt", CheckDataType.Mat)
+        check("second_comp_filt", CheckDataType.Mat)
+        check("azimuth_comp_filt", CheckDataType.Mat)
+        check("third_comp_filt", CheckDataType.Mat)
 
-    check("migr_par", CheckDataType.ColVec)
-    check("modified_range_fm_rate_hz_s", CheckDataType.ColVec)
-    check("chirp_scaling", CheckDataType.Mat)
-    check("range_comp_filt", CheckDataType.Mat)
-    check("second_comp_filt", CheckDataType.Mat)
-    check("azimuth_comp_filt", CheckDataType.Mat)
-    check("third_comp_filt", CheckDataType.Mat)
+    if mode == "app":
+        check("azimuth_fft_out", CheckDataType.Mat)
+        check("chirp_scaling_out", CheckDataType.Mat)
+        check("range_fft_out", CheckDataType.Mat)
+        check("second_phase_func_out", CheckDataType.Mat)
+        check("range_ifft_out", CheckDataType.Mat)
+        check("third_phase_func_out", CheckDataType.Mat)
+        check("csa_out", CheckDataType.Mat)
 
-    # check("azimuth_fft_out", CheckDataType.Mat)
-    # check("chirp_scaling_out", CheckDataType.Mat)
-    # check("range_fft_out", CheckDataType.Mat)
-    # check("second_phase_func_out", CheckDataType.Mat)
-    # check("range_ifft_out", CheckDataType.Mat)
-    # check("third_phase_func_out", CheckDataType.Mat)
-    # check("csa_out", CheckDataType.Mat)
-    # check_inverse_csa()
+    if mode =="inverse_csa":
+        check("csa_out", CheckDataType.Mat)
+        check_inverse_csa()
