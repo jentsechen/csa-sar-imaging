@@ -44,14 +44,14 @@ def check_inverse_csa():
     print("error of inverse_csa_out: {}".format(sum(sum(abs(result - golden)))))
 
 if __name__ == "__main__":
-    proc = subprocess.run(
-        "../build/bin/Debug/TestChirpScalingAlgo.exe",
-        capture_output=True,  # Capture stdout and stderr
-        text=True,  # Decode output as text (string)
-        check=True,  # Raise an exception for non-zero exit codes (errors)
-    )
-    print("\n--- C++ Program Output (STDOUT) ---")
-    print(proc.stdout)
+    # proc = subprocess.run(
+    #     "../build/TestChirpScalingAlgo",
+    #     capture_output=True,  # Capture stdout and stderr
+    #     text=True,  # Decode output as text (string)
+    #     check=True,  # Raise an exception for non-zero exit codes (errors)
+    # )
+    # print("\n--- C++ Program Output (STDOUT) ---")
+    # print(proc.stdout)
 
     check("migr_par", CheckDataType.ColVec)
     check("modified_range_fm_rate_hz_s", CheckDataType.ColVec)
