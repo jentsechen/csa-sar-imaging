@@ -7,7 +7,8 @@ import plotly.graph_objs as go
 import plotly.offline as pof
 from plotly.subplots import make_subplots
 from enum import Enum, auto
-
+import os
+import time
 
 class CheckDataType(Enum):
     ColVec, Mat = auto(), auto()
@@ -55,8 +56,13 @@ def run_cpp(mode="par"):
     print(proc.stdout)
 
 if __name__ == "__main__":
-    mode = "par"
+    # os.environ['OMP_STACKSIZE'] = '64M'
+    mode = "inverse_csa"
+    start_time = time.time()
     run_cpp(mode=mode)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time:.4f} seconds")
     
     if mode == "par":
         check("migr_par", CheckDataType.ColVec)

@@ -21,7 +21,7 @@ def gen_input_par():
 
 def run_cpp(args=[]):
     proc = subprocess.run(
-        "../build/bin/Debug/TestMultiPointTarget.exe {} {}".format(args[0], args[1]),
+        "../build/TestMultiPointTarget {} {}".format(args[0], args[1]),
         capture_output=True,  # Capture stdout and stderr
         text=True,  # Decode output as text (string)
         check=True,  # Raise an exception for non-zero exit codes (errors)
