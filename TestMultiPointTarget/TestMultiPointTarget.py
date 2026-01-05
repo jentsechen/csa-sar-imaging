@@ -20,8 +20,9 @@ def gen_input_par():
 
 
 def run_cpp(args=[]):
+    cmd = ["../build/TestMultiPointTarget", args[0], args[1]]
     proc = subprocess.run(
-        "../build/TestMultiPointTarget {} {}".format(args[0], args[1]),
+        cmd,
         capture_output=True,  # Capture stdout and stderr
         text=True,  # Decode output as text (string)
         check=True,  # Raise an exception for non-zero exit codes (errors)
@@ -77,7 +78,7 @@ def save_3d_plot_of_focused_image(source_folder_name, source_file_name):
 
 
 if __name__ == "__main__":
-    # gen_input_par()
+    gen_input_par()
     # run_cpp(args=["gen", "single_point_target"])
     # run_cpp(args=["focus", "single_point_target"])
     # run_cpp(args=["focus", "multi_point_target"])

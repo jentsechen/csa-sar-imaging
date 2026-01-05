@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
             {
                 for (auto j = 0; j < imaging_par.n_col; j++)
                 {
-                    // std::cout << "(i, j) = (" << i << ", " << j << ")" << std::endl;
                     if (point_target_location[i][j] == 1)
                     {
                         auto azimuth_offset_m = [&]()
@@ -157,38 +156,38 @@ int main(int argc, char *argv[])
         size_t n_row = shape_vec[0], n_col = shape_vec[1];
         std::complex<double> *echo_signal_ptr = echo_sig_npy.data<std::complex<double>>();
         std::vector<std::complex<double>> echo_signal(echo_signal_ptr, echo_signal_ptr + n_row * n_col);
-        // std::random_device rd;
-        // std::mt19937 gen(rd());
-        // auto gen_down_smp_idx = [&](size_t n_total, size_t n_rand)
-        // {
-        //     std::uniform_int_distribution<> distrib(0, n_total - 1);
-        //     std::vector<size_t> down_smp_idx(n_rand);
-        //     for (auto i = 0; i < down_smp_idx.size(); i++)
-        //     {
-        //         down_smp_idx[i] = distrib(gen);
-        //         std::cout << down_smp_idx[i] << std::endl;
-        //     }
-        //     return down_smp_idx;
-        // };
-        // // std::vector<size_t> row_down_smp_idx = gen_down_smp_idx(11110, 3333);
-        // std::vector<size_t> row_down_smp_idx = gen_down_smp_idx(555, 167);
-        // for (size_t row_idx : row_down_smp_idx)
-        // {
-        //     size_t start_idx = row_idx * n_col;
-        //     for (auto col_idx = 0; col_idx < n_col; col_idx++)
-        //     {
-        //         echo_signal[start_idx + col_idx] = std::complex(0.0);
-        //     }
-        // }
-        // // std::vector<size_t> col_down_smp_idx = gen_down_smp_idx(2560, 768);
-        // std::vector<size_t> col_down_smp_idx = gen_down_smp_idx(555, 167);
-        // for (size_t col_idx : col_down_smp_idx)
-        // {
-        //     for (auto row_idx = 0; row_idx < n_row; row_idx++)
-        //     {
-        //         echo_signal[row_idx * n_col + col_idx] = std::complex(0.0);
-        //     }
-        // }
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        auto gen_down_smp_idx = [&](size_t n_total, size_t n_rand)
+        {
+            std::uniform_int_distribution<> distrib(0, n_total - 1);
+            std::vector<size_t> down_smp_idx(n_rand);
+            for (auto i = 0; i < down_smp_idx.size(); i++)
+            {
+                down_smp_idx[i] = distrib(gen);
+                std::cout << down_smp_idx[i] << std::endl;
+            }
+            return down_smp_idx;
+        };
+        // std::vector<size_t> row_down_smp_idx = gen_down_smp_idx(11110, 3333);
+        std::vector<size_t> row_down_smp_idx = gen_down_smp_idx(555, 167);
+        for (size_t row_idx : row_down_smp_idx)
+        {
+            size_t start_idx = row_idx * n_col;
+            for (auto col_idx = 0; col_idx < n_col; col_idx++)
+            {
+                echo_signal[start_idx + col_idx] = std::complex(0.0);
+            }
+        }
+        // std::vector<size_t> col_down_smp_idx = gen_down_smp_idx(2560, 768);
+        std::vector<size_t> col_down_smp_idx = gen_down_smp_idx(555, 167);
+        for (size_t col_idx : col_down_smp_idx)
+        {
+            for (auto row_idx = 0; row_idx < n_row; row_idx++)
+            {
+                echo_signal[row_idx * n_col + col_idx] = std::complex(0.0);
+            }
+        }
 
         ChirpScalingAlgo chirp_scaling_algo(imaging_par);
         std::vector<std::complex<double>> csa_out(n_row * n_col);
