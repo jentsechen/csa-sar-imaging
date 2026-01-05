@@ -107,7 +107,7 @@ void ChirpScalingAlgo::gen_azimuth_comp_filt()
 {
     const size_t half_n_row = this->n_row / 2;
     this->azimuth_comp_filt.resize(this->n_row * this->n_col);
-    std::complex<double> common_term(0.0, 4.0 * PI * this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.wavelength_m);
+    std::complex<double> common_term(0.0, 4.0 * PI / this->imaging_par.sig_par.wavelength_m);
     OMP_FOR
     for (auto i = 0; i < this->n_row; i++)
     {
@@ -115,7 +115,7 @@ void ChirpScalingAlgo::gen_azimuth_comp_filt()
         double col_term = this->migr_par[i];
         for (auto j = 0; j < this->n_col; j++)
         {
-            double row_term = 1.0;
+            double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8;
             this->azimuth_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }
     }
