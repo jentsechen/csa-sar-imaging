@@ -2,6 +2,7 @@
 /.vscode/*.json
 /TestImagingPar/*.json
 /TestImagingPar/*.npy
+/TestImagingPar/*.mat
 /TestImagingPar/__pycache__/
 /TestChirpScalingAlgo/*.html
 /TestChirpScalingAlgo/result/
@@ -10,3 +11,5 @@
 /TestMultiPointTarget/iter_result*
 /TestMultiPointTarget/echo_signal
 /TestMultiPointTarget/focused_image
+/TestMultiPointTarget/*.html
+/TestMultiPointTarget/*.json
