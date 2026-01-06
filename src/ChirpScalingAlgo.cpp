@@ -116,6 +116,7 @@ void ChirpScalingAlgo::gen_azimuth_comp_filt()
         for (auto j = 0; j < this->n_col; j++)
         {
             double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8;
+            // double row_term = this->imaging_par.closest_slant_range_m;
             this->azimuth_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }
     }
@@ -125,7 +126,7 @@ void ChirpScalingAlgo::gen_third_comp_filt()
 {
     const size_t half_n_row = this->n_row / 2;
     this->third_comp_filt.resize(this->n_row * this->n_col);
-    std::complex<double> common_term(0.0, -4.0 * PI * square(this->imaging_par.closest_slant_range_m / this->imaging_par.sig_par.light_speed_m_s));
+    std::complex<double> common_term(0.0, -4.0 * PI / square(this->imaging_par.sig_par.light_speed_m_s));
     OMP_FOR
     for (auto i = 0; i < this->n_row; i++)
     {
@@ -133,7 +134,8 @@ void ChirpScalingAlgo::gen_third_comp_filt()
         double col_term = this->modified_range_fm_rate_hz_s[i] / this->migr_par[i] * (1.0 / this->migr_par[i] - 1.0);
         for (auto j = 0; j < this->n_col; j++)
         {
-            double row_term = 1.0;
+            double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8;
+            // double row_term = this->imaging_par.closest_slant_range_m;
             this->third_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }
     }
@@ -245,7 +247,8 @@ std::vector<std::complex<double>> ChirpScalingAlgo::apply_third_phase_func(const
     {
         for (auto j = 0; j < this->n_col; j++)
         {
-            std::complex<double> mult = this->azimuth_comp_filt[i * this->n_col + j];
+            std::complex<double> mult = this->azimuth_comp_filt[i * this->n_col + j] * this->third_comp_filt[i * this->n_col + j];
+            // std::complex<double> mult = this->azimuth_comp_filt[i * this->n_col + j];
             output[i * this->n_col + j] = input[i * this->n_col + j] * (is_conj ? std::conj(mult) : mult);
         }
     }
@@ -254,24 +257,40 @@ std::vector<std::complex<double>> ChirpScalingAlgo::apply_third_phase_func(const
 
 std::vector<std::complex<double>> ChirpScalingAlgo::apply_csa(const std::vector<std::complex<double>> &input)
 {
+    std::cout << "test 0" << std::endl;
     std::vector<std::complex<double>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::cout << "test 1" << std::endl;
     std::vector<std::complex<double>> chirp_scaling_out = this->apply_chirp_scaling(azimuth_fft_out);
+    std::cout << "test 2" << std::endl;
     std::vector<std::complex<double>> range_fft_out = this->apply_range_fft(chirp_scaling_out);
+    std::cout << "test 3" << std::endl;
     std::vector<std::complex<double>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out);
+    std::cout << "test 4" << std::endl;
     std::vector<std::complex<double>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::cout << "test 5" << std::endl;
     std::vector<std::complex<double>> third_phase_func_out = this->apply_third_phase_func(range_ifft_out);
+    std::cout << "test 6" << std::endl;
     std::vector<std::complex<double>> output = this->apply_azimuth_fft(third_phase_func_out, true);
+    std::cout << "test 7" << std::endl;
     return output;
 }
 
 std::vector<std::complex<double>> ChirpScalingAlgo::apply_inverse_csa(const std::vector<std::complex<double>> &input)
 {
+    std::cout << "test 0" << std::endl;
     std::vector<std::complex<double>> azimuth_fft_out = this->apply_azimuth_fft(input);
+    std::cout << "test 1" << std::endl;
     std::vector<std::complex<double>> third_phase_func_out = this->apply_third_phase_func(azimuth_fft_out, true);
+    std::cout << "test 2" << std::endl;
     std::vector<std::complex<double>> range_fft_out = this->apply_range_fft(third_phase_func_out);
+    std::cout << "test 3" << std::endl;
     std::vector<std::complex<double>> second_phase_func_out_out = this->apply_second_phase_func(range_fft_out, true);
+    std::cout << "test 4" << std::endl;
     std::vector<std::complex<double>> range_ifft_out = this->apply_range_fft(second_phase_func_out_out, true);
+    std::cout << "test 5" << std::endl;
     std::vector<std::complex<double>> chirp_scaling_out = this->apply_chirp_scaling(range_ifft_out, true);
+    std::cout << "test 6" << std::endl;
     std::vector<std::complex<double>> output = this->apply_azimuth_fft(chirp_scaling_out, true);
+    std::cout << "test 7" << std::endl;
     return output;
 }

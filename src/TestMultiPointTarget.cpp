@@ -93,22 +93,22 @@ int main(int argc, char *argv[])
             // save_mat_to_npy("./echo_signal/multi_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(), PointTarget(0.005, 0.0), PointTarget(0.0, 3.0)})), imaging_par.n_row, imaging_par.n_col);
             json point_target_location = load_json("point_target_location.json");
             std::vector<PointTarget> point_target_list;
-            assert(point_target_location.size() == imaging_par.n_row && point_target_location[0].size() == imaging_par.n_col);
+            // assert(point_target_location.size() == imaging_par.n_row && point_target_location[0].size() == imaging_par.n_col);
             std::cout << "n_row: " << imaging_par.n_row << std::endl;
             std::cout << "n_col: " << imaging_par.n_col << std::endl;
-            for (auto i = 0; i < imaging_par.n_row; i++)
+            for (auto i = 0; i < imaging_par.n_row / 4; i++)
             {
-                for (auto j = 0; j < imaging_par.n_col; j++)
+                for (auto j = 0; j < imaging_par.n_col / 4; j++)
                 {
                     if (point_target_location[i][j] == 1)
                     {
                         auto azimuth_offset_m = [&]()
                         {
-                            return (static_cast<double>(i) - imaging_par.n_row / 2.0) / sig_par.pulse_rep_freq_hz;
+                            return (static_cast<double>(i + imaging_par.n_row * 3 / 8) - imaging_par.n_row / 2.0) / sig_par.pulse_rep_freq_hz;
                         };
                         auto range_offset_m = [&]()
                         {
-                            return (static_cast<double>(j) - imaging_par.n_col / 2.0) * sig_par.light_speed_m_s / sig_par.sampling_freq_hz;
+                            return (static_cast<double>(j + imaging_par.n_col * 3 / 8) - imaging_par.n_col / 2.0) * sig_par.light_speed_m_s / sig_par.sampling_freq_hz;
                         };
                         point_target_list.emplace_back(PointTarget(azimuth_offset_m(), range_offset_m()));
                     }
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
         // save_mat_to_npy("./iter_result_down_smp/csa_out_iter_1.npy", csa_out, n_row, n_col);
 
         std::vector<std::complex<double>> diff_csa_out(n_row * n_col);
-        for (auto iter_idx = 0; iter_idx < 10; iter_idx++)
+        for (auto iter_idx = 0; iter_idx < 5; iter_idx++)
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;

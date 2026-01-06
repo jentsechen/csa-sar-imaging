@@ -72,20 +72,20 @@ if __name__ == "__main__":
     golden = np.load("./focused_image/multi_point_target_image.npy")
     folder_name = "iter_result_multi_point_image"
     iter_result = []
-    for iter in range(10):
+    for iter in range(5):
         iter_result.append(np.load("./{}/csa_out_iter_{}.npy".format(folder_name, iter)))
 
     print("not equal:")
-    for iter in range(9):
+    for iter in range(4):
         print(sum(sum(iter_result[iter] != iter_result[iter + 1])))
     print("")
 
     print("difference:")
-    for iter in range(9):
+    for iter in range(4):
         print(sum(sum(abs(iter_result[iter] - iter_result[iter + 1]))))
 
     print("difference:")
-    for iter in range(10):
+    for iter in range(5):
         print(sum(sum(abs(iter_result[iter] - golden))))
 
     print("DONE")

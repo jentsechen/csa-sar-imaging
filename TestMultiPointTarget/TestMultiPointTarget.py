@@ -166,20 +166,21 @@ if __name__ == "__main__":
     # )
     # fig.write_html("multi_point_target.html")
 
-    # run_cpp(args=["gen", "multi_point_target"])
-    # run_cpp(args=["focus", "multi_point_target_image"])
-    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
-    # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
+    run_cpp(args=["gen", "multi_point_target"])
+    run_cpp(args=["focus", "multi_point_target_image"])
+    run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
+    save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
+    # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
-    run_cpp(args=["iter_recov", "test"])
-    for i in range(10):
-        run_cpp(
-            args=[
-                "calc_mag",
-                "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
-            ]
-        )
-    for i in range(10):
-        save_3d_plot_of_focused_image(
-            "iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
-        )
+    # run_cpp(args=["iter_recov", "test"])
+    # for i in range(5):
+    #     run_cpp(
+    #         args=[
+    #             "calc_mag",
+    #             "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
+    #         ]
+    #     )
+    # for i in range(5):
+    #     save_3d_plot_of_focused_image(
+    #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
+    #     )
