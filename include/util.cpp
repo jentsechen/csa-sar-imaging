@@ -102,3 +102,9 @@ std::vector<std::complex<double>> operator-(const std::vector<std::complex<doubl
 // {
 //     cnpy::npy_save(file_path, mat.data(), {n_row, n_col}, "w");
 // }
+
+double sinc(double x) {
+    if (x == 0.0) { return 1.0; }
+    double pix = PI * x;
+    return std::sin(pix) / pix;
+}

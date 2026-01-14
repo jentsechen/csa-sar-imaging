@@ -7,10 +7,20 @@ import plotly.graph_objects as go
 
 import matplotlib.pyplot as plt
 
+def plot_single_point_target():
+    data = np.load("./focused_image/single_point_target_mag_db.npy")[(5555 - 400) : (5555 + 400), (2560 - 160) : (2560 + 160)]
+    print(data.shape)
+    plt.imshow(data, origin='lower', cmap='viridis')
+    plt.colorbar()
+    plt.savefig("single_point_target.png", dpi=300, bbox_inches="tight")
+
 if __name__ == "__main__":    
     data = np.load("./focused_image/multi_point_target_image_mag_db.npy")[int(556/2):int(556*7/2), int(556/2):int(556*7/2)]
+    # data = abs(np.load("./focused_image/multi_point_target_image.npy")[int(556/2):int(556*7/2), int(556/2):int(556*7/2)])
     print(data.shape)
     # plt.imshow(data, origin='lower', cmap='viridis')
+    # enhanced_data = np.power(data / np.max(data), 0.6)
+    # plt.imshow(enhanced_data, origin='lower', cmap='viridis', aspect=2.0)
     plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
     plt.colorbar()
     plt.savefig("coast_csa.png", dpi=300, bbox_inches="tight")
@@ -20,4 +30,5 @@ if __name__ == "__main__":
     #     plt.colorbar()
     #     plt.savefig("coast_iter_{}.png".format(i), dpi=300, bbox_inches="tight")
     #     plt.clf()
+    
     print("DONE")

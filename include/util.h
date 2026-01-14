@@ -28,6 +28,9 @@ template <typename T>
 inline T cube(T x) { return x * x * x; }
 
 template <typename T>
+inline T to_the_fourth(T x) { return x * x * x * x; }
+
+template <typename T>
 void resize_mat(std::vector<std::vector<T>> &mat, size_t n_row, size_t n_col)
 {
     mat.resize(n_row);
@@ -62,5 +65,7 @@ void save_mat_to_npy(std::string file_path, const std::vector<T> &mat, size_t n_
 }
 
 const double PI = 3.14159265358979323846;
+
+double sinc(double x);
 
 #endif

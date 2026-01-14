@@ -80,6 +80,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
             double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i], point_target_list[target_index].azimuth_offset_sec, point_target_list[target_index].range_offset_m);
             double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
             std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);
+            double wa = to_the_fourth(sinc(this->sensor_speed_m_s * this->azimuth_time_axis_sec[i] / this->synthetic_aperture_len_m));
             for (auto j = 0; j < rng_n_smp; j++)
             {
                 auto echo_signal_sample = [&]()
@@ -92,7 +93,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
                     }
                     return std::complex<double>(0.0, 0.0);
                 };
-                point_target_echo_signal[i * rng_n_smp + j] += echo_signal_sample();
+                point_target_echo_signal[i * rng_n_smp + j] += (echo_signal_sample() * wa);
             }
         }
     }

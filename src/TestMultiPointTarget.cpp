@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     {
         if (std::string(argv[2]) == "single_point_target")
         {
-            save_mat_to_npy("./echo_signal/single_point_target.npy", imaging_par.gen_point_target_echo_signal(), imaging_par.n_row, imaging_par.n_col);
+            save_mat_to_npy("./echo_signal/single_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(0.0, 0.0)})), imaging_par.n_row, imaging_par.n_col);
         }
         if (std::string(argv[2]) == "multi_point_target")
         {

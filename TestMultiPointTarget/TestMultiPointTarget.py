@@ -79,12 +79,6 @@ def save_3d_plot_of_focused_image(source_folder_name, source_file_name):
 
 if __name__ == "__main__":
     gen_input_par()
-    # run_cpp(args=["gen", "single_point_target"])
-    # run_cpp(args=["focus", "single_point_target"])
-    # run_cpp(args=["focus", "multi_point_target"])
-    # run_cpp(args=["calc_mag", "./focused_image/single_point_target"])
-    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target"])
-
     # run_cpp(args=["iter_recov", "test"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_0"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_1"])
@@ -103,28 +97,6 @@ if __name__ == "__main__":
     #     save_3d_plot(
     #         "iter_result_multi_point_rng_dpl_anal", "csa_out_iter_{}_mag_db".format(i)
     #     )
-    # single_point_target = np.load("./iter_result/csa_out_iter_0_mag_db.npy")
-    # single_point_target = np.load("./iter_result/csa_out_iter_1.npy")
-    # print(np.argmax(single_point_target))
-    # print(single_point_target[0])
-    # fig = go.Figure(
-    #     data=[
-    #         go.Surface(
-    #             z=single_point_target[
-    #                 (5555 - 400) : (5555 + 400), (2560 - 160) : (2560 + 160)
-    #             ],
-    #             colorscale="Viridis",
-    #         )
-    #     ]
-    # )
-    # fig.update_layout(
-    #     scene=dict(
-    #         xaxis_title="range direction",
-    #         yaxis_title="azimuth direction",
-    #         zaxis_title="magnitude (dB)",
-    #     )
-    # )
-    # fig.write_html("csa_out_iter_0_mag_db.html")
 
     # single_point_target = np.load("./focused_image/single_point_target_mag_db.npy")
     # fig = go.Figure(
@@ -166,11 +138,11 @@ if __name__ == "__main__":
     # )
     # fig.write_html("multi_point_target.html")
 
-    run_cpp(args=["gen", "multi_point_target"])
-    run_cpp(args=["focus", "multi_point_target_image"])
+    # run_cpp(args=["gen", "multi_point_target"])
+    # run_cpp(args=["focus", "multi_point_target_image"])
     run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
     save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
-    # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
+    # # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
     # run_cpp(args=["iter_recov", "test"])
     # for i in range(5):
@@ -184,3 +156,8 @@ if __name__ == "__main__":
     #     save_3d_plot_of_focused_image(
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
     #     )
+
+    # run_cpp(args=["gen", "single_point_target"])
+    # run_cpp(args=["focus", "single_point_target"])
+    # run_cpp(args=["calc_mag", "./focused_image/single_point_target"])
+    # save_3d_plot("focused_image", "single_point_target_mag_db")
