@@ -128,5 +128,4 @@ error of inverse_csa_out: 1.3500874256198407e-08
 ```
 
 ## Multi-Point Target
-![](./image/single_point_target.png)
-![](./image/multi_point_target.png)
+[Simulation Result](./document/multi_point_target_sim_result.md)
