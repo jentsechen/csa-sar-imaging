@@ -33,13 +33,18 @@ void ChirpScalingAlgo::gen_migr_par()
 
 void ChirpScalingAlgo::modify_range_fm_rate_hz_s()
 {
-    this->modified_range_fm_rate_hz_s.resize(this->imaging_par.azimuth_freq_axis_hz.size());
+    this->modified_range_fm_rate_hz_s.resize(this->n_row * this->n_col);
     OMP_FOR
-    for (auto i = 0; i < this->imaging_par.azimuth_freq_axis_hz.size(); i++)
+    for (auto i = 0; i < this->n_row; i++)
     {
-        double num = this->imaging_par.sig_par.light_speed_m_s * this->imaging_par.closest_slant_range_m * square(this->imaging_par.azimuth_freq_axis_hz[i]);
+        double num = this->imaging_par.sig_par.light_speed_m_s * square(this->imaging_par.azimuth_freq_axis_hz[i]);
         double den = 2.0 * square(this->imaging_par.sensor_speed_m_s) * cube(this->imaging_par.sig_par.carrier_freq_hz) * cube(this->migr_par[i]);
-        this->modified_range_fm_rate_hz_s[i] = this->imaging_par.sig_par.range_fm_rate_hz_s / (1.0 - this->imaging_par.sig_par.range_fm_rate_hz_s * num / den);
+        double col_term = num / den;
+        for (auto j = 0; j < this->n_col; j++)
+        {
+            double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8;
+            this->modified_range_fm_rate_hz_s[i * this->n_col + j] = this->imaging_par.sig_par.range_fm_rate_hz_s / (1.0 - this->imaging_par.sig_par.range_fm_rate_hz_s * col_term * row_term);
+        }
     }
 }
 
@@ -52,11 +57,11 @@ void ChirpScalingAlgo::gen_chirp_scaling()
     for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
-        double first_order_col_term = this->modified_range_fm_rate_hz_s[i] * (1.0 / this->migr_par[i] - 1.0);
+        double first_order_col_term = 1.0 / this->migr_par[i] - 1.0;
         double second_order_col_term = -2.0 * this->imaging_par.closest_slant_range_m / (this->imaging_par.sig_par.light_speed_m_s * this->migr_par[i]);
         for (auto j = 0; j < this->n_col; j++)
         {
-            double first_order_term = first_order_col_term;
+            double first_order_term = first_order_col_term * this->modified_range_fm_rate_hz_s[i * this->n_col + j];
             double second_order_term = square(this->imaging_par.range_time_axis_sec[j] + second_order_col_term);
             chirp_scaling[i_sft * this->n_col + j] = std::exp(common_term * first_order_term * second_order_term);
         }
@@ -73,11 +78,11 @@ void ChirpScalingAlgo::gen_range_comp_filt()
     for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
-        double col_term = this->migr_par[i] / this->modified_range_fm_rate_hz_s[i];
+        double col_term = this->migr_par[i];
         for (auto j = 0; j < this->n_col; j++)
         {
             size_t j_sft = fft_shift_index(j, half_n_col);
-            double row_term = square(this->imaging_par.range_freq_axis_hz[j]);
+            double row_term = square(this->imaging_par.range_freq_axis_hz[j]) / this->modified_range_fm_rate_hz_s[i * this->n_col + j];
             this->range_comp_filt[i_sft * this->n_col + j_sft] = std::exp(cmmon_term * col_term * row_term);
         }
     }
@@ -131,10 +136,10 @@ void ChirpScalingAlgo::gen_third_comp_filt()
     for (auto i = 0; i < this->n_row; i++)
     {
         size_t i_sft = fft_shift_index(i, half_n_row);
-        double col_term = this->modified_range_fm_rate_hz_s[i] / this->migr_par[i] * (1.0 / this->migr_par[i] - 1.0);
+        double col_term = 1.0 / this->migr_par[i] * (1.0 / this->migr_par[i] - 1.0);
         for (auto j = 0; j < this->n_col; j++)
         {
-            double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8;
+            double row_term = this->imaging_par.range_time_axis_sec[j] / 2.0 * 3e8 * this->modified_range_fm_rate_hz_s[i * this->n_col + j];
             // double row_term = this->imaging_par.closest_slant_range_m;
             this->third_comp_filt[i_sft * this->n_col + j] = std::exp(common_term * col_term * row_term);
         }

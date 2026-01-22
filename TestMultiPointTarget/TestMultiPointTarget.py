@@ -4,17 +4,30 @@ import json
 import subprocess
 import scipy.io
 import plotly.graph_objects as go
+from enum import Enum, auto
 
+class Scene(Enum):
+    Basic, Coast = auto(), auto()
 
-def gen_input_par():
-    input_par = {
-        "wavelength_m": 0.4,
-        "pulse_width_sec": 10e-6,
-        "pulse_rep_freq_hz": 1e3,
-        "bandwidth_hz": 50e6,
-        "sampling_freq_hz": 64e6,
-        "closest_slant_range_m": 4e3,
-    }
+def gen_input_par(scene):
+    if scene == Scene.Basic:
+        input_par = {
+            "wavelength_m": 0.4,
+            "pulse_width_sec": 10e-6,
+            "pulse_rep_freq_hz": 1e3,
+            "bandwidth_hz": 50e6,
+            "sampling_freq_hz": 64e6,
+            "closest_slant_range_m": 4e3,
+        }
+    elif scene == Scene.Coast:
+        input_par = {
+            "wavelength_m": 0.08008,
+            "pulse_width_sec": 4.34375e-6,
+            "pulse_rep_freq_hz": 1e3,
+            "bandwidth_hz": 50e6,
+            "sampling_freq_hz": 64e6,
+            "closest_slant_range_m": 4e3,
+        }
     with open("input_par.json", "w", encoding="utf-8") as f:
         json.dump(input_par, f)
 
@@ -78,7 +91,7 @@ def save_3d_plot_of_focused_image(source_folder_name, source_file_name):
 
 
 if __name__ == "__main__":
-    gen_input_par()
+    gen_input_par(scene=Scene.Coast)
     # run_cpp(args=["iter_recov", "test"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_0"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_1"])
@@ -138,11 +151,11 @@ if __name__ == "__main__":
     # )
     # fig.write_html("multi_point_target.html")
 
-    # run_cpp(args=["gen", "multi_point_target"])
-    # run_cpp(args=["focus", "multi_point_target_image"])
+    run_cpp(args=["gen", "multi_point_target"])
+    run_cpp(args=["focus", "multi_point_target_image"])
     run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
     save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
-    # # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
+    # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
     # run_cpp(args=["iter_recov", "test"])
     # for i in range(5):

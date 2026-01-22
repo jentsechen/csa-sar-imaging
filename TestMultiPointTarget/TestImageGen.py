@@ -18,10 +18,9 @@ if __name__ == "__main__":
     data = np.load("./focused_image/multi_point_target_image_mag_db.npy")[int(556/2):int(556*7/2), int(556/2):int(556*7/2)]
     # data = abs(np.load("./focused_image/multi_point_target_image.npy")[int(556/2):int(556*7/2), int(556/2):int(556*7/2)])
     print(data.shape)
-    # plt.imshow(data, origin='lower', cmap='viridis')
-    # enhanced_data = np.power(data / np.max(data), 0.6)
-    # plt.imshow(enhanced_data, origin='lower', cmap='viridis', aspect=2.0)
-    plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
+    # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
+    clipped_data = np.clip(data, np.max(data)-50, np.max(data))
+    plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=2.0)
     plt.colorbar()
     plt.savefig("coast_csa.png", dpi=300, bbox_inches="tight")
     # for i in range(5):

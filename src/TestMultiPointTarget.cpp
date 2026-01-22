@@ -40,8 +40,7 @@ std::vector<std::vector<std::complex<double>>> thresholding(const std::vector<st
 
 int main(int argc, char *argv[])
 {
-    // json input_par = load_json("input_par.json");
-    json input_par = load_json("input_par_img.json");
+    json input_par = load_json("input_par.json");
     SigPar sig_par(input_par.find("wavelength_m")->get<double>(), input_par.find("pulse_width_sec")->get<double>(),
                    input_par.find("pulse_rep_freq_hz")->get<double>(), input_par.find("bandwidth_hz")->get<double>(),
                    input_par.find("sampling_freq_hz")->get<double>());
@@ -142,7 +141,7 @@ int main(int argc, char *argv[])
         {
             for (auto j = 0; j < n_col; j++)
             {
-                focused_image_mag_db[i * n_col + j] = std::log10(square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag()));
+                focused_image_mag_db[i * n_col + j] = 10.0 * std::log10(square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag()));
             }
         }
         save_mat_to_npy(std::string(argv[2]) + "_mag_db.npy", focused_image_mag_db, n_row, n_col);
