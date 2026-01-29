@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
     # max_val = np.percentile(data, 99.8)
     max_val = np.max(data)
-    clipped_data = np.clip(data, max_val-50, max_val)
+    clipped_data = np.clip(data, max_val-30, max_val)
     plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=2.0)
     plt.colorbar()
     plt.savefig("coast_csa.png", dpi=300, bbox_inches="tight")

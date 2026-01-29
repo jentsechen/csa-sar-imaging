@@ -91,7 +91,6 @@ def save_3d_plot_of_focused_image(source_folder_name, source_file_name):
 
 
 if __name__ == "__main__":
-    gen_input_par(scene=Scene.Coast)
     # run_cpp(args=["iter_recov", "test"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_0"])
     # run_cpp(args=["calc_mag", "./iter_result/csa_out_iter_1"])
@@ -151,10 +150,11 @@ if __name__ == "__main__":
     # )
     # fig.write_html("multi_point_target.html")
 
-    run_cpp(args=["gen", "multi_point_target"])
-    run_cpp(args=["focus", "multi_point_target_image"])
-    run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
-    save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
+    # gen_input_par(scene=Scene.Coast)
+    # run_cpp(args=["gen", "multi_point_target"])
+    # run_cpp(args=["focus", "multi_point_target_image"])
+    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
+    # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
     # run_cpp(args=["iter_recov", "test"])
@@ -170,7 +170,8 @@ if __name__ == "__main__":
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
     #     )
 
-    # run_cpp(args=["gen", "single_point_target"])
-    # run_cpp(args=["focus", "single_point_target"])
+    gen_input_par(scene=Scene.Basic)
+    run_cpp(args=["gen", "single_point_target"])
+    run_cpp(args=["focus", "single_point_target"])
     # run_cpp(args=["calc_mag", "./focused_image/single_point_target"])
     # save_3d_plot("focused_image", "single_point_target_mag_db")

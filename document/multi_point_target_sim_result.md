@@ -1,11 +1,24 @@
 
 ## Azimuth Compression With Variant Range
-|fixed range|variant range|
+* azimuth compression filter with fixed range
+    * location $T_3$: azimuth time offset is 0.04 sec, range distance offset is 30 m
+
+|point target at scene center $T_0$|point target at location $T_3$|
 |:---:|:---:|
-|![](../diagram/azi_comp_with_variant_range/fix_rng_image.png)|![](../diagram/azi_comp_with_variant_range/var_rng_image.png)|
-|![](../diagram/azi_comp_with_variant_range/fix_rng_rng_slice.png)|![](../diagram/azi_comp_with_variant_range/var_rng_rng_slice.png)|
-|![](../diagram/azi_comp_with_variant_range/fix_rng_azi_slice.png)|![](../diagram/azi_comp_with_variant_range/var_rng_azi_slice.png)|
+|![](../diagram/fixed_range_scene_center/image.png)|![](../diagram/fixed_range_diff_azi_rng/image.png)|
+|![](../diagram/fixed_range_scene_center/rng_slice.png)|![](../diagram/fixed_range_diff_azi_rng/rng_slice.png)|
+|![](../diagram/fixed_range_scene_center/azi_slice.png)|![](../diagram/fixed_range_diff_azi_rng/azi_slice.png)|
+
+* azimuth compression filter with variant range
+    * location $T_3$: azimuth time offset is 0.04 sec, range distance offset is 30 m
+
+|point target at scene center $T_0$|point target at (0.04, 30)|
+|:---:|:---:|
+|![](../diagram/var_range_scene_center/image.png)|![](../diagram/var_range_diff_azi_rng/image.png)|
+|![](../diagram/var_range_scene_center/rng_slice.png)|![](../diagram/var_range_diff_azi_rng/rng_slice.png)|
+|![](../diagram/var_range_scene_center/azi_slice.png)|![](../diagram/var_range_diff_azi_rng/azi_slice.png)|
 
 ## Scaling
-![](../diagram/coast_full_scale.png)
-![](../diagram/coast_50_db_dynamic_range.png)
+|full scale|30 dB dynamic range|ground truth|
+|:---:|:---:|:---:|
+|![](../diagram/coast_full_scale.png)|![](../diagram/coast_30_db_dynamic_range.png)|![](../diagram/point_target_location.png)|
