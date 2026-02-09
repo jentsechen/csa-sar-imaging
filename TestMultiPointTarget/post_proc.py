@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy import signal
+import json
 
 def run_cpp(cmd):
     proc = subprocess.run(
@@ -39,20 +40,28 @@ if __name__ == "__main__":
     image = np.load("./focused_image/single_point_target.npy")
     print(image.shape)
     azimuth_center, range_center = int(image.shape[0]/2), int(image.shape[1]/2)
+    row, col = np.unravel_index(np.argmax(abs(image)), image.shape)
+    print(row, col)
 
-    plot_mf_out(image_line=image[azimuth_center, :],
-                center=range_center,
+    plot_mf_out(image_line=image[azimuth_center-40, :],
+                center=range_center+13,
                 bnd=20,
                 xlabel="range",
                 file_name="range_slice.png")
-    plot_mf_out(image_line=image[:, range_center],
-                center=azimuth_center,
+    plot_mf_out(image_line=image[:, range_center+13],
+                center=azimuth_center-40,
                 bnd=40,
                 xlabel="azimuth",
                 file_name="azimuth_slice.png")
     show_azi_bnd, show_rng_bnd = 1300, 640
+    # image_db = 10*np.log10(abs(image)**2)
     image_db = 10*np.log10(abs(image[(azimuth_center-show_azi_bnd):(azimuth_center+show_azi_bnd), (range_center-show_rng_bnd):(range_center+show_rng_bnd)])**2)
-    image_db = 10*np.log10(abs(image)**2)
+    # max_val = np.max(image_db)
+    # clipped_data = np.clip(image_db, max_val-50, max_val)
+    # plt.imshow(clipped_data - np.max(clipped_data), 
+    #            extent=[range_center-show_rng_bnd, range_center+show_rng_bnd, azimuth_center-show_azi_bnd, azimuth_center+show_azi_bnd],
+    #            origin='lower', 
+    #            cmap='viridis')
     plt.imshow(image_db - np.max(image_db), 
                extent=[range_center-show_rng_bnd, range_center+show_rng_bnd, azimuth_center-show_azi_bnd, azimuth_center+show_azi_bnd],
                origin='lower', 
@@ -61,5 +70,20 @@ if __name__ == "__main__":
     plt.ylabel('azimuth')
     plt.colorbar()
     plt.savefig("single_point_target.png", dpi=300, bbox_inches="tight")
-    
+    plt.clf()
+
+    with open('./point_target_location.json', 'r') as file:
+        point_target_location = json.load(file)
+    point_target_location = np.array(point_target_location)
+    point_target_location = np.flipud(point_target_location)
+    print(point_target_location.shape)
+    plt.imshow(point_target_location,
+               origin='lower', 
+               cmap='viridis')
+    plt.xlabel('range')
+    plt.ylabel('azimuth')
+    plt.colorbar()
+    plt.savefig("point_target_location.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
     print("DONE")

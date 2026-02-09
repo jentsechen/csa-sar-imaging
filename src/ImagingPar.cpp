@@ -94,6 +94,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
                     return std::complex<double>(0.0, 0.0);
                 };
                 point_target_echo_signal[i * rng_n_smp + j] += (echo_signal_sample() * wa);
+                // point_target_echo_signal[i * rng_n_smp + j] += echo_signal_sample();
             }
         }
     }

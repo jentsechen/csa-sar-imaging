@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 from enum import Enum, auto
 
 class Scene(Enum):
-    Basic, Coast = auto(), auto()
+    Basic, Coast, Island = auto(), auto(), auto()
 
 def gen_input_par(scene):
     if scene == Scene.Basic:
@@ -28,6 +28,17 @@ def gen_input_par(scene):
             "sampling_freq_hz": 64e6,
             "closest_slant_range_m": 4e3,
         }
+    elif scene == Scene.Island:
+        input_par = {
+            "wavelength_m": 0.042048,
+            "pulse_width_sec": 2.28125e-6,
+            "pulse_rep_freq_hz": 1e3,
+            "bandwidth_hz": 50e6,
+            "sampling_freq_hz": 64e6,
+            "closest_slant_range_m": 4e3,
+        }
+    else:
+        print("The scene is not supported!")
     with open("input_par.json", "w", encoding="utf-8") as f:
         json.dump(input_par, f)
 
@@ -151,27 +162,28 @@ if __name__ == "__main__":
     # fig.write_html("multi_point_target.html")
 
     # gen_input_par(scene=Scene.Coast)
-    # run_cpp(args=["gen", "multi_point_target"])
-    # run_cpp(args=["focus", "multi_point_target_image"])
-    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
+    gen_input_par(scene=Scene.Island)
+    run_cpp(args=["gen", "multi_point_target"])
+    run_cpp(args=["focus", "multi_point_target_image"])
+    run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
-    # run_cpp(args=["iter_recov", "test"])
-    # for i in range(5):
-    #     run_cpp(
-    #         args=[
-    #             "calc_mag",
-    #             "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
-    #         ]
-    #     )
+    run_cpp(args=["iter_recov", "test"])
+    for i in range(1):
+        run_cpp(
+            args=[
+                "calc_mag",
+                "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
+            ]
+        )
     # for i in range(5):
     #     save_3d_plot_of_focused_image(
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
     #     )
 
-    gen_input_par(scene=Scene.Basic)
-    run_cpp(args=["gen", "single_point_target"])
-    run_cpp(args=["focus", "single_point_target"])
+    # gen_input_par(scene=Scene.Basic)
+    # run_cpp(args=["gen", "single_point_target"])
+    # run_cpp(args=["focus", "single_point_target"])
     # run_cpp(args=["calc_mag", "./focused_image/single_point_target"])
     # save_3d_plot("focused_image", "single_point_target_mag_db")
