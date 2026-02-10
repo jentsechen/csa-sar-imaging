@@ -7,6 +7,7 @@
 #include "../include/util.h"
 #include "SigPar.h"
 #include "PointTarget.h"
+#include "EchoSigGenPar.h"
 
 class ImagingPar
 {
@@ -27,8 +28,14 @@ public:
     std::vector<double> range_freq_axis_hz;    // f_\tau
     std::vector<double> azimuth_time_axis_sec; // \eta
     std::vector<double> azimuth_freq_axis_hz;  // f_\eta
-    ImagingPar(const SigPar &sig_par, double closest_slant_range_m, double sensor_speed_m_s = 120, double azimuth_aperture_len_m = 1.2);
-    std::vector<std::complex<double>> gen_point_target_echo_signal(const std::vector<PointTarget> &point_target_list = std::vector<PointTarget>(1, PointTarget()));
+    EchoSigGenPar echo_sig_gen_par;
+    ImagingPar(const SigPar &sig_par,
+               const EchoSigGenPar &echo_sig_gen_par,
+               double closest_slant_range_m,
+               double sensor_speed_m_s = 120,
+               double azimuth_aperture_len_m = 1.2);
+    std::vector<std::complex<double>> gen_point_target_echo_signal(
+        const std::vector<PointTarget> &point_target_list = std::vector<PointTarget>(1, PointTarget()));
 };
 
 #endif

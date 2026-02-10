@@ -1,6 +1,7 @@
 #include "../include/util.h"
 #include "../include/util.cpp"
 #include "ImagingPar.h"
+#include "EchoSigGenPar.h"
 
 int main(int argc, char *argv[])
 {
@@ -8,7 +9,11 @@ int main(int argc, char *argv[])
     SigPar sig_par(input_par.find("wavelength_m")->get<double>(), input_par.find("pulse_width_sec")->get<double>(),
                    input_par.find("pulse_rep_freq_hz")->get<double>(), input_par.find("bandwidth_hz")->get<double>(),
                    input_par.find("sampling_freq_hz")->get<double>());
-    ImagingPar imaging_par(sig_par, input_par.find("closest_slant_range_m")->get<double>());
+    EchoSigGenPar echo_sig_gen_par(input_par.find("azi_win_en")->get<bool>(),
+                                   input_par.find("rng_pad_time")->get<size_t>(),
+                                   input_par.find("noise_en")->get<bool>(),
+                                   input_par.find("snr_db")->get<double>());
+    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>());
     json output_par{{"range_time_axis_sec", imaging_par.range_time_axis_sec},
                     {"range_freq_axis_hz", imaging_par.range_freq_axis_hz},
                     {"azimuth_time_axis_sec", imaging_par.azimuth_time_axis_sec},

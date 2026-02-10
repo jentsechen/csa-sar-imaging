@@ -1,11 +1,16 @@
 #include "ImagingPar.h"
 
-ImagingPar::ImagingPar(const SigPar &sig_par, double closest_slant_range_m, double sensor_speed_m_s, double azimuth_aperture_len_m)
+ImagingPar::ImagingPar(const SigPar &sig_par,
+                       const EchoSigGenPar &echo_sig_gen_par,
+                       double closest_slant_range_m,
+                       double sensor_speed_m_s,
+                       double azimuth_aperture_len_m)
     : sig_par(sig_par), closest_slant_range_m(closest_slant_range_m),
       sensor_speed_m_s(sensor_speed_m_s), azimuth_aperture_len_m(azimuth_aperture_len_m),
       beamwidth_rad(sig_par.wavelength_m / azimuth_aperture_len_m),
       synthetic_aperture_len_m(beamwidth_rad * closest_slant_range_m),
-      synthetic_aperture_time_sec(synthetic_aperture_len_m / sensor_speed_m_s)
+      synthetic_aperture_time_sec(synthetic_aperture_len_m / sensor_speed_m_s),
+      echo_sig_gen_par(echo_sig_gen_par)
 {
     gen_range_time_axis_sec();
     gen_azimuth_time_axis_sec();
@@ -28,7 +33,7 @@ ImagingPar::ImagingPar(const SigPar &sig_par, double closest_slant_range_m, doub
 
 void ImagingPar::gen_range_time_axis_sec()
 {
-    int range_time_axis_sec_len = static_cast<int>(floor(8 * sig_par.pulse_width_sec * sig_par.sampling_freq_hz / 2) * 2);
+    int range_time_axis_sec_len = static_cast<int>(floor(this->echo_sig_gen_par.rng_pad_time * sig_par.pulse_width_sec * sig_par.sampling_freq_hz / 2) * 2);
     this->range_time_axis_sec = std::vector<double>(range_time_axis_sec_len);
     for (auto i = 0; i < range_time_axis_sec_len; i++)
     {
@@ -80,7 +85,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
             double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i], point_target_list[target_index].azimuth_offset_sec, point_target_list[target_index].range_offset_m);
             double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
             std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);
-            double wa = to_the_fourth(sinc(this->sensor_speed_m_s * this->azimuth_time_axis_sec[i] / this->synthetic_aperture_len_m));
+            double wa = this->echo_sig_gen_par.azi_win_en ? to_the_fourth(sinc(this->sensor_speed_m_s * this->azimuth_time_axis_sec[i] / this->synthetic_aperture_len_m)) : 1.0;
             for (auto j = 0; j < rng_n_smp; j++)
             {
                 auto echo_signal_sample = [&]()
@@ -94,7 +99,6 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
                     return std::complex<double>(0.0, 0.0);
                 };
                 point_target_echo_signal[i * rng_n_smp + j] += (echo_signal_sample() * wa);
-                // point_target_echo_signal[i * rng_n_smp + j] += echo_signal_sample();
             }
         }
     }

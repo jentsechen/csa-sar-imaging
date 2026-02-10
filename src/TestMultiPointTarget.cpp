@@ -44,7 +44,11 @@ int main(int argc, char *argv[])
     SigPar sig_par(input_par.find("wavelength_m")->get<double>(), input_par.find("pulse_width_sec")->get<double>(),
                    input_par.find("pulse_rep_freq_hz")->get<double>(), input_par.find("bandwidth_hz")->get<double>(),
                    input_par.find("sampling_freq_hz")->get<double>());
-    ImagingPar imaging_par(sig_par, input_par.find("closest_slant_range_m")->get<double>());
+    EchoSigGenPar echo_sig_gen_par(input_par.find("azi_win_en")->get<bool>(),
+                                   input_par.find("rng_pad_time")->get<size_t>(),
+                                   input_par.find("noise_en")->get<bool>(),
+                                   input_par.find("snr_db")->get<double>());
+    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>());
     json output_par{{"range_time_axis_sec", imaging_par.range_time_axis_sec},
                     {"range_freq_axis_hz", imaging_par.range_freq_axis_hz},
                     {"azimuth_time_axis_sec", imaging_par.azimuth_time_axis_sec},
@@ -205,7 +209,7 @@ int main(int argc, char *argv[])
         // save_mat_to_npy("./iter_result_down_smp/csa_out_iter_1.npy", csa_out, n_row, n_col);
 
         std::vector<std::complex<double>> diff_csa_out(n_row * n_col);
-        for (auto iter_idx = 0; iter_idx < 1; iter_idx++)
+        for (auto iter_idx = 0; iter_idx < 5; iter_idx++)
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;

@@ -45,6 +45,6 @@ def gen_point_target_location(file_name):
 
 if __name__ == "__main__":
     # gen_point_target_location(file_name="image_coast")
-    # gen_point_target_location(file_name="image_island")
-    plot_binary_image()
+    gen_point_target_location(file_name="image_island")
+    # plot_binary_image()
     print("DONE")
