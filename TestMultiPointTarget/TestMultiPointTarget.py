@@ -46,8 +46,8 @@ def gen_input_par(scene):
             "closest_slant_range_m": 4e3,
             "azi_win_en": True,
             "rng_pad_time": 8,
-            "noise_en": False,
-            "snr_db": 25.0
+            "noise_en": True,
+            "snr_db": -25.0
         }
     else:
         print("The scene is not supported!")
@@ -175,20 +175,20 @@ if __name__ == "__main__":
 
     # gen_input_par(scene=Scene.Coast)
     gen_input_par(scene=Scene.Island)
-    run_cpp(args=["gen", "multi_point_target"])
-    run_cpp(args=["focus", "multi_point_target_image"])
-    run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
+    # run_cpp(args=["gen", "multi_point_target"])
+    # run_cpp(args=["focus", "multi_point_target_image"])
+    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
-    # run_cpp(args=["iter_recov", "test"])
-    # for i in range(5):
-    #     run_cpp(
-    #         args=[
-    #             "calc_mag",
-    #             "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
-    #         ]
-    #     )
+    run_cpp(args=["iter_recov", "test"])
+    for i in range(5):
+        run_cpp(
+            args=[
+                "calc_mag",
+                "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
+            ]
+        )
     # for i in range(5):
     #     save_3d_plot_of_focused_image(
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)

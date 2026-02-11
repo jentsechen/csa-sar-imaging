@@ -102,5 +102,20 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
             }
         }
     }
+    if (this->echo_sig_gen_par.noise_en)
+    {
+        double noise_pow(std::pow(10.0, -echo_sig_gen_par.snr_db / 10.0));
+        double noise_std(std::sqrt(noise_pow / 2.0));
+        std::default_random_engine generator;
+        std::normal_distribution<double> distribution(0.0, noise_std);
+        for (auto i = 0; i < azi_n_smp; i++)
+        {
+            for (auto j = 0; j < rng_n_smp; j++)
+            {
+                std::complex<double> noise(distribution(generator), distribution(generator));
+                point_target_echo_signal[i * rng_n_smp + j] += noise;
+            }
+        }
+    }
     return point_target_echo_signal;
 }

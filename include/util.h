@@ -7,6 +7,8 @@
 #include <complex>
 #include <chrono>
 #include <thread>
+#include <cmath>
+#include <random>
 #include "../cnpy/cnpy.h"
 #include "json.hpp"
 using json = nlohmann::json;
