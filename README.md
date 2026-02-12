@@ -37,7 +37,6 @@ cmake --build .
 ## How to use CNPY
 * Pre-request: ZLIB
     * https://zlib.net/
-![](./image/build_zlib.png)
 * Git clone and CMake
 ```bash
 git clone https://github.com/rogersce/cnpy.git
@@ -129,3 +128,6 @@ error of inverse_csa_out: 1.3500874256198407e-08
 
 ## Multi-Point Target
 [Simulation Result](./document/multi_point_target_sim_result.md)
+
+## Simulation Setup
+[Simulation Setup](./document/simulation_setup.md)
