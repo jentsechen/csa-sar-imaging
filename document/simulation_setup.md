@@ -13,11 +13,11 @@ $$s_{m,n}=\sum_k A_{k}
 \cdot e^{-j4\pi\frac{R_k(m\Delta\eta)}{\lambda}}$$
 
 * Coherent scattering in time domain: $S\circ C+W$
-    * Time domain: $C=[c_{m,n}]_{M\times N}$, $c_{m,n}=e^{j\theta_{m,n}}, \theta_{m,n} \sim \mathcal{U}(0,2\pi)$
+    * Time domain: $C=[c_{m,n}]_{M\times N}$ , $c_{m,n}=e^{j\theta_{m,n}}, \theta_{m,n} \sim \mathcal{U}(0,2\pi)$
 * Coherent scattering in spatial domain: $\mathcal{T}(S+W)\circ C$
-    * $C=[c_{m,n}]_{M\times N}, c_{m,n} \sim \mathcal{E}(1)$
+    * $C=[c_{m,n}]_{M\times N}$ , $c_{m,n} \sim \mathcal{E}(1)$
     * $\mathcal{T}(\cdot)$: Imaging algorithm, e.g. RDA or CSA
-* Thermal noise (time domain): $W=[w_{m,n}]_{M\times N}, w_{m,n} \sim \mathcal{CN}(0, \sigma)$
+* Thermal noise (time domain): $W=[w_{m,n}]_{M\times N}$ , $w_{m,n} \sim \mathcal{CN}(0, \sigma)$
     * $\sigma^2=P_n/2, P_n=P_s/SNR$
 
 ## How to Convert Image to Echo Signal
