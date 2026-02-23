@@ -26,6 +26,14 @@
 ## Effect of Thresholding Operator
 ![](../diagram/thresholding/island/original.png)
 
-|binary|CSA|thresholding|
-|:---:|:---:|:---:|
-|![](../diagram/thresholding/island/binary.png)|![](../diagram/thresholding/island/csa.png)|![](../diagram/thresholding/island/thresholding.png)|
+||binary|CSA (threshold = 0)|threshold = 100|threshold = 200|
+|:---:|:---:|:---:|:---:|:---:|
+|**image**|![](../diagram/thresholding/island/binary.png)|![](../diagram/thresholding/island/csa.png)|![](../diagram/thresholding/island/threshold_100.png)|![](../diagram/thresholding/island/threshold_200.png)|
+|**entropy**||10.6795|10.5306|10.3998|
+|**number of non-zero pixels**||1364224|48001|43255|
+
+* Entropy: $E=-\sum_{i=1}^M\sum_{j=1}^N P_{i,j}\ln(P_{i,j}),P_{i,j}=\frac{|I_{i,j}|^2}{\sum_{i=1}^M\sum_{j=1}^N |I_{i,j}|^2}$
+    * $\lim_{P\rightarrow0}P\ln(P)=0$
+
+![](../diagram/thresholding/island/entropy.png)
+![](../diagram/thresholding/island/n_non_zero_pixel.png)

@@ -4,36 +4,35 @@
 #include "ChirpScalingAlgo.h"
 #include <random>
 
-double thresholding(double input)
+double thresholding(double input, double threshold)
 {
-    const double threshold = 100;
     double mag = std::abs(input);
     if (mag > threshold)
         return (input > 0) ? (mag - threshold) : (threshold - mag);
     return 0.0;
 }
 
-std::complex<double> thresholding(const std::complex<double> &input)
+std::complex<double> thresholding(const std::complex<double> &input, double threshold)
 {
-    return std::complex<double>(thresholding(input.real()), thresholding(input.imag()));
+    return std::complex<double>(thresholding(input.real(), threshold), thresholding(input.imag(), threshold));
 }
 
-std::vector<std::complex<double>> thresholding(const std::vector<std::complex<double>> &input)
+std::vector<std::complex<double>> thresholding(const std::vector<std::complex<double>> &input, double threshold)
 {
     std::vector<std::complex<double>> output(input.size());
     for (auto i = 0; i < input.size(); i++)
     {
-        output[i] = thresholding(input[i]);
+        output[i] = thresholding(input[i], threshold);
     }
     return output;
 }
 
-std::vector<std::vector<std::complex<double>>> thresholding(const std::vector<std::vector<std::complex<double>>> &input)
+std::vector<std::vector<std::complex<double>>> thresholding(const std::vector<std::vector<std::complex<double>>> &input, double threshold)
 {
     std::vector<std::vector<std::complex<double>>> output(input.size());
     for (auto i = 0; i < input.size(); i++)
     {
-        output[i] = thresholding(input[i]);
+        output[i] = thresholding(input[i], threshold);
     }
     return output;
 }
@@ -150,6 +149,34 @@ int main(int argc, char *argv[])
         }
         save_mat_to_npy(std::string(argv[2]) + "_mag_db.npy", focused_image_mag_db, n_row, n_col);
     }
+    if (std::string(argv[1]) == "calc_entropy")
+    {
+        cnpy::NpyArray arr = cnpy::npy_load(std::string(argv[2]) + ".npy");
+        const std::vector<size_t> &shape_vec = arr.shape;
+        assert(shape_vec.size() == 2);
+        size_t n_row = shape_vec[0], n_col = shape_vec[1];
+        std::complex<double> *ptr = arr.data<std::complex<double>>();
+        std::vector<std::complex<double>> focused_image(ptr, ptr + n_row * n_col);
+        std::vector<double> focused_image_mag_db(n_row * n_col);
+        double total_power = 0;
+        for (auto i = 0; i < n_row; i++)
+        {
+            for (auto j = 0; j < n_col; j++)
+            {
+                total_power += square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag());
+            }
+        }
+        double entropy = 0;
+        for (auto i = 0; i < n_row; i++)
+        {
+            for (auto j = 0; j < n_col; j++)
+            {
+                double prob = (square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag())) / total_power;
+                entropy += -prob * std::log(prob);
+            }
+        }
+        std::cout << "entropy: " << entropy << std::endl;
+    }
     if (std::string(argv[1]) == "iter_recov")
     {
         // cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/single_point_target.npy");
@@ -209,14 +236,55 @@ int main(int argc, char *argv[])
         // save_mat_to_npy("./iter_result_down_smp/csa_out_iter_1.npy", csa_out, n_row, n_col);
 
         std::vector<std::complex<double>> diff_csa_out(n_row * n_col);
-        for (auto iter_idx = 0; iter_idx < 5; iter_idx++)
+        for (auto iter_idx = 0; iter_idx < 1; iter_idx++)
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;
-            csa_out = thresholding(csa_out);
+            csa_out = thresholding(csa_out, 200);
             // save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
             save_mat_to_npy("./iter_result_multi_point_image/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
         }
+
+    //     size_t n_threshold = 5;
+    //     std::vector<double> entropy_vec(n_threshold);
+    //     std::vector<size_t> n_non_zero_pixel_vec(n_threshold);
+    //     for (auto i = 0; i < n_threshold; i++)
+    //     {
+    //         csa_out = thresholding(chirp_scaling_algo.apply_csa(echo_signal), i * 20.0 + 100.0);
+
+    //         double total_power = 0;
+    //         for (auto i = 0; i < n_row; i++)
+    //         {
+    //             for (auto j = 0; j < n_col; j++)
+    //             {
+    //                 total_power += square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag());
+    //             }
+    //         }
+    //         double entropy = 0;
+    //         size_t n_non_zero_pixel = 0;
+    //         for (auto i = 0; i < n_row; i++)
+    //         {
+    //             for (auto j = 0; j < n_col; j++)
+    //             {
+    //                 double prob = (square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag())) / total_power;
+    //                 if (prob > 0.0)
+    //                 {
+    //                     entropy += -prob * std::log(prob);
+    //                     n_non_zero_pixel += 1;
+    //                 }
+    //             }
+    //         }
+    //         entropy_vec[i] = entropy;
+    //         n_non_zero_pixel_vec[i] = n_non_zero_pixel;
+    //     }
+    //     std::cout << "entropy: " << std::endl;
+    //     for (auto i = 0; i < n_threshold; i++)
+    //         std::cout << entropy_vec[i] << ", ";
+    //     std::cout << std::endl;
+    //     std::cout << "n_non_zero_pixel: " << std::endl;
+    //     for (auto i = 0; i < n_threshold; i++)
+    //         std::cout << n_non_zero_pixel_vec[i] << ", ";
+    //     std::cout << std::endl;
     }
 
     return 0;
