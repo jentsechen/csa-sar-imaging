@@ -117,5 +117,19 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
             }
         }
     }
+    if (this->echo_sig_gen_par.coherent_scatter_en)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distr(0.0, 2.0*PI);
+        for (auto i = 0; i < azi_n_smp; i++)
+        {
+            double theta = distr(gen);
+            for (auto j = 0; j < rng_n_smp; j++)
+            {
+                point_target_echo_signal[i * rng_n_smp + j] *= std::complex<double>(std::cos(theta), std::sin(theta));
+            }
+        }
+    }
     return point_target_echo_signal;
 }

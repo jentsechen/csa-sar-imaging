@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
     EchoSigGenPar echo_sig_gen_par(input_par.find("azi_win_en")->get<bool>(),
                                    input_par.find("rng_pad_time")->get<size_t>(),
                                    input_par.find("noise_en")->get<bool>(),
-                                   input_par.find("snr_db")->get<double>());
+                                   input_par.find("snr_db")->get<double>(),
+                                   input_par.find("coherent_scatter_en")->get<bool>());
     ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>());
     json output_par{{"range_time_axis_sec", imaging_par.range_time_axis_sec},
                     {"range_freq_axis_hz", imaging_par.range_freq_axis_hz},
@@ -139,6 +140,18 @@ int main(int argc, char *argv[])
         std::complex<double> *ptr = arr.data<std::complex<double>>();
         std::vector<std::complex<double>> focused_image(ptr, ptr + n_row * n_col);
         std::vector<double> focused_image_mag_db(n_row * n_col);
+
+        // std::random_device rd;
+        // std::mt19937 gen(rd());
+        // double lambda = 1.0;
+        // std::exponential_distribution<double> dist(lambda);
+        // for (auto i = 0; i < n_row; i++)
+        // {
+        //     for (auto j = 0; j < n_col; j++)
+        //     {
+        //         focused_image_mag_db[i * n_col + j] = 10.0 * std::log10((square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag())) * dist(gen));
+        //     }
+        // }
         OMP_FOR
         for (auto i = 0; i < n_row; i++)
         {
@@ -245,46 +258,46 @@ int main(int argc, char *argv[])
             save_mat_to_npy("./iter_result_multi_point_image/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
         }
 
-    //     size_t n_threshold = 5;
-    //     std::vector<double> entropy_vec(n_threshold);
-    //     std::vector<size_t> n_non_zero_pixel_vec(n_threshold);
-    //     for (auto i = 0; i < n_threshold; i++)
-    //     {
-    //         csa_out = thresholding(chirp_scaling_algo.apply_csa(echo_signal), i * 20.0 + 100.0);
+        //     size_t n_threshold = 5;
+        //     std::vector<double> entropy_vec(n_threshold);
+        //     std::vector<size_t> n_non_zero_pixel_vec(n_threshold);
+        //     for (auto i = 0; i < n_threshold; i++)
+        //     {
+        //         csa_out = thresholding(chirp_scaling_algo.apply_csa(echo_signal), i * 20.0 + 100.0);
 
-    //         double total_power = 0;
-    //         for (auto i = 0; i < n_row; i++)
-    //         {
-    //             for (auto j = 0; j < n_col; j++)
-    //             {
-    //                 total_power += square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag());
-    //             }
-    //         }
-    //         double entropy = 0;
-    //         size_t n_non_zero_pixel = 0;
-    //         for (auto i = 0; i < n_row; i++)
-    //         {
-    //             for (auto j = 0; j < n_col; j++)
-    //             {
-    //                 double prob = (square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag())) / total_power;
-    //                 if (prob > 0.0)
-    //                 {
-    //                     entropy += -prob * std::log(prob);
-    //                     n_non_zero_pixel += 1;
-    //                 }
-    //             }
-    //         }
-    //         entropy_vec[i] = entropy;
-    //         n_non_zero_pixel_vec[i] = n_non_zero_pixel;
-    //     }
-    //     std::cout << "entropy: " << std::endl;
-    //     for (auto i = 0; i < n_threshold; i++)
-    //         std::cout << entropy_vec[i] << ", ";
-    //     std::cout << std::endl;
-    //     std::cout << "n_non_zero_pixel: " << std::endl;
-    //     for (auto i = 0; i < n_threshold; i++)
-    //         std::cout << n_non_zero_pixel_vec[i] << ", ";
-    //     std::cout << std::endl;
+        //         double total_power = 0;
+        //         for (auto i = 0; i < n_row; i++)
+        //         {
+        //             for (auto j = 0; j < n_col; j++)
+        //             {
+        //                 total_power += square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag());
+        //             }
+        //         }
+        //         double entropy = 0;
+        //         size_t n_non_zero_pixel = 0;
+        //         for (auto i = 0; i < n_row; i++)
+        //         {
+        //             for (auto j = 0; j < n_col; j++)
+        //             {
+        //                 double prob = (square(csa_out[i * n_col + j].real()) + square(csa_out[i * n_col + j].imag())) / total_power;
+        //                 if (prob > 0.0)
+        //                 {
+        //                     entropy += -prob * std::log(prob);
+        //                     n_non_zero_pixel += 1;
+        //                 }
+        //             }
+        //         }
+        //         entropy_vec[i] = entropy;
+        //         n_non_zero_pixel_vec[i] = n_non_zero_pixel;
+        //     }
+        //     std::cout << "entropy: " << std::endl;
+        //     for (auto i = 0; i < n_threshold; i++)
+        //         std::cout << entropy_vec[i] << ", ";
+        //     std::cout << std::endl;
+        //     std::cout << "n_non_zero_pixel: " << std::endl;
+        //     for (auto i = 0; i < n_threshold; i++)
+        //         std::cout << n_non_zero_pixel_vec[i] << ", ";
+        //     std::cout << std::endl;
     }
 
     return 0;
