@@ -27,7 +27,7 @@ def plot_binary_image():
 
 def gen_point_target_location(file_name):
     img = cv2.imread(f"./{file_name}.png")
-    ret, output1 = cv2.threshold(img, 40, 255, cv2.THRESH_BINARY)
+    _, output1 = cv2.threshold(img, 40, 255, cv2.THRESH_BINARY)
     binary_pixel_matrix = (output1 / 255).astype(np.uint8)
     binary_matrix = []
     for i in range(len(binary_pixel_matrix)):

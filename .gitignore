@@ -19,3 +19,6 @@
 /TestMultiPointTarget/__pycache__
 
 /gen_raw_data/*.png
+/UmbraDataProc/*.tif
+/UmbraDataProc/*.png
+/UmbraDataProc/*.json
