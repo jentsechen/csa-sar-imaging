@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
             for (auto j = 0; j < n_col; j++)
             {
                 double prob = (square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag())) / total_power;
-                entropy += -prob * std::log(prob);
+                entropy += -prob * std::log(prob+1e-12);
             }
         }
         std::cout << "entropy: " << entropy << std::endl;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;
-            csa_out = thresholding(csa_out, 200);
+            csa_out = thresholding(csa_out, 2.5e5);
             // save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
             save_mat_to_npy("./iter_result_multi_point_image/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
         }
