@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
             {
                 for (auto j = 0; j < imaging_par.n_col / 4; j++)
                 {
-                    if (point_target_location[i][j] == 1)
+                    if (point_target_location[i][j] > 0)
                     {
                         auto azimuth_offset_m = [&]()
                         {
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
                         {
                             return (static_cast<double>(j + imaging_par.n_col * 3 / 8) - imaging_par.n_col / 2.0) * sig_par.light_speed_m_s / sig_par.sampling_freq_hz;
                         };
-                        point_target_list.emplace_back(PointTarget(azimuth_offset_m(), range_offset_m()));
+                        point_target_list.emplace_back(PointTarget(azimuth_offset_m(), range_offset_m(), point_target_location[i][j]));
                     }
                 }
             }

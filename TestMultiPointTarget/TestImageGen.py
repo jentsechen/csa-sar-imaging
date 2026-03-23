@@ -17,16 +17,23 @@ def plot_single_point_target():
 
 if __name__ == "__main__": 
     # scene = Scene.Coast
-    scene = Scene.Island
+    # scene = Scene.Island
+    scene = Scene.TsoYingNavalBase
     if scene == Scene.Coast:
         image_size = 556
         image_name = "coast"
     elif scene == Scene.Island:
         image_size = 292
         image_name = "island"
+    elif scene == Scene.TsoYingNavalBase:
+        n_row, n_col = 640, 720
+        image_name = "tsoying_naval_base"
     else:
         print("The scene is not supported!")
-    data = np.load("./focused_image/multi_point_target_image_mag_db.npy")[int(image_size*3/2):int(image_size*5/2), int(image_size*1):int(image_size*3)]
+    if scene == Scene.Island:
+        data = np.load("./focused_image/multi_point_target_image_mag_db.npy")[int(image_size*3/2):int(image_size*5/2), int(image_size*1):int(image_size*3)]
+    elif scene == Scene.TsoYingNavalBase:
+        data = np.load("./focused_image/multi_point_target_image_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*1):int(n_col*3)]
     print(data.shape)
     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
     # max_val = np.percentile(data, 99.8)

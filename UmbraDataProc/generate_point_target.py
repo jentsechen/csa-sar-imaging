@@ -65,16 +65,17 @@ def read_tif(file_name, scene_name, row_start, row_len, col_start, col_len, thre
     if is_bin ==True:
         _, sar_data_bin = cv2.threshold(sar_data_slice, threshold, 255, cv2.THRESH_BINARY)
         binary_pixel_matrix = (sar_data_bin / 255).astype(np.uint8)
-        binary_matrix = []
+        point_target_loc = []
         for i in range(len(binary_pixel_matrix)):
-            binary_matrix.append([])
+            point_target_loc.append([])
             for j in range(len(binary_pixel_matrix[i])):
-                binary_matrix[i].append(int(binary_pixel_matrix[i][j]))
+                point_target_loc[i].append(int(binary_pixel_matrix[i][j]))
     else:
-        binary_matrix = sar_data_slice.tolist()
+        point_target_loc = sar_data_slice.tolist()
 
+    calc_num_zero(scene_name=scene_name, point_target_loc=point_target_loc)
     with open(scene_name+'.json', "w") as f:
-        json.dump(binary_matrix, f)
+        json.dump(point_target_loc, f)
     with open(scene_name+'.json', "r", encoding="UTF-8") as f:
         data = json.load(f)
     print(np.array(data).shape)
@@ -94,15 +95,33 @@ def plot_binary_image(scene_name):
     plt.savefig(scene_name+".png", dpi=300, bbox_inches="tight")
     plt.clf()
 
+def calc_num_zero(scene_name, point_target_loc):
+    num_zero = sum(sublist.count(0) for sublist in point_target_loc)
+    percentage = (num_zero / (len(point_target_loc)*len(point_target_loc[0]))) * 100
+    print(f"Number of zeros: {num_zero} ({percentage}%)")
+
+    flat_data = np.array(point_target_loc).flatten()
+    counts, _ = np.histogram(flat_data, bins=256, range=(0, 256))
+    plt.plot(counts)
+    plt.xlabel('value')
+    plt.ylabel('count')
+    plt.grid()
+    plt.savefig(scene_name + "_hist.png")
+    plt.clf()
+
 if __name__ == "__main__":
     # download_tif(uuid='c59dab96-3b16-456b-80fe-866f30a3cabe')
     # read_tif(file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif', scene_name='tsoying_naval_base', 
     #          row_start=3200, row_len=2000, col_start=3500, col_len=2000, threshold=40)
     read_tif(file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif', scene_name='tsoying_naval_base', 
-             row_start=3200, row_len=2000, col_start=3500, col_len=2000, threshold=40, is_bin=False)
+             row_start=4050, row_len=640, col_start=4180, col_len=720, threshold=40, is_bin=False)
     plot_binary_image(scene_name='tsoying_naval_base')
 
     # download_tif(uuid='8cd3eeb0-22e2-42d7-969e-030826a3a0c6')
     # read_tif(file_name='2023-06-30-12-56-34_UMBRA-05_GEC.tif', scene_name='port_of_kaohsiung', 
     #          row_start=1500, row_len=10000, col_start=0, col_len=10000, threshold=40)
     # plot_binary_image(scene_name='port_of_kaohsiung')
+
+    # with open('/home/phd/jtc/csa-sar-imaging/TestMultiPointTarget/point_target_location.json', 'r') as file:
+    #     point_target_location = json.load(file)
+    # print(np.array(point_target_location).shape)

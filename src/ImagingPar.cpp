@@ -94,7 +94,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
                     {
                         std::complex<double> chirp_term = std::exp(std::complex<double>(0.0, PI) * this->sig_par.range_fm_rate_hz_s * square(this->range_time_axis_sec[j] - round_trip_time_sec));
                         std::complex<double> carrier_term = std::exp(std::complex<double>(0.0, -PI) * 4.0 * slant_range_m / this->sig_par.wavelength_m);
-                        return chirp_term * carrier_term;
+                        return chirp_term * carrier_term * point_target_list[target_index].scatter_coef;
                     }
                     return std::complex<double>(0.0, 0.0);
                 };

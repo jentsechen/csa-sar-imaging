@@ -5,9 +5,10 @@ import subprocess
 import scipy.io
 import plotly.graph_objects as go
 from enum import Enum, auto
+import time
 
 class Scene(Enum):
-    Basic, Coast, Island = auto(), auto(), auto()
+    Basic, Coast, Island, TsoYingNavalBase = auto(), auto(), auto(), auto()
 
 def gen_input_par(scene):
     if scene == Scene.Basic:
@@ -41,16 +42,30 @@ def gen_input_par(scene):
     elif scene == Scene.Island:
         input_par = {
             "wavelength_m": 0.042048,
-            "pulse_width_sec": 2.28125e-6,
+            "pulse_width_sec": 4.5625e-6,
             "pulse_rep_freq_hz": 1e3,
             "bandwidth_hz": 50e6,
             "sampling_freq_hz": 64e6,
             "closest_slant_range_m": 4e3,
             "azi_win_en": True,
-            "rng_pad_time": 8,
+            "rng_pad_time": 4,
             "noise_en": False,
             "snr_db": -25.0,
-            "coherent_scatter_en": True
+            "coherent_scatter_en": False
+        }
+    elif scene == Scene.TsoYingNavalBase:
+        input_par = {
+            "wavelength_m": 0.09216,
+            "pulse_width_sec": 11.25e-6,
+            "pulse_rep_freq_hz": 1e3,
+            "bandwidth_hz": 50e6,
+            "sampling_freq_hz": 64e6,
+            "closest_slant_range_m": 4e3,
+            "azi_win_en": True,
+            "rng_pad_time": 4,
+            "noise_en": False,
+            "snr_db": -25.0,
+            "coherent_scatter_en": False
         }
     else:
         print("The scene is not supported!")
@@ -177,8 +192,13 @@ if __name__ == "__main__":
     # fig.write_html("multi_point_target.html")
 
     # gen_input_par(scene=Scene.Coast)
-    gen_input_par(scene=Scene.Island)
-    run_cpp(args=["gen", "multi_point_target"])
+    # gen_input_par(scene=Scene.Island)
+    gen_input_par(scene=Scene.TsoYingNavalBase)
+    # start_time = time.perf_counter()
+    # run_cpp(args=["gen", "multi_point_target"])
+    # end_time = time.perf_counter()
+    # execution_time = end_time - start_time
+    # print(f"Execution time: {execution_time/60:.6f} minutes")
     run_cpp(args=["focus", "multi_point_target_image"])
     run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
     run_cpp(args=["calc_entropy", "./focused_image/multi_point_target_image"])
