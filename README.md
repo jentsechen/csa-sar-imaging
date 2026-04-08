@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ### How to run
 ```bash
 cd UmbraDataProc
-python generate_point_target.py
+python3 generate_point_target.py
 ```
 
 ---
@@ -27,20 +27,27 @@ python generate_point_target.py
     * Add `target_include_directories()` to `CMakeLists.txt`
 
 ## How to Build (Linux)
+
+### 1. Install dependencies
+```bash
+sudo apt install libfftw3-dev
+```
+
+### 2. Build cnpy (in-tree)
 ```bash
 git clone https://github.com/rogersce/cnpy.git
 cd cnpy
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
+mkdir build && cd build
+cmake ..
 make
-make install DESTDIR=$HOME/.local
+cd ../..
+```
 
-cd ..
-mkdir build # if build not exists
-cd build
-rm ./CMakeCache.txt # if CMakeCache.txt needs to be updated
-cmake .. -DCNPY_LIBRARY=$HOME/.local/lib/libcnpy.so -DCNPY_INCLUDE_DIR=$HOME/.local/include
+### 3. Build the project
+```bash
+mkdir -p build && cd build
+rm -f CMakeCache.txt  # if CMakeCache.txt needs to be updated
+cmake ..
 make
 ```
 

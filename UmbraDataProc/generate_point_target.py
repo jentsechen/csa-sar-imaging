@@ -100,23 +100,43 @@ def plot_scene(scene_name):
     plt.clf()
 
 
+def process_scene(scene_name, file_name, row_start, row_len, col_start, col_len,
+                  binarize_threshold=None):
+    """
+    Process a SAR scene and save results.
+
+    Args:
+        scene_name: output name used for .json and .png files
+        file_name: input GeoTIFF path
+        row_start, row_len, col_start, col_len: slice bounds
+        binarize_threshold: if set, binarize the slice with this threshold;
+                            if None, save raw float data
+    """
+    sar_slice = read_sar_slice(file_name, row_start, row_len, col_start, col_len)
+
+    data = binarize(sar_slice, binarize_threshold) if binarize_threshold is not None else sar_slice
+
+    save_scene(scene_name, data)
+    count_zeros(data)
+    plot_histogram(scene_name, data)
+    plot_scene(scene_name)
+
+
 if __name__ == "__main__":
-    download_tif(uuid='c59dab96-3b16-456b-80fe-866f30a3cabe')
-    sar_slice = read_sar_slice(
+    # download_tif(uuid='c59dab96-3b16-456b-80fe-866f30a3cabe')
+    process_scene(
+        scene_name='tsoying_naval_base',
         file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
         row_start=4050, row_len=640,
         col_start=4180, col_len=720,
+        binarize_threshold=110,   # set to None to save raw float data
     )
-    # binary = binarize(sar_slice, threshold=110)
-    # save_scene('tsoying_naval_base', binary)
-    # count_zeros(binary)
-    # plot_histogram('tsoying_naval_base', binary)
-    # plot_scene('tsoying_naval_base')
 
     # download_tif(uuid='8cd3eeb0-22e2-42d7-969e-030826a3a0c6')
-    # sar_slice = read_sar_slice('2023-06-30-12-56-34_UMBRA-05_GEC.tif',
-    #                            row_start=1500, row_len=10000, col_start=0, col_len=10000)
-    # save_scene('port_of_kaohsiung', sar_slice)
-    # count_zeros(sar_slice)
-    # plot_histogram('port_of_kaohsiung', sar_slice)
-    # plot_scene('port_of_kaohsiung')
+    # process_scene(
+    #     scene_name='port_of_kaohsiung',
+    #     file_name='2023-06-30-12-56-34_UMBRA-05_GEC.tif',
+    #     row_start=1500, row_len=10000,
+    #     col_start=0, col_len=10000,
+    #     binarize_threshold=None,  # raw float
+    # )

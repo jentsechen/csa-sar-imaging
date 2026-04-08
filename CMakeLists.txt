@@ -5,26 +5,26 @@ project(MyCppProject VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CUSTOM_LIB_DIR "cnpy/build/CMakeFiles")
-list(APPEND CMAKE_PREFIX_PATH ${CUSTOM_LIB_DIR})
-find_library(CNPY_LIBRARY NAMES cnpy REQUIRED HINTS ${CUSTOM_LIB_DIR}/lib)
-find_path(CNPY_INCLUDE_DIR cnpy.h REQUIRED HINTS ${CUSTOM_LIB_DIR}/include)
+set(CNPY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
+find_library(CNPY_LIBRARY NAMES cnpy REQUIRED HINTS "${CNPY_DIR}/build")
+find_path(CNPY_INCLUDE_DIR cnpy.h REQUIRED HINTS "${CNPY_DIR}")
 
 option(ENABLE_OPENMP "Enable OpenMP parallelization for this project" ON)
 find_package(OpenMP REQUIRED)
 
-set(FFTW_LOCAL_DIR "$ENV{HOME}/jtc/local")
-include_directories(${FFTW_LOCAL_DIR}/include)
-link_directories(${FFTW_LOCAL_DIR}/lib)
+find_library(FFTW3_LIBRARY NAMES fftw3 REQUIRED
+    HINTS /usr/lib/x86_64-linux-gnu /usr/local/lib)
+find_path(FFTW3_INCLUDE_DIR fftw3.h REQUIRED
+    HINTS /usr/include /usr/local/include "${CMAKE_CURRENT_SOURCE_DIR}/fftw")
 
-set(COMMON_INCLUDES 
+set(COMMON_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cnpy"
-    "${FFTW_LOCAL_DIR}/include"
+    "${CNPY_INCLUDE_DIR}"
+    "${FFTW3_INCLUDE_DIR}"
 )
 
-set(COMMON_LIBS 
-    "${FFTW_LOCAL_DIR}/lib/libfftw3.so"
+set(COMMON_LIBS
+    ${FFTW3_LIBRARY}
     ${CNPY_LIBRARY}
     OpenMP::OpenMP_CXX
 )
@@ -38,13 +38,12 @@ function(setup_sar_target TARGET_NAME)
     endif()
 endfunction()
 
-add_executable(TestImagingPar 
-    src/TestImagingPar.cpp 
-    src/SigPar.cpp 
-    src/ImagingPar.cpp 
-    src/PointTarget.cpp 
-    src/EchoSigGenPar.cpp
+add_executable(TestImagingPar
     src/TestImagingPar.cpp
+    src/SigPar.cpp
+    src/ImagingPar.cpp
+    src/PointTarget.cpp
+    src/EchoSigGenPar.cpp
 )
 setup_sar_target(TestImagingPar)
 

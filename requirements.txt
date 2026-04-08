@@ -5,6 +5,7 @@ rasterio
 numpy
 opencv-python
 matplotlib
+packaging
 plotly
 folium
 scipy
