@@ -1,0 +1,10 @@
+boto3
+botocore
+tqdm
+rasterio
+numpy
+opencv-python
+matplotlib
+plotly
+folium
+scipy

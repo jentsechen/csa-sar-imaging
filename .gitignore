@@ -22,3 +22,5 @@
 /UmbraDataProc/*.tif
 /UmbraDataProc/*.png
 /UmbraDataProc/*.json
+
+/venv/
