@@ -3,9 +3,11 @@
 ImagingPar::ImagingPar(const SigPar &sig_par,
                        const EchoSigGenPar &echo_sig_gen_par,
                        double closest_slant_range_m,
+                       double height_m,
                        double sensor_speed_m_s,
                        double azimuth_aperture_len_m)
-    : sig_par(sig_par), closest_slant_range_m(closest_slant_range_m),
+    : sig_par(sig_par), closest_slant_range_m(closest_slant_range_m), height_m(height_m),
+      closest_ground_range_m(this->calc_closest_ground_range_m(closest_slant_range_m, height_m)),
       sensor_speed_m_s(sensor_speed_m_s), azimuth_aperture_len_m(azimuth_aperture_len_m),
       beamwidth_rad(sig_par.wavelength_m / azimuth_aperture_len_m),
       synthetic_aperture_len_m(beamwidth_rad * closest_slant_range_m),
@@ -51,9 +53,14 @@ void ImagingPar::gen_azimuth_time_axis_sec()
     }
 }
 
+double ImagingPar::calc_closest_ground_range_m(double closest_slant_range_m, double height_m)
+{
+    return sqrt(square(closest_slant_range_m) - square(height_m));
+}
+
 double ImagingPar::calc_slant_range_m(double azimuth_time_sec, double azimuth_offset_sec, double range_offset_m)
 {
-    return sqrt(square(this->closest_slant_range_m + range_offset_m) + square(this->sensor_speed_m_s * (azimuth_time_sec + azimuth_offset_sec)));
+    return sqrt(square(sqrt(square(this->height_m) + square(this->closest_ground_range_m + range_offset_m))) + square(this->sensor_speed_m_s * (azimuth_time_sec + azimuth_offset_sec)));
 }
 
 double ImagingPar::calc_round_trip_time_sec(double slant_range_m)
@@ -121,7 +128,7 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distr(0.0, 2.0*PI);
+        std::uniform_int_distribution<> distr(0.0, 2.0 * PI);
         for (auto i = 0; i < azi_n_smp; i++)
         {
             double theta = distr(gen);

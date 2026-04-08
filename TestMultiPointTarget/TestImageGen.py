@@ -40,21 +40,22 @@ if __name__ == "__main__":
     max_val = np.max(data)
     clipped_data = np.clip(data, max_val-30, max_val)
     # plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=2.0)
-    # plt.colorbar()
-    # plt.savefig(f"{image_name}_csa.png", dpi=300, bbox_inches="tight")
-    # plt.clf()
+    plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=1.0)
+    plt.colorbar()
+    plt.savefig(f"{image_name}_csa.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
-    down_sample_en = True
+    down_sample_en = False
     for i in range(1):
         # data = np.load("./iter_result_multi_point_image/csa_out_iter_{}_mag_db.npy".format(i))[int(image_size*3/2):int(image_size*5/2), int(image_size*1):int(image_size*3)]
         data = np.load("./iter_result_multi_point_image/csa_out_iter_{}_mag_db.npy".format(i))[int(n_row*3/2):int(n_row*5/2), int(n_col*1):int(n_col*3)]
-        if down_sample_en == True:
+        if down_sample_en:
             data = data[:, ::2]
             postfix = "_down_sampled"
             aspect = 1.0
         else:
             postfix = ""
-            aspect = 2.0
+            aspect = 1.0
         # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
         max_val = np.max(data)
         print(max_val)

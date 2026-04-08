@@ -113,8 +113,10 @@ if __name__ == "__main__":
     # download_tif(uuid='c59dab96-3b16-456b-80fe-866f30a3cabe')
     # read_tif(file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif', scene_name='tsoying_naval_base', 
     #          row_start=3200, row_len=2000, col_start=3500, col_len=2000, threshold=40)
+    # read_tif(file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif', scene_name='tsoying_naval_base', 
+    #          row_start=4050, row_len=640, col_start=4180, col_len=720, threshold=40, is_bin=False)
     read_tif(file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif', scene_name='tsoying_naval_base', 
-             row_start=4050, row_len=640, col_start=4180, col_len=720, threshold=40, is_bin=False)
+             row_start=4050, row_len=640, col_start=4180, col_len=720, threshold=110, is_bin=True)
     plot_binary_image(scene_name='tsoying_naval_base')
 
     # download_tif(uuid='8cd3eeb0-22e2-42d7-969e-030826a3a0c6')

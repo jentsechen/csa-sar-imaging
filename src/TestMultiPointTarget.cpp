@@ -48,7 +48,8 @@ int main(int argc, char *argv[])
                                    input_par.find("noise_en")->get<bool>(),
                                    input_par.find("snr_db")->get<double>(),
                                    input_par.find("coherent_scatter_en")->get<bool>());
-    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>());
+    std::cout << input_par.find("height_m")->get<double>() << std::endl;
+    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>());
     json output_par{{"range_time_axis_sec", imaging_par.range_time_axis_sec},
                     {"range_freq_axis_hz", imaging_par.range_freq_axis_hz},
                     {"azimuth_time_axis_sec", imaging_par.azimuth_time_axis_sec},
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
             for (auto j = 0; j < n_col; j++)
             {
                 double prob = (square(focused_image[i * n_col + j].real()) + square(focused_image[i * n_col + j].imag())) / total_power;
-                entropy += -prob * std::log(prob+1e-12);
+                entropy += -prob * std::log(prob + 1e-12);
             }
         }
         std::cout << "entropy: " << entropy << std::endl;
@@ -253,7 +254,8 @@ int main(int argc, char *argv[])
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;
-            csa_out = thresholding(csa_out, 2.5e5);
+            // csa_out = thresholding(csa_out, 2.5e5);
+            csa_out = thresholding(csa_out, 5e2);
             // save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
             save_mat_to_npy("./iter_result_multi_point_image/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
         }
