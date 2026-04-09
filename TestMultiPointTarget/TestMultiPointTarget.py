@@ -77,6 +77,23 @@ def gen_input_par(scene):
         json.dump(input_par, f)
 
 
+def run_gen_echo_signal(target, azimuth_offset_m=None, range_offset_m=None):
+    if target == "single_point_target":
+        if azimuth_offset_m is None or range_offset_m is None:
+            raise ValueError("single_point_target requires azimuth_offset_m and range_offset_m")
+        cmd = ["../build/gen_echo_signal", target, str(azimuth_offset_m), str(range_offset_m)]
+    else:
+        cmd = ["../build/gen_echo_signal", target]
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    print("\n--- C++ Program Output (STDOUT) ---")
+    print(proc.stdout)
+
+
 def run_cpp(args=[]):
     cmd = ["../build/TestMultiPointTarget", args[0], args[1]]
     proc = subprocess.run(
@@ -203,20 +220,22 @@ if __name__ == "__main__":
     # end_time = time.perf_counter()
     # execution_time = end_time - start_time
     # print(f"Execution time: {execution_time/60:.6f} minutes")
-    # run_cpp(args=["focus", "multi_point_target_image"])
-    # run_cpp(args=["calc_mag", "./focused_image/multi_point_target_image"])
-    # run_cpp(args=["calc_entropy", "./focused_image/multi_point_target_image"])
+    
+    run_cpp(args=["focus", "tsoying_naval_base"])
+    run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
+    run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
+    
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
-    run_cpp(args=["iter_recov", "test"])
-    for i in range(1):
-        run_cpp(
-            args=[
-                "calc_mag",
-                "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
-            ]
-        )
+    # run_cpp(args=["iter_recov", "test"])
+    # for i in range(1):
+    #     run_cpp(
+    #         args=[
+    #             "calc_mag",
+    #             "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
+    #         ]
+    #     )
     # for i in range(5):
     #     save_3d_plot_of_focused_image(
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)
@@ -230,3 +249,6 @@ if __name__ == "__main__":
 
     # run_cpp(args=["calc_entropy", "./focused_image/multi_point_target_image"])
     # run_cpp(args=["calc_entropy", "./iter_result_multi_point_image/csa_out_iter_0"])
+
+    # run_gen_echo_signal("tsoying_naval_base")
+    # run_gen_echo_signal(target="single_point_target", azimuth_offset_m=0.04, range_offset_m=30.0)

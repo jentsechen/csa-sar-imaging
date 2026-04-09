@@ -86,43 +86,6 @@ int main(int argc, char *argv[])
         std::cout << "number of point target: " << point_target_list.size() << std::endl;
         return 0;
     }
-    if (std::string(argv[1]) == "gen")
-    {
-        if (std::string(argv[2]) == "single_point_target")
-        {
-            save_mat_to_npy("./echo_signal/single_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(0.04, 30.0)})), imaging_par.n_row, imaging_par.n_col);
-        }
-        if (std::string(argv[2]) == "multi_point_target")
-        {
-            // save_mat_to_npy("./echo_signal/multi_point_target.npy", imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(), PointTarget(0.005, 0.0), PointTarget(0.0, 3.0)})), imaging_par.n_row, imaging_par.n_col);
-            json point_target_location = load_json("point_target_location.json");
-            std::vector<PointTarget> point_target_list;
-            // assert(point_target_location.size() == imaging_par.n_row && point_target_location[0].size() == imaging_par.n_col);
-            std::cout << "n_row: " << imaging_par.n_row << std::endl;
-            std::cout << "n_col: " << imaging_par.n_col << std::endl;
-            for (auto i = 0; i < imaging_par.n_row / 4; i++)
-            {
-                for (auto j = 0; j < imaging_par.n_col / 4; j++)
-                {
-                    if (point_target_location[i][j] > 0)
-                    {
-                        auto azimuth_offset_m = [&]()
-                        {
-                            return (static_cast<double>(i + imaging_par.n_row * 3 / 8) - imaging_par.n_row / 2.0) / sig_par.pulse_rep_freq_hz;
-                        };
-                        auto range_offset_m = [&]()
-                        {
-                            return (static_cast<double>(j + imaging_par.n_col * 3 / 8) - imaging_par.n_col / 2.0) * sig_par.light_speed_m_s / sig_par.sampling_freq_hz;
-                        };
-                        point_target_list.emplace_back(PointTarget(azimuth_offset_m(), range_offset_m(), point_target_location[i][j]));
-                    }
-                }
-            }
-            std::cout << "number of point target: " << point_target_list.size() << std::endl;
-            // save_mat_to_npy("./echo_signal/multi_point_target.npy", imaging_par.gen_point_target_echo_signal(point_target_list), imaging_par.n_row, imaging_par.n_col);
-            save_mat_to_npy("./echo_signal/multi_point_target_image.npy", imaging_par.gen_point_target_echo_signal(point_target_list), imaging_par.n_row, imaging_par.n_col);
-        }
-    }
     if (std::string(argv[1]) == "focus")
     {
         ChirpScalingAlgo chirp_scaling_algo(imaging_par);

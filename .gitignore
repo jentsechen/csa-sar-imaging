@@ -11,8 +11,10 @@
 /TestChirpScalingAlgo/golden/
 
 /TestMultiPointTarget/iter_result*
-/TestMultiPointTarget/echo_signal
-/TestMultiPointTarget/focused_image
+/TestMultiPointTarget/echo_signal/*.npy
+/TestMultiPointTarget/focused_image/*.npy
+/TestMultiPointTarget/focused_image/*.html
+/TestMultiPointTarget/point_target_location/*.json
 /TestMultiPointTarget/*.html
 /TestMultiPointTarget/*.json
 /TestMultiPointTarget/*.png
