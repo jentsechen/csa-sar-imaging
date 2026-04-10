@@ -313,7 +313,7 @@ def write_metrics_md(metrics_by_label, md_path="performance_metrics.md"):
         f.write("C₃ = C₂ / 2.\n\n")
 
         f.write("### PSNR — Peak Signal-to-Noise Ratio\n\n")
-        f.write("$$\\text{PSNR} = 20\\log_{10}\\!\\left(\\frac{1}{\\sqrt{\\text{MSE}}}\\right) \\text{ dB}$$\n\n")
+        f.write("$$\\text{PSNR} = 20\\log_{10}\\\left(\\frac{1}{\\sqrt{\\text{MSE}}}\\right) \\text{ dB}$$\n\n")
         f.write("Measures pixel-level fidelity on the normalised images. **Higher is better.**\n\n")
 
         f.write("### MSE — Mean Squared Error\n\n")
@@ -321,7 +321,7 @@ def write_metrics_md(metrics_by_label, md_path="performance_metrics.md"):
         f.write("Computed on the peak−30 dB normalised [0, 1] images. **Lower is better.**\n\n")
 
         f.write("### SCR — Signal-to-Clutter Ratio\n\n")
-        f.write("$$\\text{SCR} = 10\\log_{10}\\!\\left(\\frac{\\bar{P}_{\\text{signal}}}{\\bar{P}_{\\text{clutter}}}\\right) \\text{ dB}$$\n\n")
+        f.write("$$\\text{SCR} = 10\\log_{10}\\\left(\\frac{\\bar{P}_{\\text{signal}}}{\\bar{P}_{\\text{clutter}}}\\right) \\text{ dB}$$\n\n")
         f.write("Computed independently on each image (golden in linear amplitude, result in dB).\n")
         f.write("The brightest pixel is taken as the target centre. An inner disk of radius\n")
         f.write("r₁ = 5 px defines the **signal zone**; an annulus between r₁ and r₂ = 15 px\n")
