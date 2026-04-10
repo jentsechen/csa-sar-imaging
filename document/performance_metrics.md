@@ -1,6 +1,6 @@
 # Performance Metrics
 
-*Last updated: 2026-04-10 23:44:05*
+*Last updated: 2026-04-11 00:01:20*
 
 > All metrics are computed after converting both images to dB scale
 > and applying **peak-to-peak−30 dB** normalisation to [0, 1].
@@ -46,7 +46,7 @@ C₃ = C₂ / 2.
 
 ### PSNR — Peak Signal-to-Noise Ratio
 
-$$\text{PSNR} = 20\log_{10}\!\left(\frac{1}{\sqrt{\text{MSE}}}\right) \text{ dB}$$
+$$\text{PSNR} = 20\log_{10}\left(\frac{1}{\sqrt{\text{MSE}}}\right) \text{ dB}$$
 
 Measures pixel-level fidelity on the normalised images. **Higher is better.**
 
@@ -58,7 +58,7 @@ Computed on the peak−30 dB normalised [0, 1] images. **Lower is better.**
 
 ### SCR — Signal-to-Clutter Ratio
 
-$$\text{SCR} = 10\log_{10}\!\left(\frac{\bar{P}_{\text{signal}}}{\bar{P}_{\text{clutter}}}\right) \text{ dB}$$
+$$\text{SCR} = 10\log_{10}\left(\frac{\bar{P}_{\text{signal}}}{\bar{P}_{\text{clutter}}}\right) \text{ dB}$$
 
 Computed independently on each image (golden in linear amplitude, result in dB).
 The brightest pixel is taken as the target centre. An inner disk of radius
