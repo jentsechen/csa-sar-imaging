@@ -88,7 +88,7 @@ def plot_histogram(scene_name, data):
 
 
 def plot_scene(scene_name):
-    with open(scene_name + '.json', 'r') as f:
+    with open('../TestMultiPointTarget/point_target_location/' + scene_name + '.json', 'r') as f:
         data = json.load(f)
     arr = np.flipud(np.array(data))
     print(arr.shape)
@@ -131,6 +131,12 @@ if __name__ == "__main__":
         col_start=4180, col_len=720,
         binarize_threshold=110,   # set to None to save raw float data
     )
+    # process_scene(
+    #     scene_name='tsoying_naval_base',
+    #     file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
+    #     row_start=4050, row_len=640,
+    #     col_start=4180, col_len=720
+    # )
 
     # download_tif(uuid='8cd3eeb0-22e2-42d7-969e-030826a3a0c6')
     # process_scene(

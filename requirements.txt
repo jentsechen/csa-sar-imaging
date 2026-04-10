@@ -9,3 +9,4 @@ packaging
 plotly
 folium
 scipy
+scikit-image

@@ -31,38 +31,29 @@ if __name__ == "__main__":
     else:
         print("The scene is not supported!")
     if scene == Scene.Island:
-        data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(image_size*3/2):int(image_size*5/2), int(image_size*1):int(image_size*3)]
+        data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(image_size*3/2):int(image_size*5/2), int(image_size*3/2):int(image_size*5/2)]
     elif scene == Scene.TsoYingNavalBase:
-        data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*1):int(n_col*3)]
+        data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
     print(data.shape)
     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
     # max_val = np.percentile(data, 99.8)
     max_val = np.max(data)
     clipped_data = np.clip(data, max_val-30, max_val)
-    # plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=2.0)
     plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=1.0)
     plt.colorbar()
     plt.savefig(f"{image_name}_csa.png", dpi=300, bbox_inches="tight")
     plt.clf()
 
-    # down_sample_en = False
-    # for i in range(1):
-    #     # data = np.load("./iter_result_multi_point_image/csa_out_iter_{}_mag_db.npy".format(i))[int(image_size*3/2):int(image_size*5/2), int(image_size*1):int(image_size*3)]
-    #     data = np.load("./iter_result_multi_point_image/csa_out_iter_{}_mag_db.npy".format(i))[int(n_row*3/2):int(n_row*5/2), int(n_col*1):int(n_col*3)]
-    #     if down_sample_en:
-    #         data = data[:, ::2]
-    #         postfix = "_down_sampled"
-    #         aspect = 1.0
-    #     else:
-    #         postfix = ""
-    #         aspect = 1.0
-    #     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
-    #     max_val = np.max(data)
-    #     print(max_val)
-    #     clipped_data = np.clip(data, max_val-30, max_val)
-    #     plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=aspect)
-    #     plt.colorbar()
-    #     plt.savefig(f"tsoying_naval_base_iter_{i}{postfix}.png".format(i), dpi=300, bbox_inches="tight")
-    #     plt.clf()
+    for i in range(1):
+        data = np.load("./focused_image/tsoying_naval_base_iter_{}_mag_db.npy".format(i))[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
+        aspect = 1.0
+        # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
+        max_val = np.max(data)
+        print(max_val)
+        clipped_data = np.clip(data, max_val-30, max_val)
+        plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=aspect)
+        plt.colorbar()
+        plt.savefig(f"tsoying_naval_base_iter_{i}.png".format(i), dpi=300, bbox_inches="tight")
+        plt.clf()
     
     print("DONE")

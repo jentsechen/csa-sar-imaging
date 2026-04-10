@@ -64,7 +64,7 @@ def gen_input_par(scene):
             "bandwidth_hz": 50e6,
             "sampling_freq_hz": 64e6,
             "closest_slant_range_m": 4e3,
-            "height_m": 3.2e3,
+            "height_m": 0.0,
             "azi_win_en": True,
             "rng_pad_time": 4,
             "noise_en": False,
@@ -221,21 +221,21 @@ if __name__ == "__main__":
     # execution_time = end_time - start_time
     # print(f"Execution time: {execution_time/60:.6f} minutes")
     
-    run_cpp(args=["focus", "tsoying_naval_base"])
-    run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
-    run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
+    # run_cpp(args=["focus", "tsoying_naval_base"])
+    # run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
+    # run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
     
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
 
-    # run_cpp(args=["iter_recov", "test"])
-    # for i in range(1):
-    #     run_cpp(
-    #         args=[
-    #             "calc_mag",
-    #             "./iter_result_multi_point_image/csa_out_iter_{}".format(i),
-    #         ]
-    #     )
+    run_cpp(args=["iter_recov", "test"])
+    for i in range(1):
+        run_cpp(
+            args=[
+                "calc_mag",
+                "./focused_image/tsoying_naval_base_iter_{}".format(i),
+            ]
+        )
     # for i in range(5):
     #     save_3d_plot_of_focused_image(
     #         "./iter_result_multi_point_image", "csa_out_iter_{}_mag_db".format(i)

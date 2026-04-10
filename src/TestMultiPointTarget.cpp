@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     {
         // cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/single_point_target.npy");
         // cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/multi_point_target.npy");
-        cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/multi_point_target_image.npy");
+        cnpy::NpyArray echo_sig_npy = cnpy::npy_load("./echo_signal/tsoying_naval_base.npy");
         const std::vector<size_t> &shape_vec = echo_sig_npy.shape;
         size_t n_row = shape_vec[0], n_col = shape_vec[1];
         std::complex<double> *echo_signal_ptr = echo_sig_npy.data<std::complex<double>>();
@@ -217,10 +217,10 @@ int main(int argc, char *argv[])
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;
-            // csa_out = thresholding(csa_out, 2.5e5);
-            csa_out = thresholding(csa_out, 5e2);
+            csa_out = thresholding(csa_out, 2e5);
+            // csa_out = thresholding(csa_out, 5e2);
             // save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
-            save_mat_to_npy("./iter_result_multi_point_image/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
+            save_mat_to_npy("./focused_image/tsoying_naval_base_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
         }
 
         //     size_t n_threshold = 5;
