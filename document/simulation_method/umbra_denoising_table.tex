@@ -1,0 +1,17 @@
+\begin{table}[H]
+    \centering
+    \caption{Non-zero sample counts per denoising method.}
+    \begin{tabular}{lr}
+        \toprule
+        Method & Non-zero samples \\
+        \midrule
+        Raw SAR Image & 443,448 \\
+        Binary Thresholding (threshold = 110) & 16,419 \\
+        Otsu's Thresholding + Morphological Closing & 27,572 \\
+        Bilateral Filter + Morphological Closing & 23,629 \\
+        Guided Filter + Morphological Closing & 27,087 \\
+        Total Variation (TV) Filter + Morphological Closing & 23,075 \\
+        Lee Filter + Morphological Closing & 23,873 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

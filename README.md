@@ -162,3 +162,34 @@ error of inverse_csa_out: 1.3500874256198407e-08
 
 ## Simulation Setup
 [Simulation Setup](./document/simulation_setup.md)
+
+---
+
+## Writing the Simulation Method Document (LaTeX)
+
+The LaTeX source lives at [`document/simulation_method/main.tex`](./document/simulation_method/main.tex).
+
+### Prerequisites
+
+Install a LaTeX distribution and the VSCode extension:
+
+- **Linux**: `sudo apt install texlive-full`
+- **macOS**: install [MacTeX](https://www.tug.org/mactex/)
+- **Windows**: install [MiKTeX](https://miktex.org/) (auto-installs missing packages on first use)
+- **VSCode extension**: [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=James-Yu.latex-workshop) (`james-yu.latex-workshop`)
+
+### Compile and Preview in VSCode
+
+1. Open `document/simulation_method/main.tex` in VSCode.
+2. Press `Ctrl+Alt+B` to build (compile) the PDF.
+3. Press `Ctrl+Alt+V` to open the PDF preview side by side.
+4. `Ctrl+Click` on a line in the PDF to jump to the matching source line.
+
+### Compile from Terminal
+
+```bash
+cd document/simulation_method
+pdflatex main.tex   # run twice to resolve cross-references
+```
+
+The output PDF is written to `document/simulation_method/main.pdf`.

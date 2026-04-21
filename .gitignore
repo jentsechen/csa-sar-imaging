@@ -18,11 +18,16 @@
 /TestMultiPointTarget/*.html
 /TestMultiPointTarget/*.json
 /TestMultiPointTarget/*.png
-/TestMultiPointTarget/__pycache__
+/TestMultiPointTarget/__pycache__/
 
 /gen_raw_data/*.png
 /UmbraDataProc/*.tif
 /UmbraDataProc/*.png
 /UmbraDataProc/*.json
+/UmbraDataProc/__pycache__/
 
 /venv/
+/document/simulation_method/*
+!/document/simulation_method/*.tex
+!/document/simulation_method/*.pdf
+!/document/simulation_method/.latexmkrc
