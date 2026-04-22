@@ -28,6 +28,17 @@
 \newpage
 
 % ══════════════════════════════════════════════════════════════════════════════
+\section{Overview}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{../../diagram/drawio/sim_flow.png}
+    \caption{Simulation flow overview.}
+    \label{fig:sim_flow}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════════
 \section{Simulation Setup}
 % ══════════════════════════════════════════════════════════════════════════════
 
@@ -107,6 +118,22 @@ $R_0' = \sqrt{H^2 + (G + d_i)^2}$. A Taylor expansion gives:
 
 Therefore $R_0' \approx R_0 + d_i$.
 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../../diagram/drawio/image_to_echo.png}
+        \caption{Image-to-echo conversion.}
+        \label{fig:image_to_echo}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../../diagram/drawio/multi_point_target.png}
+        \caption{Multi-point target model.}
+        \label{fig:multi_point_target}
+    \end{subfigure}
+\end{figure}
 
 \subsection{Simulation Parameters}
 
