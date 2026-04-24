@@ -8,6 +8,7 @@ import rasterio
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+# from umbra_denoising import compare_all_methods, DenoisingMethod
 
 
 S3_BUCKET = "umbra-open-data-catalog"
@@ -180,7 +181,7 @@ def segment(sar_slice, method="binary", threshold=None,
 
 def save_scene(scene_name, data):
     """Serialize data to <scene_name>.json, accepting either a list or a numpy array."""
-    with open(scene_name + '.json', "w") as f:
+    with open('../TestMultiPointTarget/point_target_location/' + scene_name + '.json', "w") as f:
         json.dump(data if isinstance(data, list) else data.tolist(), f)
     print(f"Saved {scene_name}.json — shape: {np.array(data).shape}")
 
@@ -253,26 +254,24 @@ def process_scene(scene_name, file_name, row_start, row_len, col_start, col_len,
 
 
 if __name__ == "__main__":
-    from umbra_denoising import compare_all_methods, DenoisingMethod
-
     # download_tif(uuid='c59dab96-3b16-456b-80fe-866f30a3cabe')
 
-    compare_all_methods(
-        scene_name='tsoying_naval_base',
-        file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
-        row_start=4050, row_len=640,
-        col_start=4180, col_len=720,
-        threshold=110,
-        methods=[
-            DenoisingMethod.RAW,
-            DenoisingMethod.BINARY,
-            DenoisingMethod.OTSU,
-            DenoisingMethod.BILATERAL,
-            DenoisingMethod.GUIDED,
-            DenoisingMethod.TV,
-            DenoisingMethod.LEE,
-        ],
-    )
+    # compare_all_methods(
+    #     scene_name='tsoying_naval_base',
+    #     file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
+    #     row_start=4050, row_len=640,
+    #     col_start=4180, col_len=720,
+    #     threshold=110,
+    #     methods=[
+    #         DenoisingMethod.RAW,
+    #         DenoisingMethod.BINARY,
+    #         DenoisingMethod.OTSU,
+    #         DenoisingMethod.BILATERAL,
+    #         DenoisingMethod.GUIDED,
+    #         DenoisingMethod.TV,
+    #         DenoisingMethod.LEE,
+    #     ],
+    # )
 
     # single-method processing (method="binary" is original behaviour)
     # process_scene(
@@ -282,6 +281,14 @@ if __name__ == "__main__":
     #     col_start=4180, col_len=720,
     #     method="binary", threshold=110,
     # )
+
+    process_scene(
+        scene_name='tsoying_naval_base',
+        file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
+        row_start=4050, row_len=640,
+        col_start=4180, col_len=720,
+        method="tv", weight=0.1, morph_close=True, preserve_gray=True
+    )
 
     # method="otsu"    — automatic global threshold, no manual threshold needed
     # process_scene(..., method="otsu")

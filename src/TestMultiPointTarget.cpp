@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
         {
             diff_csa_out = chirp_scaling_algo.apply_csa(echo_signal - chirp_scaling_algo.apply_inverse_csa(csa_out));
             csa_out = csa_out + diff_csa_out;
-            csa_out = thresholding(csa_out, 2e5);
+            csa_out = thresholding(csa_out, 1e4);
             // csa_out = thresholding(csa_out, 5e2);
             // save_mat_to_npy("./iter_result_multi_point_rng_dpl_anal/csa_out_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);
             save_mat_to_npy("./focused_image/tsoying_naval_base_iter_" + std::to_string(iter_idx) + ".npy", csa_out, n_row, n_col);

@@ -35,45 +35,6 @@ def normalize_peak_db(img, is_db=True, dynamic_range_db=30):
 
 
 # ---------------------------------------------------------------------------
-# SCR
-# ---------------------------------------------------------------------------
-
-def compute_scr(img, is_db=False, inner_radius=5, outer_radius=15):
-    """
-    Compute Signal-to-Clutter Ratio (SCR) for a SAR point target image.
-
-    Locates the brightest pixel, treats a circular disk of radius inner_radius
-    as the signal zone, and the annular region between inner_radius and
-    outer_radius as the clutter zone.
-
-    Parameters
-    ----------
-    img          : 2D ndarray
-    is_db        : True if img is in dB, False if linear amplitude
-    inner_radius : radius of signal disk in pixels  (default 5)
-    outer_radius : outer radius of clutter annulus in pixels (default 15)
-
-    Returns
-    -------
-    scr_db : float, SCR in dB
-    """
-    img = replace_neginf_inplace(img.copy())
-    power = 10.0 ** (img / 10.0) if is_db else img ** 2
-
-    r0, c0 = np.unravel_index(np.argmax(power), power.shape)
-    rows, cols = np.ogrid[:power.shape[0], :power.shape[1]]
-    dist = np.sqrt((rows - r0) ** 2 + (cols - c0) ** 2)
-
-    signal_mask  = dist <= inner_radius
-    clutter_mask = (dist > inner_radius) & (dist <= outer_radius)
-
-    mean_clutter = power[clutter_mask].mean()
-    if mean_clutter == 0:
-        return float('inf')
-    return 10.0 * np.log10(power[signal_mask].mean() / mean_clutter)
-
-
-# ---------------------------------------------------------------------------
 # SSIM and its components
 # ---------------------------------------------------------------------------
 
@@ -154,10 +115,9 @@ def _save_images_and_histograms(norm_mat1, norm_mat2):
 # Main metric computation
 # ---------------------------------------------------------------------------
 
-def calculate_all_metrics(matrix1, matrix2, save_plots=True,
-                          scr_inner_radius=5, scr_outer_radius=15):
+def calculate_all_metrics(matrix1, matrix2, save_plots=True):
     """
-    Calculate SSIM (and its L/C/S decomposition), PSNR, MSE, and SCR.
+    Calculate SSIM (and its L/C/S decomposition), PSNR, and MSE.
 
     Both images are converted to dB scale and peak-to-peak−30 dB normalised
     before metric computation, so that the same physical brightness level maps
@@ -165,16 +125,13 @@ def calculate_all_metrics(matrix1, matrix2, save_plots=True,
 
     Parameters
     ----------
-    matrix1          : 2D ndarray, golden/reference image (linear scale)
-    matrix2          : 2D ndarray, result image (dB scale)
-    save_plots       : save image/histogram PNGs, default True
-    scr_inner_radius : signal disk radius for SCR in pixels (default 5)
-    scr_outer_radius : clutter annulus outer radius for SCR in pixels (default 15)
+    matrix1    : 2D ndarray, golden/reference image (linear scale)
+    matrix2    : 2D ndarray, result image (dB scale)
+    save_plots : save image/histogram PNGs, default True
 
     Returns
     -------
-    dict with keys: ssim, luminance, contrast, structure, psnr_db, mse,
-                    scr_db_golden, scr_db_result
+    dict with keys: ssim, luminance, contrast, structure, psnr_db, mse
     """
     if matrix1.shape != matrix2.shape:
         raise ValueError(f"Shape mismatch: {matrix1.shape} vs {matrix2.shape}")
@@ -194,18 +151,13 @@ def calculate_all_metrics(matrix1, matrix2, save_plots=True,
     mse = float(np.mean((norm_m1 - norm_m2) ** 2))
     psnr = 20.0 * np.log10(1.0 / np.sqrt(mse)) if mse > 0 else float('inf')
 
-    scr_result = compute_scr(m2, is_db=True,
-                             inner_radius=scr_inner_radius,
-                             outer_radius=scr_outer_radius)
-
     return {
-        'ssim':          0.0 if np.isnan(score) else float(score),
-        'luminance':     L,
-        'contrast':      C,
-        'structure':     S,
-        'psnr_db':       psnr,
-        'mse':           mse,
-        'scr_db_result': scr_result,
+        'ssim':      0.0 if np.isnan(score) else float(score),
+        'luminance': L,
+        'contrast':  C,
+        'structure': S,
+        'psnr_db':   psnr,
+        'mse':       mse,
     }
 
 
@@ -226,131 +178,66 @@ def _print_metrics(label, m):
     print(f"  {'-'*36}")
     print(f"  {'PSNR (dB)':<24} {m['psnr_db']:>12.2f}")
     print(f"  {'MSE [0,1]':<24} {m['mse']:>12.5f}")
-    print(f"  {'-'*36}")
-    print(f"  {'SCR result (dB)':<24} {m['scr_db_result']:>12.2f}")
 
 
 # ---------------------------------------------------------------------------
-# Markdown output
+# LaTeX output
 # ---------------------------------------------------------------------------
 
-def _fmt(val, fmt=".4f"):
-    if isinstance(val, float) and (np.isnan(val) or np.isinf(val)):
-        return "—"
+def _fmt_tex(val, fmt=".4f"):
+    if isinstance(val, float) and np.isnan(val):
+        return "---"
+    if isinstance(val, float) and np.isinf(val):
+        return r"$\infty$"
     return f"{val:{fmt}}"
 
 
-def write_metrics_md(metrics_by_label, md_path="performance_metrics.md"):
+def write_metrics_tex(metrics_by_label, tex_path="performance_metrics_table.tex"):
     """
-    Write (or overwrite) a Markdown file with metric definitions and results table.
+    Write (or overwrite) a LaTeX table file for \input{} in simulation_report.tex.
 
     Parameters
     ----------
     metrics_by_label : dict[label -> calculate_all_metrics() result]
-    md_path          : output .md file path
+    tex_path         : output .tex file path
     """
-    from datetime import datetime
-    labels = list(metrics_by_label.keys())
-
-    col_header = " | ".join(labels)
-    sep_cols   = " | ".join(["--------"] * len(labels))
+    labels   = list(metrics_by_label.keys())
+    col_spec = "l" + "c" * len(labels)
+    header   = " & ".join(labels)
 
     def row(name, vals):
-        return f"| {name} | " + " | ".join(vals) + " |"
+        return "        " + name + " & " + " & ".join(vals) + r" \\"
 
-    table_rows = [
-        row("SSIM",
-            [_fmt(metrics_by_label[l]['ssim'],           ".5f") for l in labels]),
-        row("Luminance (L)",
-            [_fmt(metrics_by_label[l]['luminance'],      ".5f") for l in labels]),
-        row("Contrast (C)",
-            [_fmt(metrics_by_label[l]['contrast'],       ".5f") for l in labels]),
-        row("Structure (S)",
-            [_fmt(metrics_by_label[l]['structure'],      ".5f") for l in labels]),
-        row("PSNR (dB)",
-            [_fmt(metrics_by_label[l]['psnr_db'],        ".2f") for l in labels]),
-        row("MSE \[0,1\]",
-            [_fmt(metrics_by_label[l]['mse'],            ".5f") for l in labels]),
-        row("SCR result (dB)",
-            [_fmt(metrics_by_label[l]['scr_db_result'],  ".2f") for l in labels]),
+    rows = [
+        row(r"SSIM",
+            [_fmt_tex(metrics_by_label[l]['ssim'],      ".5f") for l in labels]),
+        row(r"Luminance $L$",
+            [_fmt_tex(metrics_by_label[l]['luminance'], ".5f") for l in labels]),
+        row(r"Contrast $C$",
+            [_fmt_tex(metrics_by_label[l]['contrast'],  ".5f") for l in labels]),
+        row(r"Structure $S$",
+            [_fmt_tex(metrics_by_label[l]['structure'], ".5f") for l in labels]),
+        row(r"PSNR (dB)",
+            [_fmt_tex(metrics_by_label[l]['psnr_db'],   ".2f") for l in labels]),
+        row(r"MSE $[0,1]$",
+            [_fmt_tex(metrics_by_label[l]['mse'],       ".5f") for l in labels]),
     ]
 
-    with open(md_path, "w") as f:
-        f.write("# Performance Metrics\n\n")
-        f.write(f"*Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
-        f.write("> All metrics are computed after converting both images to dB scale\n")
-        f.write("> and applying **peak-to-peak−30 dB** normalisation to [0, 1].\n\n")
-
-        # --- Definitions ---
-        f.write("---\n\n")
-        f.write("## Metric Definitions\n\n")
-
-        f.write("### SSIM — Structural Similarity Index\n\n")
-        f.write("SSIM measures perceived image similarity by independently comparing local\n")
-        f.write("luminance, contrast, and structure within sliding Gaussian-weighted windows\n")
-        f.write("(σ = 1.5, equivalent to an 11×11 kernel). The final score is the mean over\n")
-        f.write("all window positions. Range: [−1, 1]; **higher is better**.\n\n")
-        f.write("$$\\text{SSIM} = L \\cdot C \\cdot S$$\n\n")
-
-        f.write("### L — Luminance\n\n")
-        f.write("$$L(x,y) = \\frac{2\\mu_x\\mu_y + C_1}{\\mu_x^2 + \\mu_y^2 + C_1}$$\n\n")
-        f.write("Compares the local **mean brightness** μ of each patch.\n")
-        f.write("L ≈ 1 when both patches have the same average intensity.\n")
-        f.write("C₁ = (0.01 · data\\_range)² stabilises the ratio near zero.\n\n")
-
-        f.write("### C — Contrast\n\n")
-        f.write("$$C(x,y) = \\frac{2\\sigma_x\\sigma_y + C_2}{\\sigma_x^2 + \\sigma_y^2 + C_2}$$\n\n")
-        f.write("Compares the local **standard deviation** σ (texture energy / variation).\n")
-        f.write("C ≈ 1 when both patches have the same spread.\n")
-        f.write("A flat patch (σ ≈ 0) against a textured one drives C toward 0.\n")
-        f.write("C₂ = (0.03 · data\\_range)².\n\n")
-
-        f.write("### S — Structure\n\n")
-        f.write("$$S(x,y) = \\frac{\\sigma_{xy} + C_3}{\\sigma_x\\sigma_y + C_3}$$\n\n")
-        f.write("The normalised cross-covariance — equivalent to the **Pearson correlation**\n")
-        f.write("between patch values. Measures whether spatial patterns match regardless of\n")
-        f.write("brightness or contrast. S = 1 for identical shapes, S = −1 for inverted.\n")
-        f.write("C₃ = C₂ / 2.\n\n")
-
-        f.write("### PSNR — Peak Signal-to-Noise Ratio\n\n")
-        f.write("$$\\text{PSNR} = 20\\log_{10}\\left(\\frac{1}{\\sqrt{\\text{MSE}}}\\right) \\text{ dB}$$\n\n")
-        f.write("Measures pixel-level fidelity on the normalised images. **Higher is better.**\n\n")
-
-        f.write("### MSE — Mean Squared Error\n\n")
-        f.write("$$\\text{MSE} = \\frac{1}{N}\\sum_{i}(x_i - y_i)^2$$\n\n")
-        f.write("Computed on the peak−30 dB normalised [0, 1] images. **Lower is better.**\n\n")
-
-        f.write("### SCR — Signal-to-Clutter Ratio\n\n")
-        f.write("$$\\text{SCR} = 10\\log_{10}\\left(\\frac{\\bar{P}_{\\text{signal}}}{\\bar{P}_{\\text{clutter}}}\\right) \\text{ dB}$$\n\n")
-        f.write("Computed independently on each image (golden in linear amplitude, result in dB).\n")
-        f.write("The brightest pixel is taken as the target centre. An inner disk of radius\n")
-        f.write("r₁ = 5 px defines the **signal zone**; an annulus between r₁ and r₂ = 15 px\n")
-        f.write("defines the **clutter zone**. Mean power is compared between the two regions.\n")
-        f.write("**Higher is better** — a larger SCR means the target stands out more clearly\n")
-        f.write("above the background clutter.\n\n")
-
-        # --- Table ---
-        f.write("---\n\n")
-        f.write("## Results\n\n")
-        f.write(f"| Metric | {col_header} |\n")
-        f.write(f"|--------|{sep_cols}|\n")
-        for r in table_rows:
+    with open(tex_path, "w") as f:
+        f.write("\\begin{table}[H]\n")
+        f.write("    \\centering\n")
+        f.write("    \\caption{Performance metrics.}\n")
+        f.write(f"    \\begin{{tabular}}{{{col_spec}}}\n")
+        f.write("        \\toprule\n")
+        f.write(f"        Metric & {header} \\\\\n")
+        f.write("        \\midrule\n")
+        for r in rows:
             f.write(r + "\n")
+        f.write("        \\bottomrule\n")
+        f.write("    \\end{tabular}\n")
+        f.write("\\end{table}\n")
 
-        f.write("\n")
-        f.write("---\n\n")
-        f.write("## SSIM Component Interpretation\n\n")
-        f.write("| Metric | SAR Interpretation | Role in Object Detection |\n")
-        f.write("|:---:|:---:|:---:|\n")
-        f.write("| Luminosity (L) | Average Backscatter | Distinguishes overall \"brightness\"; secondary to shape. |\n")
-        f.write("| Contrast (C) | Variance/Intensity | Essential for separating target signal from background clutter. |\n")
-        f.write("| Structure (S) | Spatial Correlation | Primary metric. Defines the shape and prevents false alarms from noise. |\n")
-        f.write("\n")
-        f.write("---\n\n")
-        f.write("## Image Comparison\n\n")
-        f.write("![Image Comparison](../diagram/thresholding/comparison_map.png)\n")
-
-    print(f"\n[metrics] Written to {md_path}")
+    print(f"[metrics] Written to {tex_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +248,7 @@ if __name__ == "__main__":
     golden_path  = "./point_target_location/tsoying_naval_base.json"
     result_paths = {
         "result (threshold = 0)": "./focused_image/tsoying_naval_base_mag_db.npy",
-        "result (threshold = 2e5)": "./focused_image/tsoying_naval_base_iter_0_mag_db.npy",
+        "result (threshold = 1e4)": "./focused_image/tsoying_naval_base_iter_0_mag_db.npy",
     }
 
     if not os.path.exists(golden_path):
@@ -388,7 +275,8 @@ if __name__ == "__main__":
         _print_metrics(label, m)
 
     if metrics_by_label:
-        write_metrics_md(metrics_by_label, md_path="../document/performance_metrics.md")
+        write_metrics_tex(metrics_by_label,
+                          tex_path="../document/simulation_report/performance_metrics_table.tex")
 
     # --- Side-by-side comparison map ---
     images = {"golden": normalize_matrix(replace_neginf_inplace(golden_img.copy()))}

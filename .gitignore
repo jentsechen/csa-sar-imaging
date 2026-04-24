@@ -27,7 +27,7 @@
 /UmbraDataProc/__pycache__/
 
 /venv/
-/document/simulation_method/*
-!/document/simulation_method/*.tex
-!/document/simulation_method/*.pdf
-!/document/simulation_method/.latexmkrc
+/document/simulation_report/*
+!/document/simulation_report/*.tex
+!/document/simulation_report/*.pdf
+!/document/simulation_report/.latexmkrc

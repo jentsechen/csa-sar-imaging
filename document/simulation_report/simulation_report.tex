@@ -326,23 +326,29 @@ $r_2 = 15$\,px defines the \emph{clutter zone}.
 
 \subsection{Metric Summary}
 
-\begin{table}[H]
+\begin{figure}[H]
     \centering
-    \caption{Performance metrics (last updated 2026-04-11).}
-    \begin{tabular}{lccc}
-        \toprule
-        Metric & threshold $= 0$ & threshold $= 2\times10^5$ \\
-        \midrule
-        SSIM            & 0.33491 & 0.03021 \\
-        Luminance $L$   & 0.89509 & 0.06166 \\
-        Contrast $C$    & 0.69948 & 0.15396 \\
-        Structure $S$   & 0.49793 & 0.94501 \\
-        PSNR (dB)       & 10.81   & 3.40    \\
-        MSE $[0,1]$     & 0.08305 & 0.45706 \\
-        SCR result (dB) & 0.78    & 1.04    \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+    \includegraphics[width=0.5\textwidth]{../../diagram/perf_metric/tsoying_naval_base/golden.png}
+    \caption{Golden image.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../../diagram/perf_metric/tsoying_naval_base/result_csa.png}
+        \caption{Result (threshold $= 0$).}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../../diagram/perf_metric/tsoying_naval_base/result_threshold.png}
+        \caption{Result (threshold $= 10^4$).}
+    \end{subfigure}
+    \caption{CSA imaging results.}
+\end{figure}
+
+\input{performance_metrics_table}
 
 \subsection{SSIM Component Interpretation}
 
