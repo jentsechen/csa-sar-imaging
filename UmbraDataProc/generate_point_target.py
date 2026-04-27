@@ -149,11 +149,13 @@ def segment(sar_slice, method="binary", threshold=None,
     if method == "binary":
         if threshold is None:
             raise ValueError("threshold is required for method='binary'")
-        result = binarize(sar_slice, threshold)
+        mask = binarize(sar_slice, threshold)
         if morph_close:
             kernel = np.ones((morph_kernel, morph_kernel), np.uint8)
-            result = (cv2.morphologyEx(result * 255, cv2.MORPH_CLOSE, kernel) / 255).astype(np.uint8)
-        return result
+            mask = (cv2.morphologyEx(mask * 255, cv2.MORPH_CLOSE, kernel) / 255).astype(np.uint8)
+        if preserve_gray:
+            return cv2.bitwise_and(_to_uint8(sar_slice), mask * 255)
+        return mask
 
     if method == "otsu":
         img8 = _to_uint8(sar_slice)
@@ -177,6 +179,17 @@ def segment(sar_slice, method="binary", threshold=None,
         return result
 
     raise ValueError(f"Unknown method '{method}'. Choose from: {SEGMENT_METHODS}")
+
+
+def null_area(sar_slice, x_start, x_end, y_start, y_end):
+    """Zero out a rectangular region of sar_slice in-place.
+
+    x (columns / range): x_start to x_end (exclusive)
+    y (rows / azimuth):  y_start to y_end (exclusive)
+    Returns the modified array.
+    """
+    sar_slice[y_start:y_end, x_start:x_end] = 0
+    return sar_slice
 
 
 def save_scene(scene_name, data):
@@ -224,7 +237,8 @@ def plot_scene(scene_name):
 
 
 def process_scene(scene_name, file_name, row_start, row_len, col_start, col_len,
-                  method=None, threshold=None, morph_close=False, morph_kernel=3, **kwargs):
+                  method=None, threshold=None, morph_close=False, morph_kernel=3,
+                  null_regions=None, **kwargs):
     """
     Process a SAR scene and save results.
 
@@ -237,9 +251,15 @@ def process_scene(scene_name, file_name, row_start, row_len, col_start, col_len,
         threshold: fixed threshold (required when method="binary")
         morph_close: apply morphological closing after thresholding
         morph_kernel: kernel size for morphological closing
+        null_regions: list of (x_start, x_end, y_start, y_end) tuples to zero out
+                      before segmentation, e.g. [(0, 500, 350, 640)]
         **kwargs: forwarded to the denoising helper (e.g. weight=, window_size=)
     """
     sar_slice = read_sar_slice(file_name, row_start, row_len, col_start, col_len)
+
+    if null_regions:
+        for x0, x1, y0, y1 in null_regions:
+            null_area(sar_slice, x0, x1, y0, y1)
 
     if method is None:
         data = sar_slice
@@ -287,7 +307,8 @@ if __name__ == "__main__":
         file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
         row_start=4050, row_len=640,
         col_start=4180, col_len=720,
-        method="tv", weight=0.1, morph_close=True, preserve_gray=True
+        method="binary", threshold=110, morph_close=True, preserve_gray=True,
+        null_regions=[(0, 500, 0, 290)]
     )
 
     # method="otsu"    — automatic global threshold, no manual threshold needed

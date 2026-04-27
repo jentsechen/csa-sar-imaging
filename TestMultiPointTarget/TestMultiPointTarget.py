@@ -221,9 +221,9 @@ if __name__ == "__main__":
     # execution_time = end_time - start_time
     # print(f"Execution time: {execution_time/60:.6f} minutes")
     
-    # run_cpp(args=["focus", "tsoying_naval_base"])
-    # run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
-    # run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
+    run_cpp(args=["focus", "tsoying_naval_base"])
+    run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
+    run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
     
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
