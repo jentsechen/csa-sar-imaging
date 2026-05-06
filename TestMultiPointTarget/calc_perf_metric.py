@@ -277,30 +277,3 @@ if __name__ == "__main__":
     if metrics_by_label:
         write_metrics_tex(metrics_by_label,
                           tex_path="../document/simulation_report/performance_metrics_table.tex")
-
-    # --- Side-by-side comparison map ---
-    images = {"golden": normalize_matrix(replace_neginf_inplace(golden_img.copy()))}
-    for label, result_path in result_paths.items():
-        if not os.path.exists(result_path):
-            continue
-        result_img = np.load(result_path).astype(float)[
-            int(n_row * 3 / 2):int(n_row * 5 / 2),
-            int(n_col * 3 / 2):int(n_col * 5 / 2),
-        ]
-        images[label] = normalize_peak_db(result_img, is_db=True)
-
-    n = len(images)
-    fig, axes = plt.subplots(1, n, figsize=(6 * n, 5))
-    if n == 1:
-        axes = [axes]
-    for ax, (label, img) in zip(axes, images.items()):
-        im = ax.imshow(img, origin='lower', cmap='gray', aspect='auto', vmin=0, vmax=1)
-        ax.set_title(label, fontsize=10)
-        ax.axis('off')
-        plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    plt.suptitle("Image Comparison  (peak to peak−30 dB)", fontsize=12)
-    plt.tight_layout()
-    map_path = "../diagram/thresholding/comparison_map.png"
-    plt.savefig(map_path, dpi=300, bbox_inches="tight")
-    plt.clf()
-    print(f"[map] Saved {map_path}")
