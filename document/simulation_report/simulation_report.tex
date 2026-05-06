@@ -6,7 +6,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{float}
@@ -159,110 +159,6 @@ Therefore $R_0' \approx R_0 + d_i$.
 \end{table}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Umbra Image Denoising}
-% ══════════════════════════════════════════════════════════════════════════════
-
-\subsection{Processing Flow}
-
-All methods start by normalising the float SAR slice to uint8 $[0, 255]$ via
-min-max scaling, which is required by the OpenCV processing functions.
-The pipeline then diverges by method:
-
-\begin{itemize}
-    \item \textbf{Raw} — no processing; the normalised slice is used as-is.
-    \item \textbf{Binary} — a fixed threshold is applied; pixels above the
-          threshold are set to 1, others to 0.
-    \item \textbf{Otsu} — same as binary, but the threshold is computed
-          automatically by minimising intra-class intensity variance.
-    \item \textbf{Filter methods} (Bilateral, Guided, TV, Lee) — a denoising
-          filter is applied first to suppress speckle, then Otsu thresholding
-          is run on the smoothed image to produce a cleaner binary mask.
-\end{itemize}
-
-For filter methods, the role of the filter is to improve the quality of the
-subsequent Otsu threshold: speckle in raw SAR creates a noisy intensity
-histogram, causing Otsu to produce a ragged mask. Denoising first yields two
-cleaner histogram peaks (target vs.\ clutter) so the threshold is more reliable.
-
-After thresholding, morphological closing is optionally applied to fill small
-holes inside detected regions.
-
-\subsection{Morphological Closing}
-
-Morphological closing is a two-step operation applied to a binary image:
-
-\begin{enumerate}
-    \item \textbf{Dilation} — expands bright regions by adding pixels around their edges.
-    \item \textbf{Erosion} — shrinks the dilated regions back by removing pixels around their edges.
-\end{enumerate}
-
-The net effect is that small gaps and holes within detected regions are filled and nearby
-disconnected blobs are merged, while the overall shape and size remain roughly unchanged.
-Formally, closing of image $I$ by structuring element $B$ is defined as:
-
-\begin{equation}
-    I \bullet B = (I \oplus B) \ominus B
-\end{equation}
-
-where $\oplus$ denotes dilation and $\ominus$ denotes erosion.
-
-In the SAR context, after thresholding or denoising produces a rough binary mask,
-morphological closing fills small dark holes inside a detected target
-(e.g.\ a ship) that were incorrectly zeroed out, yielding a more solid and
-contiguous detection region.
-
-\subsection{Results}
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_raw.png}
-        \caption{Raw image.}
-    \end{subfigure}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_binary.png}
-        \caption{Binary thresholding.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_otsu.png}
-        \caption{Otsu thresholding.}
-    \end{subfigure}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_bilateral.png}
-        \caption{Bilateral filter.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_guided.png}
-        \caption{Guided filter.}
-    \end{subfigure}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_tv.png}
-        \caption{Total variation filter.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_lee.png}
-        \caption{Lee filter.}
-    \end{subfigure}
-\end{figure}
-
-\input{umbra_denoising_table}
-
-% ══════════════════════════════════════════════════════════════════════════════
 \section{Performance Metrics}
 % ══════════════════════════════════════════════════════════════════════════════
 
@@ -368,5 +264,111 @@ $r_2 = 15$\,px defines the \emph{clutter zone}.
         \bottomrule
     \end{tabular}
 \end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\appendix
+% ══════════════════════════════════════════════════════════════════════════════
+
+\section{Umbra Image Denoising}
+
+\subsection{Processing Flow}
+
+All methods start by normalising the float SAR slice to uint8 $[0, 255]$ via
+min-max scaling, which is required by the OpenCV processing functions.
+The pipeline then diverges by method:
+
+\begin{itemize}
+    \item \textbf{Raw} — no processing; the normalised slice is used as-is.
+    \item \textbf{Binary} — a fixed threshold is applied; pixels above the
+          threshold are set to 1, others to 0.
+    \item \textbf{Otsu} — same as binary, but the threshold is computed
+          automatically by minimising intra-class intensity variance.
+    \item \textbf{Filter methods} (Bilateral, Guided, TV, Lee) — a denoising
+          filter is applied first to suppress speckle, then Otsu thresholding
+          is run on the smoothed image to produce a cleaner binary mask.
+\end{itemize}
+
+For filter methods, the role of the filter is to improve the quality of the
+subsequent Otsu threshold: speckle in raw SAR creates a noisy intensity
+histogram, causing Otsu to produce a ragged mask. Denoising first yields two
+cleaner histogram peaks (target vs.\ clutter) so the threshold is more reliable.
+
+After thresholding, morphological closing is optionally applied to fill small
+holes inside detected regions.
+
+\subsection{Morphological Closing}
+
+Morphological closing is a two-step operation applied to a binary image:
+
+\begin{enumerate}
+    \item \textbf{Dilation} — expands bright regions by adding pixels around their edges.
+    \item \textbf{Erosion} — shrinks the dilated regions back by removing pixels around their edges.
+\end{enumerate}
+
+The net effect is that small gaps and holes within detected regions are filled and nearby
+disconnected blobs are merged, while the overall shape and size remain roughly unchanged.
+Formally, closing of image $I$ by structuring element $B$ is defined as:
+
+\begin{equation}
+    I \bullet B = (I \oplus B) \ominus B
+\end{equation}
+
+where $\oplus$ denotes dilation and $\ominus$ denotes erosion.
+
+In the SAR context, after thresholding or denoising produces a rough binary mask,
+morphological closing fills small dark holes inside a detected target
+(e.g.\ a ship) that were incorrectly zeroed out, yielding a more solid and
+contiguous detection region.
+
+\subsection{Results}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_raw.png}
+        \caption{Raw image.}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_binary.png}
+        \caption{Binary thresholding.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_otsu.png}
+        \caption{Otsu thresholding.}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_bilateral.png}
+        \caption{Bilateral filter.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_guided.png}
+        \caption{Guided filter.}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_tv.png}
+        \caption{Total variation filter.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{../../diagram/umbra_image_denoising/tsoying_naval_base_lee.png}
+        \caption{Lee filter.}
+    \end{subfigure}
+\end{figure}
+
+\input{umbra_denoising_table}
 
 \end{document}

@@ -1,6 +1,7 @@
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
+from dataclasses import dataclass, field
 import json
 import os
 from tqdm import tqdm
@@ -17,24 +18,28 @@ S3_PREFIX = "sar-data/tasks/ship_detection_testdata/"
 
 def download_tif(uuid, bucket=S3_BUCKET, prefix=S3_PREFIX):
     """Download all .tif/.tiff files matching a UUID from an S3 bucket to the current directory."""
-    s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+    s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
     print(f"Searching for .tif files associated with: {uuid}...")
 
-    paginator = s3.get_paginator('list_objects_v2')
+    paginator = s3.get_paginator("list_objects_v2")
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
     found_files = 0
     for page in pages:
-        for obj in page.get('Contents', []):
-            key = obj['Key']
-            if uuid in key and key.lower().endswith(('.tif', '.tiff')):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            if uuid in key and key.lower().endswith((".tif", ".tiff")):
                 local_path = os.path.basename(key)
-                with tqdm(total=obj['Size'], unit='B', unit_scale=True, desc=local_path) as pbar:
+                with tqdm(
+                    total=obj["Size"], unit="B", unit_scale=True, desc=local_path
+                ) as pbar:
                     s3.download_file(
                         bucket,
                         key,
                         local_path,
-                        Callback=lambda bytes_transferred: pbar.update(bytes_transferred)
+                        Callback=lambda bytes_transferred: pbar.update(
+                            bytes_transferred
+                        ),
                     )
                 found_files += 1
 
@@ -55,7 +60,9 @@ def read_sar_slice(file_name, row_start, row_len, col_start, col_len):
     print(f"Data Shape: {sar_data.shape}")
     print(f"Pixel Resolution: {pixel_spacing_x}m x {pixel_spacing_y}m")
 
-    sar_slice = sar_data[row_start:(row_start + row_len), col_start:(col_start + col_len)]
+    sar_slice = sar_data[
+        row_start : (row_start + row_len), col_start : (col_start + col_len)
+    ]
     return sar_slice
 
 
@@ -80,9 +87,9 @@ def _denoise_guided(sar_slice, radius=8, eps=1e-4):
     """Self-guided filter: smooths homogeneous regions while preserving sharp SAR edges."""
     I = _to_uint8(sar_slice).astype(np.float32) / 255.0
     win = 2 * radius + 1
-    mean_I  = cv2.boxFilter(I,     -1, (win, win))
+    mean_I = cv2.boxFilter(I, -1, (win, win))
     mean_II = cv2.boxFilter(I * I, -1, (win, win))
-    var_I   = mean_II - mean_I * mean_I
+    var_I = mean_II - mean_I * mean_I
     a = var_I / (var_I + eps)
     b = mean_I - a * mean_I
     mean_a = cv2.boxFilter(a, -1, (win, win))
@@ -94,6 +101,7 @@ def _denoise_guided(sar_slice, radius=8, eps=1e-4):
 def _denoise_tv(sar_slice, weight=0.1):
     """Total Variation denoising: flattens clutter while keeping high-return target edges."""
     from skimage.restoration import denoise_tv_chambolle
+
     img = _to_uint8(sar_slice).astype(np.float32) / 255.0
     denoised = denoise_tv_chambolle(img, weight=weight)
     return np.clip(denoised * 255, 0, 255).astype(np.uint8)
@@ -102,28 +110,36 @@ def _denoise_tv(sar_slice, weight=0.1):
 def _denoise_lee(sar_slice, window_size=7):
     """Lee adaptive speckle filter: suppresses speckle using local mean and variance."""
     from scipy.ndimage import uniform_filter
+
     img = _to_uint8(sar_slice).astype(np.float32)
-    local_mean    = uniform_filter(img,       size=window_size)
-    local_sq_mean = uniform_filter(img ** 2,  size=window_size)
-    local_var     = local_sq_mean - local_mean ** 2
-    img_var       = np.var(img)
-    k             = local_var / (local_var + img_var + 1e-10)
-    result        = local_mean + k * (img - local_mean)
+    local_mean = uniform_filter(img, size=window_size)
+    local_sq_mean = uniform_filter(img**2, size=window_size)
+    local_var = local_sq_mean - local_mean**2
+    img_var = np.var(img)
+    k = local_var / (local_var + img_var + 1e-10)
+    result = local_mean + k * (img - local_mean)
     return np.clip(result, 0, 255).astype(np.uint8)
 
 
 _DENOISE_FNS = {
     "bilateral": _denoise_bilateral,
-    "guided":    _denoise_guided,
-    "tv":        _denoise_tv,
-    "lee":       _denoise_lee,
+    "guided": _denoise_guided,
+    "tv": _denoise_tv,
+    "lee": _denoise_lee,
 }
 
 SEGMENT_METHODS = ("binary", "otsu", "bilateral", "guided", "tv", "lee")
 
 
-def segment(sar_slice, method="binary", threshold=None,
-            morph_close=False, morph_kernel=3, preserve_gray=False, **kwargs):
+def segment(
+    sar_slice,
+    method="binary",
+    threshold=None,
+    morph_close=False,
+    morph_kernel=3,
+    preserve_gray=False,
+    **kwargs,
+):
     """
     Process a SAR slice with the selected method.
 
@@ -152,7 +168,9 @@ def segment(sar_slice, method="binary", threshold=None,
         mask = binarize(sar_slice, threshold)
         if morph_close:
             kernel = np.ones((morph_kernel, morph_kernel), np.uint8)
-            mask = (cv2.morphologyEx(mask * 255, cv2.MORPH_CLOSE, kernel) / 255).astype(np.uint8)
+            mask = (cv2.morphologyEx(mask * 255, cv2.MORPH_CLOSE, kernel) / 255).astype(
+                np.uint8
+            )
         if preserve_gray:
             return cv2.bitwise_and(_to_uint8(sar_slice), mask * 255)
         return mask
@@ -163,12 +181,16 @@ def segment(sar_slice, method="binary", threshold=None,
         result = (binary / 255).astype(np.uint8)
         if morph_close:
             kernel = np.ones((morph_kernel, morph_kernel), np.uint8)
-            result = (cv2.morphologyEx(result * 255, cv2.MORPH_CLOSE, kernel) / 255).astype(np.uint8)
+            result = (
+                cv2.morphologyEx(result * 255, cv2.MORPH_CLOSE, kernel) / 255
+            ).astype(np.uint8)
         return result
 
     if method in _DENOISE_FNS:
         denoised = _DENOISE_FNS[method](sar_slice, **kwargs)
-        _, otsu_mask = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, otsu_mask = cv2.threshold(
+            denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
         if preserve_gray:
             result = cv2.bitwise_and(denoised, otsu_mask)
         else:
@@ -194,7 +216,9 @@ def null_area(sar_slice, x_start, x_end, y_start, y_end):
 
 def save_scene(scene_name, data):
     """Serialize data to <scene_name>.json, accepting either a list or a numpy array."""
-    with open('../TestMultiPointTarget/point_target_location/' + scene_name + '.json', "w") as f:
+    with open(
+        "../TestMultiPointTarget/point_target_location/" + scene_name + ".json", "w"
+    ) as f:
         json.dump(data if isinstance(data, list) else data.tolist(), f)
     print(f"Saved {scene_name}.json — shape: {np.array(data).shape}")
 
@@ -214,63 +238,124 @@ def plot_histogram(scene_name, data):
     flat = np.array(data).flatten()
     counts, _ = np.histogram(flat, bins=256, range=(0, 256))
     plt.plot(counts)
-    plt.xlabel('value')
-    plt.ylabel('count')
+    plt.xlabel("value")
+    plt.ylabel("count")
     plt.grid()
     plt.savefig(scene_name + "_hist.png")
     plt.clf()
 
 
-def plot_scene(scene_name):
+def plot_scene(scene_name, data=None):
     """Load a scene JSON from the point_target_location directory and save it as a viridis imshow PNG."""
-    with open('../TestMultiPointTarget/point_target_location/' + scene_name + '.json', 'r') as f:
-        data = json.load(f)
+    if data is None:
+        with open(
+            "../TestMultiPointTarget/point_target_location/" + scene_name + ".json", "r"
+        ) as f:
+            data = json.load(f)
     arr = np.flipud(np.array(data))
     print(arr.shape)
-    plt.imshow(arr, origin='lower', cmap='viridis')
-    plt.xlabel('range')
-    plt.ylabel('azimuth')
+    plt.imshow(arr, origin="lower", cmap="viridis")
+    plt.xlabel("range")
+    plt.ylabel("azimuth")
     plt.colorbar()
     plt.savefig(scene_name + ".png", dpi=300, bbox_inches="tight")
     plt.clf()
 
 
+@dataclass
+class SliceParams:
+    row_start: int
+    row_len: int
+    col_start: int
+    col_len: int
 
-def process_scene(scene_name, file_name, row_start, row_len, col_start, col_len,
-                  method=None, threshold=None, morph_close=False, morph_kernel=3,
-                  null_regions=None, **kwargs):
+
+@dataclass
+class DenoisingParams:
+    method: str = None
+    threshold: float = None
+    morph_close: bool = False
+    morph_kernel: int = 3
+    preserve_gray: bool = False
+    extra: dict = field(default_factory=dict)
+
+
+@dataclass
+class SpeckleParams:
+    num_looks: int = None
+    speckle_bg: float = None
+    zero_threshold: float = None
+    clip_plot: bool = False
+
+
+def process_scene(
+    scene_name,
+    file_name,
+    slice_params: SliceParams,
+    denoising_params: DenoisingParams = None,
+    speckle_params: SpeckleParams = None,
+    null_regions=None,
+):
     """
     Process a SAR scene and save results.
 
     Args:
         scene_name: output name used for .json and .png files
         file_name: input GeoTIFF path
-        row_start, row_len, col_start, col_len: slice bounds
-        method: segmentation method passed to segment(); if None, saves raw float data.
-                One of: "binary", "otsu", "bilateral", "guided", "tv", "lee"
-        threshold: fixed threshold (required when method="binary")
-        morph_close: apply morphological closing after thresholding
-        morph_kernel: kernel size for morphological closing
+        slice_params: SliceParams(row_start, row_len, col_start, col_len)
+        denoising_params: DenoisingParams grouping segmentation options;
+                          if None, raw float data is saved without segmentation
+        speckle_params: SpeckleParams grouping speckle and threshold options;
+                        if None, no speckle or zero-threshold is applied
         null_regions: list of (x_start, x_end, y_start, y_end) tuples to zero out
                       before segmentation, e.g. [(0, 500, 350, 640)]
-        **kwargs: forwarded to the denoising helper (e.g. weight=, window_size=)
     """
-    sar_slice = read_sar_slice(file_name, row_start, row_len, col_start, col_len)
+    sp = slice_params
+    dp = denoising_params or DenoisingParams()
+    xp = speckle_params or SpeckleParams()
+
+    sar_slice = read_sar_slice(
+        file_name, sp.row_start, sp.row_len, sp.col_start, sp.col_len
+    )
 
     if null_regions:
         for x0, x1, y0, y1 in null_regions:
             null_area(sar_slice, x0, x1, y0, y1)
 
-    if method is None:
+    if dp.method is None:
         data = sar_slice
     else:
-        data = segment(sar_slice, method=method, threshold=threshold,
-                       morph_close=morph_close, morph_kernel=morph_kernel, **kwargs)
+        data = segment(
+            sar_slice,
+            method=dp.method,
+            threshold=dp.threshold,
+            morph_close=dp.morph_close,
+            morph_kernel=dp.morph_kernel,
+            preserve_gray=dp.preserve_gray,
+            **dp.extra,
+        )
+
+    save_scene(scene_name + "_no_speckle", data)
+
+    if xp.num_looks is not None:
+        reflectivity = data.astype(np.float32)
+        bg_mask = reflectivity == 0
+        if xp.speckle_bg is not None:
+            reflectivity = reflectivity + xp.speckle_bg
+        # Multiplicative L-look speckle: u ~ Gamma(L, 1/L), mean=1, var=1/L
+        # Applied only to originally-zero (background) pixels.
+        speckle = np.random.gamma(
+            shape=xp.num_looks, scale=1.0 / xp.num_looks, size=data.shape
+        )
+        data = np.where(bg_mask, reflectivity * speckle, reflectivity)
+
+    if xp.zero_threshold is not None:
+        data = np.where(data < xp.zero_threshold, 0, data)
 
     save_scene(scene_name, data)
     count_zeros(data)
     plot_histogram(scene_name, data)
-    plot_scene(scene_name)
+    plot_scene(scene_name, data=np.clip(data, 0.0, 255.0) if xp.clip_plot else None)
 
 
 if __name__ == "__main__":
@@ -293,47 +378,42 @@ if __name__ == "__main__":
     #     ],
     # )
 
-    # single-method processing (method="binary" is original behaviour)
-    # process_scene(
-    #     scene_name='tsoying_naval_base',
-    #     file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
-    #     row_start=4050, row_len=640,
-    #     col_start=4180, col_len=720,
-    #     method="binary", threshold=110,
-    # )
-
     process_scene(
-        scene_name='tsoying_naval_base',
-        file_name='2023-04-12-13-00-32_UMBRA-04_GEC.tif',
-        row_start=4050, row_len=640,
-        col_start=4180, col_len=720,
-        method="binary", threshold=110, morph_close=True, preserve_gray=True,
-        null_regions=[(0, 500, 0, 290)]
+        scene_name="tsoying_naval_base",
+        file_name="2023-04-12-13-00-32_UMBRA-04_GEC.tif",
+        slice_params=SliceParams(
+            row_start=4050, row_len=640, col_start=4180, col_len=720
+        ),
+        denoising_params=DenoisingParams(
+            method="binary", threshold=110, morph_close=True, preserve_gray=True
+        ),
+        speckle_params=SpeckleParams(
+            zero_threshold=140, num_looks=1, speckle_bg=100, clip_plot=True
+        ),
+        null_regions=[(0, 500, 0, 290)],
     )
 
     # method="otsu"    — automatic global threshold, no manual threshold needed
-    # process_scene(..., method="otsu")
+    # process_scene(..., denoising_params=DenoisingParams(method="otsu"))
 
     # method="bilateral" — edge-preserving denoise + Otsu; use morph_close to fill hull gaps
-    # process_scene(..., method="bilateral", morph_close=True, d=9, sigma_color=75, sigma_space=75)
+    # process_scene(..., denoising_params=DenoisingParams(method="bilateral", morph_close=True, extra={"d": 9, "sigma_color": 75, "sigma_space": 75}))
 
     # method="guided"  — guided-filter denoise + Otsu
-    # process_scene(..., method="guided", radius=8, eps=1e-4)
+    # process_scene(..., denoising_params=DenoisingParams(method="guided", extra={"radius": 8, "eps": 1e-4}))
 
     # method="tv"      — Total Variation denoise + Otsu (requires scikit-image)
-    # process_scene(..., method="tv", weight=0.1)
+    # process_scene(..., denoising_params=DenoisingParams(method="tv", extra={"weight": 0.1}))
 
     # method="lee"     — Lee adaptive speckle filter + Otsu (requires scipy)
-    # process_scene(..., method="lee", window_size=7)
+    # process_scene(..., denoising_params=DenoisingParams(method="lee", extra={"window_size": 7}))
 
     # method=None      — save raw float data (no segmentation)
-    # process_scene(..., method=None)
+    # process_scene(..., denoising_params=DenoisingParams())
 
     # download_tif(uuid='8cd3eeb0-22e2-42d7-969e-030826a3a0c6')
     # process_scene(
     #     scene_name='port_of_kaohsiung',
     #     file_name='2023-06-30-12-56-34_UMBRA-05_GEC.tif',
-    #     row_start=1500, row_len=10000,
-    #     col_start=0, col_len=10000,
-    #     method=None,
+    #     slice_params=SliceParams(row_start=1500, row_len=10000, col_start=0, col_len=10000),
     # )
