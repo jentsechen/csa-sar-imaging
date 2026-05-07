@@ -216,14 +216,14 @@ if __name__ == "__main__":
     # gen_input_par(scene=Scene.Island)
     gen_input_par(scene=Scene.TsoYingNavalBase)
     # start_time = time.perf_counter()
-    # run_cpp(args=["gen", "multi_point_target"])
+    # run_gen_echo_signal("tsoying_naval_base")
     # end_time = time.perf_counter()
     # execution_time = end_time - start_time
     # print(f"Execution time: {execution_time/60:.6f} minutes")
     
-    run_cpp(args=["focus", "tsoying_naval_base"])
-    run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
-    run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
+    # run_cpp(args=["focus", "tsoying_naval_base"])
+    # run_cpp(args=["calc_mag", "./focused_image/tsoying_naval_base"])
+    # run_cpp(args=["calc_entropy", "./focused_image/tsoying_naval_base"])
     
     # save_3d_plot_of_focused_image("focused_image", "multi_point_target_image_mag_db")
     # save_3d_plot("focused_image", "multi_point_target_image_mag_db")
@@ -250,5 +250,4 @@ if __name__ == "__main__":
     # run_cpp(args=["calc_entropy", "./focused_image/multi_point_target_image"])
     # run_cpp(args=["calc_entropy", "./iter_result_multi_point_image/csa_out_iter_0"])
 
-    # run_gen_echo_signal("tsoying_naval_base")
     # run_gen_echo_signal(target="single_point_target", azimuth_offset_m=0.04, range_offset_m=30.0)

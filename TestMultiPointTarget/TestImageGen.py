@@ -15,6 +15,15 @@ def plot_single_point_target():
     plt.colorbar()
     plt.savefig("single_point_target.png", dpi=300, bbox_inches="tight")
 
+def save_result(sliced_data, file_path):
+    # max_val = np.percentile(data, 99.8)
+    max_val = np.max(sliced_data)
+    clipped_data = np.clip(sliced_data, max_val-30, max_val)
+    plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=1.0)
+    plt.colorbar()
+    plt.savefig(file_path, dpi=300, bbox_inches="tight")
+    plt.clf()
+
 if __name__ == "__main__": 
     # scene = Scene.Coast
     # scene = Scene.Island
@@ -36,24 +45,26 @@ if __name__ == "__main__":
         data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
     print(data.shape)
     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
-    # max_val = np.percentile(data, 99.8)
-    max_val = np.max(data)
-    clipped_data = np.clip(data, max_val-30, max_val)
-    plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=1.0)
-    plt.colorbar()
-    plt.savefig(f"{image_name}_csa.png", dpi=300, bbox_inches="tight")
-    plt.clf()
+    save_result(
+        sliced_data=data,
+        file_path="../diagram/perf_metric/tsoying_naval_base/result_csa.png",
+    )
 
-    for i in range(1):
-        data = np.load("./focused_image/tsoying_naval_base_iter_{}_mag_db.npy".format(i))[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
-        aspect = 1.0
-        # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
-        max_val = np.max(data)
-        print(max_val)
-        clipped_data = np.clip(data, max_val-30, max_val)
-        plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=aspect)
-        plt.colorbar()
-        plt.savefig(f"tsoying_naval_base_iter_{i}.png".format(i), dpi=300, bbox_inches="tight")
-        plt.clf()
+    # for i in range(1):
+    #     data = np.load("./focused_image/tsoying_naval_base_iter_{}_mag_db.npy".format(i))[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
+    #     aspect = 1.0
+    #     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
+    #     max_val = np.max(data)
+    #     print(max_val)
+    #     clipped_data = np.clip(data, max_val-30, max_val)
+    #     plt.imshow(clipped_data, origin='lower', cmap='viridis', aspect=aspect)
+    #     plt.colorbar()
+    #     plt.savefig(f"tsoying_naval_base_iter_{i}.png".format(i), dpi=300, bbox_inches="tight")
+    #     plt.clf()
+    data = np.load("./focused_image/tsoying_naval_base_iter_0_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
+    save_result(
+        sliced_data=data,
+        file_path="../diagram/perf_metric/tsoying_naval_base/result_threshold.png",
+    )
     
     print("DONE")

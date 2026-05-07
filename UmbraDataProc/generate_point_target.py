@@ -337,9 +337,13 @@ def process_scene(
 
     save_scene(scene_name + "_no_speckle", data)
 
+    bg_mask = None
     if xp.num_looks is not None:
         reflectivity = data.astype(np.float32)
         bg_mask = reflectivity == 0
+        plot_histogram(
+            scene_name, reflectivity[~bg_mask] if bg_mask is not None else reflectivity
+        )
         if xp.speckle_bg is not None:
             reflectivity = reflectivity + xp.speckle_bg
         # Multiplicative L-look speckle: u ~ Gamma(L, 1/L), mean=1, var=1/L
@@ -354,7 +358,6 @@ def process_scene(
 
     save_scene(scene_name, data)
     count_zeros(data)
-    plot_histogram(scene_name, data)
     plot_scene(scene_name, data=np.clip(data, 0.0, 255.0) if xp.clip_plot else None)
 
 
@@ -388,7 +391,7 @@ if __name__ == "__main__":
             method="binary", threshold=110, morph_close=True, preserve_gray=True
         ),
         speckle_params=SpeckleParams(
-            zero_threshold=140, num_looks=1, speckle_bg=100, clip_plot=True
+            zero_threshold=120, num_looks=1, speckle_bg=120, clip_plot=True
         ),
         null_regions=[(0, 500, 0, 290)],
     )
