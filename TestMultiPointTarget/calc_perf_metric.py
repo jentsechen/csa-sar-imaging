@@ -248,7 +248,7 @@ if __name__ == "__main__":
     golden_path  = "./point_target_location/tsoying_naval_base_no_speckle.json"
     result_paths = {
         "result (threshold = 0)": "./focused_image/tsoying_naval_base_mag_db.npy",
-        "result (threshold = 1e4)": "./focused_image/tsoying_naval_base_iter_0_mag_db.npy",
+        "result (threshold = $2\cdot 10^5$)": "./focused_image/tsoying_naval_base_iter_0_mag_db.npy",
     }
 
     if not os.path.exists(golden_path):

@@ -285,6 +285,7 @@ class SpeckleParams:
     num_looks: int = None
     speckle_bg: float = None
     zero_threshold: float = None
+    bg_zero_prob: float = 0.5
     clip_plot: bool = False
 
 
@@ -354,7 +355,11 @@ def process_scene(
         data = np.where(bg_mask, reflectivity * speckle, reflectivity)
 
     if xp.zero_threshold is not None:
-        data = np.where(data < xp.zero_threshold, 0, data)
+        data = np.where(data < xp.zero_threshold, 0, data - xp.zero_threshold)
+
+    if bg_mask is not None and xp.bg_zero_prob is not None:
+        random_zero = np.random.random(data.shape) < xp.bg_zero_prob
+        data = np.where(bg_mask & random_zero, 0, data)
 
     save_scene(scene_name, data)
     count_zeros(data)
@@ -391,7 +396,7 @@ if __name__ == "__main__":
             method="binary", threshold=110, morph_close=True, preserve_gray=True
         ),
         speckle_params=SpeckleParams(
-            zero_threshold=120, num_looks=1, speckle_bg=120, clip_plot=True
+            zero_threshold=120, num_looks=1, speckle_bg=120, bg_zero_prob=0.7, clip_plot=True
         ),
         null_regions=[(0, 500, 0, 290)],
     )
