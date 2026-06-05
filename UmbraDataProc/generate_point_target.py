@@ -236,6 +236,7 @@ def count_zeros(data):
 def plot_histogram(scene_name, data):
     """Save a 256-bin intensity histogram of data to <scene_name>_hist.png."""
     flat = np.array(data).flatten()
+    print(f"Mean: {np.mean(flat)}")
     counts, _ = np.histogram(flat, bins=256, range=(0, 256))
     plt.plot(counts)
     plt.xlabel("value")
@@ -352,7 +353,8 @@ def process_scene(
         speckle = np.random.gamma(
             shape=xp.num_looks, scale=1.0 / xp.num_looks, size=data.shape
         )
-        data = np.where(bg_mask, reflectivity * speckle, reflectivity)
+        # data = np.where(bg_mask, reflectivity * speckle, reflectivity)
+        data = reflectivity * speckle
 
     if xp.zero_threshold is not None:
         data = np.where(data < xp.zero_threshold, 0, data - xp.zero_threshold)
@@ -364,6 +366,14 @@ def process_scene(
     save_scene(scene_name, data)
     count_zeros(data)
     plot_scene(scene_name, data=np.clip(data, 0.0, 255.0) if xp.clip_plot else None)
+    plot_histogram(
+        scene_name + "_bg_original",
+        sar_slice[bg_mask & (sar_slice != 0)],
+    )
+    plot_histogram(
+        scene_name + "_bg_generated",
+        data[bg_mask & (data != 0)],
+    )
 
 
 if __name__ == "__main__":
@@ -396,7 +406,11 @@ if __name__ == "__main__":
             method="binary", threshold=110, morph_close=True, preserve_gray=True
         ),
         speckle_params=SpeckleParams(
-            zero_threshold=120, num_looks=1, speckle_bg=120, bg_zero_prob=0.7, clip_plot=True
+            zero_threshold=120,
+            num_looks=1,
+            speckle_bg=120,
+            # bg_zero_prob=0.8,
+            clip_plot=True,
         ),
         null_regions=[(0, 500, 0, 290)],
     )
