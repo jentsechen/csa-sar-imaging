@@ -112,7 +112,7 @@ def write_comparison_md(scenes: list):
         "The KS statistic measures the largest vertical gap between the empirical CDF $F_n$",
         "and the theoretical CDF $F$:\n",
         "$$D_n = \\sup_x \\left| F_n(x) - F(x) \\right|$$\n",
-        "where $F_n(x) = \\frac{1}{n}\\#\\{i : I_i \\le x\\}$.  $D_n \\in [0, 1]$;",
+        "where $F_n(x) = \\frac{1}{n}|\\{i : I_i \\le x\\}|$.  $D_n \\in [0, 1]$;",
         "smaller is a better fit.  The p-value is omitted here: with large SAR images",
         "($n > 10^5$), even a trivially small $D_n$ yields $p < 0.05$, making the",
         "p-value an unreliable indicator at this scale.  Use $D_n$ directly.\n",
