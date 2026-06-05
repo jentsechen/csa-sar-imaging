@@ -34,7 +34,7 @@ and the theoretical CDF $F$:
 
 $$D_n = \sup_x \left| F_n(x) - F(x) \right|$$
 
-where $F_n(x) = \frac{1}{n}\#\{i : I_i \le x\}$.  $D_n \in [0, 1]$;
+where $F_n(x) = \frac{1}{n}|\{i : I_i \le x\}|$.  $D_n \in [0, 1]$;
 smaller is a better fit.  The p-value is omitted here: with large SAR images
 ($n > 10^5$), even a trivially small $D_n$ yields $p < 0.05$, making the
 p-value an unreliable indicator at this scale.  Use $D_n$ directly.
