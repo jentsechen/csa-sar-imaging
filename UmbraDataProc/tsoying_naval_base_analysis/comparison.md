@@ -2,16 +2,42 @@
 
 File: `2023-04-12-13-00-32_UMBRA-04_GEC.tif`
 
-## Overview
+## Background
 
-The Gamma distribution is fitted to **intensity** values, where intensity = amplitude².
-SAR amplitude pixels are first squared before fitting, because intensity (not amplitude)
-follows the Gamma distribution under the standard speckle model.
+### Gamma Distribution for SAR Intensity
 
-The KS statistic measures the maximum gap between the empirical and fitted CDFs (0 = perfect).
-The KS p-value is omitted from this report: with large SAR images (100k+ pixels),
-the p-value almost always rejects the null hypothesis even for a practically good fit,
-making it an unreliable indicator at this scale. Use the KS statistic directly.
+Under the standard SAR speckle model, the complex return of each resolution cell is the
+coherent sum of many independent scatterers. For a detected (amplitude) image, the
+**intensity** $I = a^2$ (amplitude squared) follows a Gamma distribution:
+
+$$I \sim \text{Gamma}(k,\, \theta)$$
+
+with PDF:
+
+$$f(I;\,k,\theta) = \frac{I^{k-1}\,e^{-I/\theta}}{\theta^k\,\Gamma(k)}, \quad I > 0$$
+
+The shape parameter $k$ equals the **number of looks** $L$, and $\theta = \sigma^2 / L$
+where $\sigma^2$ is the mean backscatter power.  Moments of the fit are:
+
+$$\text{Mean} = k\theta, \qquad \text{Variance} = k\theta^2$$
+
+Parameters are estimated by **Maximum Likelihood (MLE)**, maximising:
+
+$$\ell(k,\theta) = \sum_{i=1}^{n}\left[(k-1)\ln I_i - \frac{I_i}{\theta} - k\ln\theta - \ln\Gamma(k)\right]$$
+
+with the location fixed at zero (`floc=0`) because intensity cannot be negative.
+
+### Kolmogorov–Smirnov Test
+
+The KS statistic measures the largest vertical gap between the empirical CDF $F_n$
+and the theoretical CDF $F$:
+
+$$D_n = \sup_x \left| F_n(x) - F(x) \right|$$
+
+where $F_n(x) = \frac{1}{n}\#\{i : I_i \le x\}$.  $D_n \in [0, 1]$;
+smaller is a better fit.  The p-value is omitted here: with large SAR images
+($n > 10^5$), even a trivially small $D_n$ yields $p < 0.05$, making the
+p-value an unreliable indicator at this scale.  Use $D_n$ directly.
 
 ## Scenes
 
