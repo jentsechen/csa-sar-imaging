@@ -31,3 +31,9 @@
 !/document/simulation_report/*.tex
 !/document/simulation_report/*.pdf
 !/document/simulation_report/.latexmkrc
+
+/ship_detect/results/
+/ship_detect/test_data/
+!.gitkeep
+
+*.pt

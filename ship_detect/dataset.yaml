@@ -1,0 +1,6 @@
+path: /home/jtc/projects/ship_detect
+train: test_data/patches
+val:   test_data/patches
+
+nc: 1
+names: ['ship']

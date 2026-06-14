@@ -1,0 +1,11 @@
+# Minimal CPU-only deps for SAR ship detection inference.
+# Install:  pip install -r requirements-cpu.txt
+# (For CPU torch, prefer: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu)
+ultralytics>=8.3.179
+opencv-python>=4.8
+numpy
+pandas
+torch
+torchvision
+# Optional — only if you want geo-referenced output from GeoTIFFs:
+# rasterio
