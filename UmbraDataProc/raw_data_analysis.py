@@ -65,13 +65,26 @@ def check_gamma_fit(nonzero: np.ndarray, label: str) -> dict:
 
     ks_stat, ks_p = stats.kstest(intensity, "gamma", args=(a, loc, scale))
 
-    print(f"  [{label}] k={a:.4f}  θ={scale:.4f}  mean={sample_mean:.2f}/{fit_mean:.2f}={fit_mean/sample_mean:.4f}  var={sample_var:.2f}/{fit_var:.2f}={fit_var/sample_var:.4f}  KS={ks_stat:.4f}  p={ks_p:.2e}")
+    # KL divergence: KL(empirical || Gamma fit) via histogram binning
+    n_bins = 200
+    upper = np.percentile(intensity, 99.5)
+    counts, edges = np.histogram(intensity, bins=n_bins, range=(0, upper))
+    bin_width = edges[1] - edges[0]
+    midpoints = 0.5 * (edges[:-1] + edges[1:])
+    p = counts / counts.sum()                                    # empirical pmf
+    q = stats.gamma.pdf(midpoints, a, loc=loc, scale=scale) * bin_width
+    q = q / q.sum()                                             # normalise to pmf
+    mask = p > 0
+    kl = float(np.sum(p[mask] * np.log(p[mask] / q[mask])))    # KL(P||Q) in nats
+
+    print(f"  [{label}] k={a:.4f}  θ={scale:.4f}  mean={sample_mean:.2f}/{fit_mean:.2f}={fit_mean/sample_mean:.4f}  var={sample_var:.2f}/{fit_var:.2f}={fit_var/sample_var:.4f}  KS={ks_stat:.4f}  KL={kl:.4f}")
 
     return {
         "shape": a, "scale": scale,
         "fit_mean": fit_mean, "sample_mean": sample_mean,
         "fit_var": fit_var, "sample_var": sample_var,
         "ks_stat": ks_stat, "ks_p": ks_p,
+        "kl": kl,
     }
 
 
@@ -108,14 +121,26 @@ def write_comparison_md(scenes: list):
         "Parameters are estimated by **Maximum Likelihood (MLE)**, maximising:\n",
         "$$\\ell(k,\\theta) = \\sum_{i=1}^{n}\\left[(k-1)\\ln I_i - \\frac{I_i}{\\theta} - k\\ln\\theta - \\ln\\Gamma(k)\\right]$$\n",
         "with the location fixed at zero (`floc=0`) because intensity cannot be negative.\n",
-        "### Kolmogorov–Smirnov Test\n",
-        "The KS statistic measures the largest vertical gap between the empirical CDF $F_n$",
+        "### KS Statistic\n",
+        "The Kolmogorov–Smirnov statistic measures the largest vertical gap between the empirical CDF $F_n$",
         "and the theoretical CDF $F$:\n",
         "$$D_n = \\sup_x \\left| F_n(x) - F(x) \\right|$$\n",
         "where $F_n(x) = \\frac{1}{n}|\\{i : I_i \\le x\\}|$.  $D_n \\in [0, 1]$;",
         "smaller is a better fit.  The p-value is omitted here: with large SAR images",
         "($n > 10^5$), even a trivially small $D_n$ yields $p < 0.05$, making the",
         "p-value an unreliable indicator at this scale.  Use $D_n$ directly.\n",
+        "### KL Divergence\n",
+        "The Kullback–Leibler divergence measures how much the empirical distribution $P$",
+        "differs from the fitted theoretical distribution $Q$:\n",
+        "$$D_{\\mathrm{KL}}(P \\| Q) = \\sum_{i} p_i \\ln \\frac{p_i}{q_i}$$\n",
+        "where $p_i$ and $q_i$ are the empirical and Gamma probabilities in each histogram bin",
+        "(200 bins over the 0–99.5th percentile range, both normalised to sum to 1).",
+        "Units are **nats** (natural units of information: the result of using $\\ln$ instead of $\\log_2$;",
+        "1 nat $= \\log_2 e \\approx 1.4427$ bits). $D_{\\mathrm{KL}} = 0$ means perfect agreement;",
+        "values below 0.05 nats indicate a good fit.\n",
+        "KL is complementary to KS: KS detects the single worst-case gap anywhere in the",
+        "distribution, while KL accumulates evidence of mismatch across all bins,",
+        "penalising heavy-tailed deviations more strongly.\n",
         "## Scenes\n",
         f"| **{la}** | **{lb}** |",
         "|---|---|",
@@ -150,9 +175,14 @@ def write_comparison_md(scenes: list):
             "ratio ≈ 1.0000",
         ),
         (
-            "KS stat",
+            "KS statistics",
             lambda r: f"{r['ks_stat']:.4f}",
             "< 0.05 excellent, < 0.10 good",
+        ),
+        (
+            "KL divergence (nats)",
+            lambda r: f"{r['kl']:.4f}",
+            "< 0.05 good, < 0.01 excellent",
         ),
     ]
 
