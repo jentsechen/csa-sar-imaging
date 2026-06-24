@@ -1,0 +1,12 @@
+# Pinned to the environment used to train the published YOLO11m result.
+# GPU training: the default torch wheel below is CUDA-enabled (Linux/x86_64).
+# CPU-only box: instead run
+#   pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cpu
+ultralytics==8.3.179
+torch==2.8.0
+torchvision==0.23.0
+opencv-python==4.10.0
+numpy==1.26.4
+pandas==2.3.1
+pillow==11.1.0
+gdown==6.1.0          # for download_hrsid.sh (Google Drive)

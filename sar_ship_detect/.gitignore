@@ -1,0 +1,30 @@
+# ── Datasets (large; reproducible via convert_hrsid_to_yolo.py + README) ──
+HRSID_JPG/
+HRSID_YOLO/
+*.rar
+*.zip
+*.tar
+*.tar.gz
+
+# ── Model weights / exports ──
+*.pt
+*.onnx
+*.engine
+*.trt
+
+# ── Training / inference outputs ──
+runs/
+results/
+*.csv
+*.log
+
+# ── Python ──
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# ── OS / editor ──
+.DS_Store
+.vscode/
