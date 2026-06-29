@@ -2,6 +2,7 @@
 """Run inference with a trained YOLO model on the HRSID test set.
 
 Usage:
+    python infer.py --val --data HRSID_YOLO/data.yaml --device cpu
     python infer.py                                        # combined val, default weights
     python infer.py --source path/to/imgs                 # arbitrary folder or image
     python infer.py --val                                  # mAP on combined val -> results.md

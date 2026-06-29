@@ -38,6 +38,26 @@ gdown 1BZTU8Gyg20wqHXtBPFzRazn_lEdvhsbE -O HRSID_JPG.zip
 bsdtar -xf HRSID_JPG.zip      # -> HRSID_JPG/{JPEGImages,annotations}
 ```
 
+If none of those tools are available (e.g. a minimal Ubuntu/Debian environment),
+use the pure-Python fallback:
+```bash
+pip install unrar-cffi
+python3 -c "
+from unrar.cffi import rarfile
+import os
+
+rf = rarfile.RarFile('HRSID_JPG.zip')
+for name in rf.namelist():
+    out = os.path.join('.', name)
+    if os.path.isdir(out) or os.path.isfile(out):
+        continue
+    data = rf.read(name)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    open(out, 'wb').write(data)
+print('done')
+"
+```
+
 ### Step 2 — inshore / offshore annotations (newer release)
 File id `1NY3ovgc-woDlNoQdyqzRB3t9McOBH5Ms` (true ZIP, 614 MB, includes all images again):
 ```bash
