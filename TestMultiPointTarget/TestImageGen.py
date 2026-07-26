@@ -27,7 +27,8 @@ def save_result(sliced_data, file_path):
 if __name__ == "__main__": 
     # scene = Scene.Coast
     # scene = Scene.Island
-    scene = Scene.TsoYingNavalBase
+    # scene = Scene.TsoYingNavalBase
+    scene = Scene.P0002_1800_2600_2400_3200
     if scene == Scene.Coast:
         image_size = 556
         image_name = "coast"
@@ -37,17 +38,22 @@ if __name__ == "__main__":
     elif scene == Scene.TsoYingNavalBase:
         n_row, n_col = 640, 720
         image_name = "tsoying_naval_base"
+    elif scene == Scene.P0002_1800_2600_2400_3200:
+        n_row, n_col = 800, 800
+        image_name = "P0002_1800_2600_2400_3200"
     else:
         print("The scene is not supported!")
     if scene == Scene.Island:
         data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(image_size*3/2):int(image_size*5/2), int(image_size*3/2):int(image_size*5/2)]
     elif scene == Scene.TsoYingNavalBase:
         data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
+    elif scene == Scene.P0002_1800_2600_2400_3200:
+        data = np.load(f"./focused_image/{image_name}_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
     print(data.shape)
     # plt.imshow(data, origin='lower', cmap='viridis', aspect=2.0)
     save_result(
         sliced_data=data,
-        file_path="../diagram/perf_metric/tsoying_naval_base/result_csa.png",
+        file_path=f"../diagram/perf_metric/{image_name}/result_csa.png",
     )
 
     # for i in range(1):
@@ -61,10 +67,10 @@ if __name__ == "__main__":
     #     plt.colorbar()
     #     plt.savefig(f"tsoying_naval_base_iter_{i}.png".format(i), dpi=300, bbox_inches="tight")
     #     plt.clf()
-    data = np.load("./focused_image/tsoying_naval_base_iter_0_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
-    save_result(
-        sliced_data=data,
-        file_path="../diagram/perf_metric/tsoying_naval_base/result_threshold.png",
-    )
+    # data = np.load("./focused_image/tsoying_naval_base_iter_0_mag_db.npy")[int(n_row*3/2):int(n_row*5/2), int(n_col*3/2):int(n_col*5/2)]
+    # save_result(
+    #     sliced_data=data,
+    #     file_path="../diagram/perf_metric/tsoying_naval_base/result_threshold.png",
+    # )
     
     print("DONE")
