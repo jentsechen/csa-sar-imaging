@@ -101,7 +101,7 @@ def run_val(model, yaml_path, eval_dir, args):
         verbose=False,
     )
     box = metrics.box
-    return box.mp, box.mr, box.map50, box.map
+    return box.mp, box.mr, box.map50
 
 
 def main():
@@ -132,10 +132,10 @@ def main():
         if not region_stems:
             continue
         print(f"\n=== {region} (n={len(region_stems)}) ===")
-        print(f"{'Set':<10} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9} {'mAP@0.5:0.95':>13}")
+        print(f"{'Set':<10} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
         for name in SETS:
-            p, r, map50, map5095 = all_results[(region, name)]
-            print(f"{name:<10} {p:>10.4f} {r:>8.4f} {map50:>9.4f} {map5095:>13.4f}")
+            p, r, map50 = all_results[(region, name)]
+            print(f"{name:<10} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
 
 
 if __name__ == "__main__":

@@ -82,7 +82,6 @@ def main():
     print(f"Precision: {box.mp:.4f}")
     print(f"Recall:    {box.mr:.4f}")
     print(f"mAP@0.5:   {box.map50:.4f}")
-    print(f"mAP@0.5:0.95: {box.map:.4f}")
 
 
 if __name__ == "__main__":

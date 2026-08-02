@@ -39,3 +39,16 @@
 *.pt
 *.bkp
 *.dtmp
+
+end_to_end_pipeline/images
+end_to_end_pipeline/labels
+end_to_end_pipeline/point_target_location
+end_to_end_pipeline/echo_signal
+end_to_end_pipeline/focused_image
+end_to_end_pipeline/csa_jpg
+end_to_end_pipeline/*csa_eval
+end_to_end_pipeline/*original_eval
+end_to_end_pipeline/*threshold_eval
+end_to_end_pipeline/threshold_jpg
+end_to_end_pipeline/threshold_sweep
+end_to_end_pipeline/csa_failures

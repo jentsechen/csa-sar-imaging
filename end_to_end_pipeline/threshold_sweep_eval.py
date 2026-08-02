@@ -78,7 +78,7 @@ def run_val(model, yaml_path, eval_dir, args):
         verbose=False,
     )
     box = metrics.box
-    return box.mp, box.mr, box.map50, box.map
+    return box.mp, box.mr, box.map50
 
 
 def main():
@@ -98,16 +98,15 @@ def main():
     rows = []
     for t in args.thresholds:
         yaml_path, eval_dir, avg_nonzero_pct = build_thresholded_set(t, stems)
-        p, r, map50, map5095 = run_val(model, yaml_path, eval_dir, args)
-        rows.append((t, p, r, map50, map5095, avg_nonzero_pct))
+        p, r, map50 = run_val(model, yaml_path, eval_dir, args)
+        rows.append((t, p, r, map50, avg_nonzero_pct))
         print(f"  threshold={t:>4}: Precision={p:.4f} Recall={r:.4f} "
-              f"mAP@0.5={map50:.4f} mAP@0.5:0.95={map5095:.4f} "
-              f"avg_nonzero_pct={avg_nonzero_pct:.4f}%")
+              f"mAP@0.5={map50:.4f} avg_nonzero_pct={avg_nonzero_pct:.4f}%")
 
     with open(RESULTS_CSV, "w") as f:
-        f.write("threshold,precision,recall,map50,map5095,avg_nonzero_pct\n")
-        for t, p, r, map50, map5095, avg_nonzero_pct in rows:
-            f.write(f"{t},{p:.4f},{r:.4f},{map50:.4f},{map5095:.4f},{avg_nonzero_pct:.4f}\n")
+        f.write("threshold,precision,recall,map50,avg_nonzero_pct\n")
+        for t, p, r, map50, avg_nonzero_pct in rows:
+            f.write(f"{t},{p:.4f},{r:.4f},{map50:.4f},{avg_nonzero_pct:.4f}\n")
 
     print(f"\nResults -> {RESULTS_CSV}")
 

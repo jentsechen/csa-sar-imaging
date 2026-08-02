@@ -69,7 +69,7 @@ def run_val(model, yaml_path, eval_dir, args):
         verbose=False,
     )
     box = metrics.box
-    return box.mp, box.mr, box.map50, box.map
+    return box.mp, box.mr, box.map50
 
 
 def main():
@@ -91,9 +91,9 @@ def main():
         yaml_path = build_eval_set(image_dir, eval_dir, stems)
         results[name] = run_val(model, yaml_path, eval_dir, args)
 
-    print(f"{'Set':<10} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9} {'mAP@0.5:0.95':>13}")
-    for name, (p, r, map50, map5095) in results.items():
-        print(f"{name:<10} {p:>10.4f} {r:>8.4f} {map50:>9.4f} {map5095:>13.4f}")
+    print(f"{'Set':<10} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
+    for name, (p, r, map50) in results.items():
+        print(f"{name:<10} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
 
 
 if __name__ == "__main__":
