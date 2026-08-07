@@ -52,3 +52,5 @@ end_to_end_pipeline/*threshold_eval
 end_to_end_pipeline/threshold_jpg
 end_to_end_pipeline/threshold_sweep
 end_to_end_pipeline/csa_failures
+end_to_end_pipeline/union_masked
+end_to_end_pipeline/union_masked_eval
