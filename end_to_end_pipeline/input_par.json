@@ -1,1 +1,0 @@
-{"wavelength_m": 0.1152, "pulse_width_sec": 1.25e-05, "pulse_rep_freq_hz": 1000.0, "bandwidth_hz": 50000000.0, "sampling_freq_hz": 64000000.0, "closest_slant_range_m": 4000.0, "height_m": 0.0, "azi_win_en": true, "rng_pad_time": 4, "noise_en": false, "snr_db": 25.0, "coherent_scatter_en": false}

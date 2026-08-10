@@ -42,15 +42,9 @@
 
 end_to_end_pipeline/images
 end_to_end_pipeline/labels
-end_to_end_pipeline/point_target_location
-end_to_end_pipeline/echo_signal
-end_to_end_pipeline/focused_image
-end_to_end_pipeline/csa_jpg
-end_to_end_pipeline/*csa_eval
-end_to_end_pipeline/*original_eval
-end_to_end_pipeline/*threshold_eval
-end_to_end_pipeline/threshold_jpg
-end_to_end_pipeline/threshold_sweep
-end_to_end_pipeline/csa_failures
+end_to_end_pipeline/original_eval
+end_to_end_pipeline/original_union_eval
+end_to_end_pipeline/union_csa_union_eval
 end_to_end_pipeline/union_masked
 end_to_end_pipeline/union_masked_eval
+end_to_end_pipeline/union_pipeline

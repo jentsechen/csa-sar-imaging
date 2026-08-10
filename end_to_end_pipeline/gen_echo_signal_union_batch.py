@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-"""Batch-generate echo signals from point_target_location/*.json via the
-`gen_echo_signal` C++ binary, for timing/throughput measurement.
+"""Batch-generate echo signals from the union-masked images (union_masked/images/*.jpg
+-- pixels outside GT-union-predicted-box zeroed, raw pixel values kept inside),
+using a separate self-contained working directory so it doesn't collide with
+the threshold=60 pipeline already in point_target_location/ and echo_signal/.
 
-Reads N point-target scenes (default 10) from point_target_location/, writes
-input_par.json (HRSID sensor params, same as used for P0002_1800_2600_2400_3200
-in TestMultiPointTarget/TestMultiPointTarget.py), then runs
-`../build/gen_echo_signal <target>` once per scene -> echo_signal/<target>.npy.
-Reports per-target and total elapsed time.
+Unlike jpg_to_point_target.py, no additional intensity threshold is applied --
+the union mask itself is the "thresholding method" here, so every nonzero
+pixel inside the box is fed to gen_echo_signal as a scatterer.
 
-Runtime scales with the number of nonzero (post-threshold) scatterer pixels
-in the point-target JSON -- measured at ~0.0475 s per scatterer pixel across
-10 sample scenes (46-49 s/1000px, consistently). A few scenes keep far more
-bright pixels after thresholding (e.g. 32,168 vs the usual ~250-1500) and
-would take 20+ minutes each, so scenes whose predicted runtime exceeds
---max-seconds are skipped up front, and a subprocess timeout guards against
-the estimate being wrong for some other reason.
+azi_win_en is set to False for this run (per instruction).
+
+Runtime is predicted the same way as gen_echo_signal_batch.py (~0.0462 s per
+nonzero pixel, r=0.9999 fit); scenes whose predicted runtime exceeds
+--max-seconds are skipped up front, with a subprocess timeout as a safety net.
 
 Usage:
-    python gen_echo_signal_batch.py --n 10
-    python gen_echo_signal_batch.py --n 100 --max-seconds 120
+    python gen_echo_signal_union_batch.py --max-seconds 300
 """
 import argparse
 import json
@@ -26,14 +23,19 @@ import os
 import subprocess
 import time
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+import cv2
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+UNION_MASKED_IMAGES_DIR = os.path.join(SCRIPT_DIR, "union_masked", "images")
+
+BASE = os.path.join(SCRIPT_DIR, "union_pipeline")
 POINT_TARGET_DIR = os.path.join(BASE, "point_target_location")
 ECHO_SIGNAL_DIR = os.path.join(BASE, "echo_signal")
-GEN_ECHO_SIGNAL_BIN = os.path.join(BASE, "..", "build", "gen_echo_signal")
+GEN_ECHO_SIGNAL_BIN = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "build", "gen_echo_signal"))
 SKIPPED_LOG = os.path.join(BASE, "skipped_scenes.txt")
 TIMING_LOG = os.path.join(BASE, "echo_signal_timing.csv")
 
-SECONDS_PER_NONZERO_PIXEL = 0.0475  # measured across 10 sample scenes, ~46-49 s/1000px
+SECONDS_PER_NONZERO_PIXEL = 0.0462  # measured across 99 threshold=60 scenes, r=0.9999
 
 INPUT_PAR = {
     "wavelength_m": 0.1152,
@@ -43,7 +45,7 @@ INPUT_PAR = {
     "sampling_freq_hz": 64e6,
     "closest_slant_range_m": 4e3,
     "height_m": 0.0,
-    "azi_win_en": True,
+    "azi_win_en": False,   # per instruction
     "rng_pad_time": 4,
     "noise_en": False,
     "snr_db": 25.0,
@@ -56,12 +58,17 @@ def write_input_par():
         json.dump(INPUT_PAR, f)
 
 
-def list_targets(n):
-    stems = sorted(
-        os.path.splitext(f)[0] for f in os.listdir(POINT_TARGET_DIR)
-        if f.endswith(".json")
-    )
-    return stems[:n]
+def build_point_target_jsons():
+    os.makedirs(POINT_TARGET_DIR, exist_ok=True)
+    stems = sorted(os.path.splitext(f)[0] for f in os.listdir(UNION_MASKED_IMAGES_DIR) if f.endswith(".jpg"))
+    for stem in stems:
+        out_path = os.path.join(POINT_TARGET_DIR, stem + ".json")
+        if os.path.exists(out_path):
+            continue
+        img = cv2.imread(os.path.join(UNION_MASKED_IMAGES_DIR, stem + ".jpg"), cv2.IMREAD_GRAYSCALE)
+        with open(out_path, "w") as f:
+            json.dump(img.tolist(), f)
+    return stems
 
 
 def count_nonzero(target):
@@ -95,15 +102,17 @@ def log_timing(target, nz, elapsed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=10, help="number of echo signals to generate")
-    ap.add_argument("--max-seconds", type=float, default=120,
-                     help="skip scenes whose predicted runtime (from scatterer count) exceeds this")
+    ap.add_argument("--n", type=int, default=100, help="number of echo signals to generate")
+    ap.add_argument("--max-seconds", type=float, default=300,
+                     help="skip scenes whose predicted runtime (from nonzero pixel count) exceeds this")
     args = ap.parse_args()
 
+    os.makedirs(BASE, exist_ok=True)
     write_input_par()
     os.makedirs(ECHO_SIGNAL_DIR, exist_ok=True)
 
-    targets = list_targets(args.n)
+    all_stems = build_point_target_jsons()
+    targets = all_stems[: args.n]
     todo = [t for t in targets if not os.path.exists(os.path.join(ECHO_SIGNAL_DIR, t + ".npy"))]
     already_done = len(targets) - len(todo)
 

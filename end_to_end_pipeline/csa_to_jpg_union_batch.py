@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Run CSA focusing on echo_signal/*.npy, compute magnitude in dB, and convert
-to plain grayscale JPGs usable with sar_ship_detect/infer.py.
+"""Run CSA focusing on union_pipeline/echo_signal/*.npy, compute magnitude in
+dB, and convert to plain grayscale JPGs -- the union-mask counterpart of
+csa_to_jpg_batch.py, kept in its own self-contained union_pipeline/ directory.
 
-Pipeline per target (matching TestMultiPointTarget/TestMultiPointTarget.py):
-    echo_signal/<target>.npy
-      -> [TestMultiPointTarget focus]     -> focused_image/<target>.npy
-      -> [TestMultiPointTarget calc_mag]  -> focused_image/<target>_mag_db.npy
-      -> [crop + 30dB clip + normalize]   -> csa_jpg/<target>.jpg
+Pipeline per target:
+    union_pipeline/echo_signal/<target>.npy
+      -> [TestMultiPointTarget focus]     -> union_pipeline/focused_image/<target>.npy
+      -> [TestMultiPointTarget calc_mag]  -> union_pipeline/focused_image/<target>_mag_db.npy
+      -> [crop + 30dB clip + normalize]   -> union_pipeline/csa_jpg/<target>.jpg
 
 Usage:
-    python csa_to_jpg_batch.py --n 10
+    python csa_to_jpg_union_batch.py --n 100
 """
 import argparse
 import os
@@ -19,11 +20,12 @@ import time
 import cv2
 import numpy as np
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.join(SCRIPT_DIR, "union_pipeline")
 ECHO_SIGNAL_DIR = os.path.join(BASE, "echo_signal")
 FOCUSED_IMAGE_DIR = os.path.join(BASE, "focused_image")
 CSA_JPG_DIR = os.path.join(BASE, "csa_jpg")
-TEST_MULTI_POINT_TARGET_BIN = os.path.join(BASE, "..", "build", "TestMultiPointTarget")
+TEST_MULTI_POINT_TARGET_BIN = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "build", "TestMultiPointTarget"))
 
 N_ROW, N_COL = 800, 800
 DYNAMIC_RANGE_DB = 30
@@ -83,7 +85,7 @@ def process_target(target):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=10, help="number of scenes to process")
+    ap.add_argument("--n", type=int, default=100, help="number of scenes to process")
     args = ap.parse_args()
 
     os.makedirs(FOCUSED_IMAGE_DIR, exist_ok=True)

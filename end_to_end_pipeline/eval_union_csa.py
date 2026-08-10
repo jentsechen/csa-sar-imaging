@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Compare YOLO Precision/Recall/mAP@0.5 between the original JPGs and the
-threshold=150-only JPGs (no echo/CSA involved), over all selected scenes.
+"""Compare YOLO Precision/Recall/mAP@0.5 between the original images and the
+union-mask CSA pipeline (azi_win_en=False), over the same scene set.
 
 Usage:
-    python eval_original_vs_threshold.py --device cpu
+    python eval_union_csa.py --device cpu
 """
 import argparse
 import os
@@ -11,19 +11,19 @@ import os
 from ultralytics import YOLO
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-ORIGINAL_IMAGES_DIR = os.path.join(BASE, "images")
-THRESHOLD_JPG_DIR = os.path.join(BASE, "threshold_jpg")
+ORIGINAL_DIR = os.path.join(BASE, "images")
+UNION_CSA_DIR = os.path.join(BASE, "union_pipeline", "csa_jpg")
 LABELS_DIR = os.path.join(BASE, "labels")
 WEIGHTS = os.path.join(BASE, "..", "sar_ship_detect", "weights", "best.pt")
 
 SETS = {
-    "original": ORIGINAL_IMAGES_DIR,
-    "threshold": THRESHOLD_JPG_DIR,
+    "original": ORIGINAL_DIR,
+    "union_csa": UNION_CSA_DIR,
 }
 
 
-def all_stems():
-    return sorted(os.path.splitext(f)[0] for f in os.listdir(ORIGINAL_IMAGES_DIR) if f.endswith(".jpg"))
+def processed_stems():
+    return sorted(os.path.splitext(f)[0] for f in os.listdir(UNION_CSA_DIR) if f.endswith(".jpg"))
 
 
 def build_eval_set(image_dir, eval_dir, stems):
@@ -80,20 +80,20 @@ def main():
     ap.add_argument("--device", default="cpu")
     args = ap.parse_args()
 
-    stems = all_stems()
+    stems = processed_stems()
     print(f"Comparing on {len(stems)} scene(s)\n")
 
     model = YOLO(WEIGHTS)
 
     results = {}
     for name, image_dir in SETS.items():
-        eval_dir = os.path.join(BASE, f"{name}_eval")
+        eval_dir = os.path.join(BASE, f"{name}_union_eval")
         yaml_path = build_eval_set(image_dir, eval_dir, stems)
         results[name] = run_val(model, yaml_path, eval_dir, args)
 
-    print(f"{'Set':<10} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
+    print(f"{'Set':<12} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
     for name, (p, r, map50) in results.items():
-        print(f"{name:<10} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
+        print(f"{name:<12} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
 
 
 if __name__ == "__main__":
