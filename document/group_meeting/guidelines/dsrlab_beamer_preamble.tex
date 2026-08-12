@@ -10,16 +10,25 @@
 % Usage (from a report .tex in document/group_meeting/YYYY-MM-DD/):
 %   \input{../guidelines/dsrlab_beamer_preamble.tex}
 %
-% Compiles with LuaLaTeX (see .latexmkrc) -- needs `texlive-luatex` and
-% `fonts-crosextra-carlito` installed.
+% Compiles with LuaLaTeX (see .latexmkrc) -- needs a LaTeX distribution with
+% LuaLaTeX (e.g. MiKTeX or TeX Live). Font auto-detected: Calibri on Windows
+% (ships with Windows/Office), falling back to Carlito on systems without it
+% (Linux: install `fonts-crosextra-carlito`) -- see below.
 % ══════════════════════════════════════════════════════════════════════════════
 
-% -- Font: the lab template uses Calibri (proprietary, Windows-only); Carlito
-%    is its metric-compatible open substitute.
+% -- Font: the lab template uses Calibri; Carlito is its metric-compatible
+%    open substitute, used automatically when Calibri isn't installed (e.g.
+%    on Linux). Standard ligatures (liga/clig) and contextual alternates
+%    (calt) are disabled either way.
 \usefonttheme{professionalfonts}
 \usepackage{fontspec}
-\setmainfont{Carlito}
-\setsansfont{Carlito}
+\IfFontExistsTF{Calibri}{%
+  \setmainfont{Calibri}[RawFeature={-liga,-clig,-calt}]
+  \setsansfont{Calibri}[RawFeature={-liga,-clig,-calt}]
+}{%
+  \setmainfont{Carlito}[RawFeature={-liga,-clig,-calt}]
+  \setsansfont{Carlito}[RawFeature={-liga,-clig,-calt}]
+}
 
 \usepackage{graphicx}
 \usepackage{amsmath, amssymb}
@@ -133,7 +142,7 @@
         {\fontsize{22.7}{27.2}\selectfont\bfseries\color{dsrlabBrownText}\inserttitle};
       \node[anchor=north east, align=right]
         at ([xshift=-0.6cm,yshift=-4.9cm]current page.north east)
-        {\fontsize{6.6}{7.9}\selectfont
+        {\fontsize{9}{10.8}\selectfont
          \begin{tabular}{r@{\hspace{0.5em}}l}
            \color{dsrlabGrayLabel} Date: & \color{dsrlabBrownText}\insertdate \\
            \color{dsrlabGrayLabel} Presented by: & \color{dsrlabBrownText}\insertauthor \\
