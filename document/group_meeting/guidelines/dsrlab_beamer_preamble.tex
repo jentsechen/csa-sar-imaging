@@ -1,0 +1,154 @@
+% ══════════════════════════════════════════════════════════════════════════════
+% NTU GSAT DigitalSystemResearchLab — shared Beamer preamble
+%
+% Colors/positions below were extracted directly from the lab's
+% guidelines/template.potx (unzipped as OOXML and read from
+% ppt/theme/theme1.xml, ppt/slideMasters/slideMaster1.xml,
+% ppt/slideLayouts/slideLayout1.xml, and the embedded background/accent
+% images) -- not guessed from the rendered PDF preview.
+%
+% Usage (from a report .tex in document/group_meeting/YYYY-MM-DD/):
+%   \input{../guidelines/dsrlab_beamer_preamble.tex}
+%
+% Compiles with LuaLaTeX (see .latexmkrc) -- needs `texlive-luatex` and
+% `fonts-crosextra-carlito` installed.
+% ══════════════════════════════════════════════════════════════════════════════
+
+% -- Font: the lab template uses Calibri (proprietary, Windows-only); Carlito
+%    is its metric-compatible open substitute.
+\usefonttheme{professionalfonts}
+\usepackage{fontspec}
+\setmainfont{Carlito}
+\setsansfont{Carlito}
+
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage[font=footnotesize]{caption}
+
+% -- Colors (sampled/read directly from template.potx) -------------------------
+\definecolor{dsrlabCreamCenter}{HTML}{F6F6EE}   % background.png center
+\definecolor{dsrlabCreamEdge}{HTML}{E1E1D8}     % background.png corners (vignette)
+\definecolor{dsrlabBrown}{HTML}{492407}         % footer bar fill
+\definecolor{dsrlabBrownDark}{HTML}{371B05}     % footer bar, darker toward bottom
+\definecolor{dsrlabAccentLine}{HTML}{B04400}    % thin highlight line atop footer bar
+\definecolor{dsrlabGreen}{HTML}{6E9F33}         % theme accent5 -- corner square + wordmark caps
+\definecolor{dsrlabBrownText}{HTML}{704D02}     % theme accent4 -- title / bullets / field values
+\definecolor{dsrlabGrayLabel}{HTML}{7F7F7F}     % bg1 lumMod 50% -- "Date:" etc. labels
+
+% -- Itemize/enumerate markers: bullet color is accent4 (brown), per
+%    slideMaster bodyStyle buClr -- NOT green.
+\setbeamercolor{itemize item}{fg=dsrlabBrownText}
+\setbeamercolor{itemize subitem}{fg=dsrlabBrownText}
+\setbeamercolor{enumerate item}{fg=dsrlabBrownText}
+
+% -- Base look ------------------------------------------------------------------
+\setbeamercolor{background canvas}{bg=dsrlabCreamCenter}
+\setbeamercolor{normal text}{fg=black, bg=dsrlabCreamCenter}
+\setbeamercolor{frametitle}{fg=dsrlabBrownText, bg=dsrlabCreamCenter}
+\setbeamercolor{title}{fg=dsrlabBrownText}
+\setbeamertemplate{navigation symbols}{}
+
+% Font sizes: master titleStyle=48pt bold, bodyStyle=20pt, field labels=14pt,
+% wordmark/slide-number=16pt (PowerPoint pt, on the template's 10x7.5in
+% canvas). Scaled to beamer's 16:9 virtual canvas (160x90mm) vs. the
+% deployed 16:9 PowerPoint canvas (13.333x7.5in = 338.67x190.5mm) by the
+% height ratio 90/190.5 = 0.4724, so the RELATIVE hierarchy (title:body:label
+% = 48:20:14) matches the source template exactly:
+%   48pt -> 22.7pt   20pt -> 9.5pt   14pt -> 6.6pt   16pt -> 7.6pt
+% (Checklist item 19's ">=16pt, prefer >=18pt" is a PowerPoint-canvas-pt
+% convention, not comparable to beamer's differently-scaled virtual pt --
+% legibility is governed by final projected size, not this internal number.)
+\setbeamerfont{frametitle}{size=\fontsize{22.7}{27.2}\selectfont, series=\bfseries}
+\setbeamerfont{normal text}{size=\fontsize{9.5}{11.4}\selectfont}
+
+% -- Background: flat cream fill. (background.png has a very subtle radial
+%    vignette, but a two-tone hard-edged approximation of it just reads as an
+%    unwanted border, so a single flat color is the cleaner choice here.)
+\newcommand{\dsrlabVignette}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[dsrlabCreamCenter] (current page.south west) rectangle (current page.north east);
+  \end{tikzpicture}%
+}
+
+% -- Corner accent square + slide number overlaid in white (top-right, every
+%    slide) -- matches slideMaster: green picture + white bold slide-number
+%    placeholder occupying the same region.
+% Square: x-inset from right = 328700/9144000 = 3.594% of width -> 0.575cm on
+% a 16cm-wide canvas; width = 428625/9144000 = 4.687% -> 0.75cm; height =
+% 457200/6858000 = 6.667% of height -> 0.6cm on a 9cm-tall canvas; flush top.
+\newcommand{\dsrlabCornerAccent}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[dsrlabGreen] (current page.north east)
+      ++(-0.575cm, 0) rectangle ++(-0.75cm, -0.6cm);
+    \node[white, font=\bfseries\fontsize{7.6}{9.1}\selectfont]
+      at ($(current page.north east)+(-0.95cm,-0.3cm)$) {\insertframenumber};
+  \end{tikzpicture}%
+}
+\addtobeamertemplate{background}{}{\dsrlabVignette\dsrlabCornerAccent}
+
+% -- Footer bar with lab wordmark (every slide) ---------------------------------
+% "NTU | GSAT DigitalSystemResearchLab" -- NTU and GSAT are green (not white);
+% in "DigitalSystemResearchLab" the capitals D/S/R/L are green, rest is white.
+\newcommand{\dsrlabWordmark}{%
+  {\fontsize{7.6}{9.1}\selectfont\bfseries
+  \textcolor{dsrlabGreen}{NTU}\,\textcolor{dsrlabBrownDark}{|}\,%
+  \textcolor{dsrlabGreen}{GSAT}\quad
+  \textcolor{dsrlabGreen}{D}\textcolor{white}{igital}%
+  \textcolor{dsrlabGreen}{S}\textcolor{white}{ystem}%
+  \textcolor{dsrlabGreen}{R}\textcolor{white}{esearch}%
+  \textcolor{dsrlabGreen}{L}\textcolor{white}{ab}}%
+}
+
+\setbeamertemplate{footline}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[dsrlabBrown] (current page.south west) rectangle
+      ([yshift=0.7cm]current page.south east);
+    \fill[dsrlabAccentLine] ([yshift=0.68cm]current page.south west) rectangle
+      ([yshift=0.72cm]current page.south east);
+    \node[anchor=south west] at ([xshift=0.3cm,yshift=0.12cm]current page.south west)
+      {\dsrlabWordmark};
+  \end{tikzpicture}%
+}
+
+% -- Frame title (plain, matches the template's minimal header) ----------------
+\setbeamertemplate{frametitle}{%
+  \vspace{0.3cm}
+  \insertframetitle\par
+  \vspace{0.1cm}
+}
+
+% -- Title page (template.potx slideLayout1: title upper-right around
+%    27-42% slide height; Date/Presented by/Advisor block around 64-72%
+%    height, gray labels + brown values, right-aligned) -------------------------
+\newcommand{\dsrlabtitlepage}{%
+  \begin{frame}[plain]
+    \dsrlabVignette
+    \dsrlabCornerAccent
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=north, align=center, text width=13cm]
+        at ([yshift=-2.4cm]current page.north)
+        {\fontsize{22.7}{27.2}\selectfont\bfseries\color{dsrlabBrownText}\inserttitle};
+      \node[anchor=north east, align=right]
+        at ([xshift=-0.6cm,yshift=-4.9cm]current page.north east)
+        {\fontsize{6.6}{7.9}\selectfont
+         \begin{tabular}{r@{\hspace{0.5em}}l}
+           \color{dsrlabGrayLabel} Date: & \color{dsrlabBrownText}\insertdate \\
+           \color{dsrlabGrayLabel} Presented by: & \color{dsrlabBrownText}\insertauthor \\
+           \color{dsrlabGrayLabel} Advisor: & \color{dsrlabBrownText}\dsrlabAdvisor \\
+         \end{tabular}};
+    \end{tikzpicture}
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[dsrlabBrown] (current page.south west) rectangle
+        ([yshift=0.7cm]current page.south east);
+      \fill[dsrlabAccentLine] ([yshift=0.68cm]current page.south west) rectangle
+        ([yshift=0.72cm]current page.south east);
+      \node[anchor=south west] at ([xshift=0.3cm,yshift=0.12cm]current page.south west)
+        {\dsrlabWordmark};
+    \end{tikzpicture}
+  \end{frame}
+}
+\newcommand{\dsrlabAdvisor}{}
+\newcommand{\advisor}[1]{\renewcommand{\dsrlabAdvisor}{#1}}
