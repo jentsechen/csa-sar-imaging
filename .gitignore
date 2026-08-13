@@ -1,10 +1,12 @@
 /build/
 /.vscode/*.json
 
+__pycache__/
+*.pyc
+
 /TestImagingPar/*.json
 /TestImagingPar/*.npy
 /TestImagingPar/*.mat
-/TestImagingPar/__pycache__/
 
 /TestChirpScalingAlgo/*.html
 /TestChirpScalingAlgo/result/
@@ -18,13 +20,11 @@
 /TestMultiPointTarget/*.html
 /TestMultiPointTarget/*.json
 /TestMultiPointTarget/*.png
-/TestMultiPointTarget/__pycache__/
 
 /gen_raw_data/*.png
 /UmbraDataProc/*.tif
 /UmbraDataProc/*.png
 /UmbraDataProc/*.json
-/UmbraDataProc/__pycache__/
 
 /venv/
 /document/simulation_report/*
@@ -53,3 +53,6 @@ end_to_end_pipeline/union_csa_union_eval
 end_to_end_pipeline/union_masked
 end_to_end_pipeline/union_masked_eval
 end_to_end_pipeline/union_pipeline
+end_to_end_pipeline/union_csa_t80_union_eval
+end_to_end_pipeline/union_csa_t100_union_eval
+end_to_end_pipeline/union_csa_t120_union_eval

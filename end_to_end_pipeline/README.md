@@ -106,3 +106,89 @@ comparison).
   **`azi_win_en: false`**.
 - YOLO weights: `sar_ship_detect/weights/best.pt`, conf=0.25, iou=0.45,
   imgsz=800 (matching `sar_ship_detect/infer.py` defaults).
+
+## Post-CSA Threshold Analysis
+
+Follow-up experiment on top of the union-mask pipeline above: does applying
+a fixed intensity threshold to the *CSA output* (zeroing pixels below T,
+separate from the union-mask step) clean up residual reconstruction noise
+without damaging real ship signal? All figures/data from this analysis are
+saved to `../diagram/thresholding/union_csa/` (repo-level `diagram/` folder,
+not under `end_to_end_pipeline/`).
+
+| Script | Input | Output | Notes |
+|---|---|---|---|
+| `threshold_union_csa.py --threshold T` | `union_pipeline/csa_jpg/*.jpg` | `union_pipeline/csa_jpg_t<T>/*.jpg` | Thresholds all completed scenes; `T` tested so far: 80, 100, 120 |
+| `eval_union_csa_threshold.py --threshold T` | `images/`, `union_pipeline/csa_jpg/`, `union_pipeline/csa_jpg_t<T>/` | `original_union_eval/`, `union_csa_union_eval/`, `union_csa_t<T>_union_eval/` | Precision/Recall/mAP@0.5, three-way: original vs union_csa (no threshold) vs union_csa_t\<T\> |
+| `find_threshold_diff_images.py --threshold T` | same as above | `../diagram/thresholding/union_csa/per_image_diff_t<T>.json` | Per-image GT/prediction IoU matching (TP/FP/FN) for all three sets; prints scenes where thresholding changes the detection outcome, and flags candidates where it recovers toward original without exceeding it |
+
+### Cross-section plotting (`crosssection_plots/`)
+
+Scripts that visualize a specific scene's row/column intensity profile
+and/or the raw images themselves, to see *why* thresholding helps or hurts
+a given detection. Run from inside `crosssection_plots/` (or adjust
+relative paths accordingly):
+
+```bash
+cd crosssection_plots
+
+# Line-plot cross-sections (union_masked input vs CSA output vs CSA+threshold),
+# saved as two SEPARATE files (_horizontal.png / _vertical.png). By default
+# also overlays GT box edges (tab:purple) and the model's predicted box
+# edges on the original image (tab:cyan) wherever a box crosses the cut.
+python plot_crosssection_scene.py <stem> \
+    --row <R> --col <C> \
+    --row-window <R0> <R1> --col-window <C0> <C1> \
+    --threshold 120
+#   --no-boxes              disable the GT/detect box overlay
+#   --thresholded-path P    read the CSA+threshold image from P instead of
+#                           union_pipeline/csa_jpg_t<T>/<stem>.jpg -- use a
+#                           lossless .png here to avoid small-value ripple
+#                           from re-encoding a thresholded array as JPEG
+#   --out PATH.png          override the output path (still split into
+#                           PATH_horizontal.png / PATH_vertical.png)
+
+# Same cut row/col, but shown directly on the cropped images themselves
+# (three separate .png files: _union_masked / _csa / _csa_t<T>), with a red
+# line marking the cut and GT (tab:purple) / detect (tab:cyan) box rectangles.
+python plot_crosssection_overlay_on_images.py <stem> \
+    --row <R> --col <C> \
+    --row-window <R0> <R1> --col-window <C0> <C1> \
+    --threshold 120
+
+# One-off, hardcoded to P0002_3600_4400_1200_2000 (row=75, col=699) -- the
+# original ship-crop cross-section from before plot_crosssection_scene.py
+# was generalized.
+python plot_point_target_vs_csa_crosssection.py --threshold 120
+```
+
+Both `plot_crosssection_scene.py` and `plot_crosssection_overlay_on_images.py`
+re-run YOLO on `images/<stem>.jpg` each time to get the "detect box" (GT
+boxes come from `labels/<stem>.txt`) -- this is the same box source
+`mask_outside_gt_pred_union.py` unions to build `union_masked/`, just kept
+as two separate sets here instead of merged, so GT vs. detection can be
+compared directly.
+
+### Findings so far (92 scenes)
+
+| Set | Precision | Recall | mAP@0.5 |
+|---|---|---|---|
+| original | 1.0000 | 0.9783 | 0.9750 |
+| union_csa (no threshold) | 0.9774 | 0.9399 | 0.9538 |
+| union_csa_t80 | 0.9847 | 0.9855 | 0.9841 |
+| union_csa_t100 | 0.9918 | 0.9855 | 0.9844 |
+| union_csa_t120 | 0.9927 | 0.9855 | 0.9847 |
+
+Thresholding the CSA output (on top of the union mask) recovers most of the
+gap to `original` -- Recall saturates at 0.9855 from T=80 upward, while
+Precision/mAP keep improving only marginally as T increases to 120. Isolated
+per-scene inspection (`find_threshold_diff_images.py` +
+`crosssection_plots/`) shows two distinct mechanisms behind this recovery:
+thresholding can either clean up an unrelated false-positive elsewhere in
+the scene, or directly narrow a ship's own CSA-blurred signal enough to push
+its detection IoU back above 0.5 (e.g. `P0070_600_1400_3600_4400`, where
+narrowing the box from IoU=0.44 to IoU=0.71 flips a miss into a match).
+Pushing the threshold higher than ~120 (tested up to 150 on a single crop)
+does not converge to a clean ship -- it keeps eroding real signal at the
+same rate it removes residual background, since the two overlap in
+intensity.
