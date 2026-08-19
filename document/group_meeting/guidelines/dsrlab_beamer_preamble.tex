@@ -72,6 +72,8 @@
 % legibility is governed by final projected size, not this internal number.)
 \setbeamerfont{frametitle}{size=\fontsize{22.7}{27.2}\selectfont, series=\bfseries}
 \setbeamerfont{normal text}{size=\fontsize{9.5}{11.4}\selectfont}
+\setbeamerfont{itemize/enumerate body}{size=\fontsize{14}{16.8}\selectfont}
+\setbeamerfont{itemize/enumerate subbody}{size=\fontsize{14}{16.8}\selectfont}
 
 % -- Background: flat cream fill. (background.png has a very subtle radial
 %    vignette, but a two-tone hard-edged approximation of it just reads as an
@@ -124,9 +126,9 @@
 
 % -- Frame title (plain, matches the template's minimal header) ----------------
 \setbeamertemplate{frametitle}{%
-  \vspace{0.3cm}
-  \insertframetitle\par
   \vspace{0.1cm}
+  \insertframetitle\par
+  \vspace{0.05cm}
 }
 
 % -- Title page (template.potx slideLayout1: title upper-right around

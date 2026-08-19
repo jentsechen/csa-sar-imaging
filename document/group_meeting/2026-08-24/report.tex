@@ -5,7 +5,7 @@
 \documentclass[aspectratio=169, 11pt]{beamer}
 \input{../guidelines/dsrlab_beamer_preamble.tex}
 
-\title{Real-Time SAR Ship Detection: A Speckle-Model-Based DSP Pipeline}
+\title{Real-Time SAR Ship Detection: \\ A Speckle-Model-Based DSP Pipeline}
 \author{Jen-Tse Chen}
 \date{2026-08-24}
 \advisor{Pei-Yun Tsai}
@@ -19,13 +19,47 @@
 \begin{frame}{Outline}
   \begin{itemize}
     \item Introduction
-    \item Problem Statement
+    \item Problem and Motivation
     \item Highlight of Contribution
     \item System Definition
     \item Previous Methods
     \item Proposed Method
     \item Comparison
     \item Conclusion
+  \end{itemize}
+\end{frame}
+
+% ── c. Introduction ────────────────────────────────────────────────────────
+% Edit the bullet text below, and uncomment + point \includegraphics at your
+% own figure (put image files in the figures/ folder next to this report.tex).
+\begin{frame}{Introduction}
+  \begin{itemize}
+    \item SAR raw data are downlinked for ground-based processing, including SAR focusing, image enhancement, and ship detection.
+    \item Detected ships provide information for maritime surveillance.
+  \end{itemize}
+  \begin{center}
+    \includegraphics[width=0.65\textwidth]{./figures/ground_based_sar_ship_detection.png}
+  \end{center}
+\end{frame}
+
+% ── d. Problem and Motivation ───────────────────────────────────────────────────────────
+\begin{frame}{Problem and Motivation}
+  \begin{itemize}
+    \item Ground-Based Processing
+    \begin{itemize}
+      \item Large raw-data volume
+      \item Limited downlink bandwidth
+      \item Delayed target information
+    \end{itemize}
+    \item Onboard Processing
+    \begin{itemize}
+      \item Reduced data transmission and detection latency
+      \item Challenge: Limited computation, memory, and power
+    \end{itemize}
+    \item Research Goal
+    \begin{itemize}
+      \item Lightweight SAR processing for low-latency ship detection
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
