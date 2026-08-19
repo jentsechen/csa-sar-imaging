@@ -36,6 +36,7 @@ __pycache__/
 !/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.tex
 !/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.pdf
 !/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.latexmkrc
+!/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/figures/
 
 /ship_detect/results/
 /ship_detect/test_data/

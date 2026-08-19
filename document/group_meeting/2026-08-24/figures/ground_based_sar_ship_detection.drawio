@@ -1,0 +1,52 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.8 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.8">
+  <diagram name="第 1 页" id="fZrO2zNDx8fpUb2gmcSe">
+    <mxGraphModel dx="662" dy="426" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-1" value="" style="verticalLabelPosition=bottom;outlineConnect=0;align=center;dashed=0;html=1;verticalAlign=top;shape=mxgraph.pid.misc.ship" vertex="1" parent="1">
+          <mxGeometry x="400" y="376" width="39" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-3" value="" style="fontColor=#0066CC;verticalAlign=top;verticalLabelPosition=bottom;labelPosition=center;align=center;html=1;outlineConnect=0;fillColor=none;strokeColor=#000000;gradientColor=none;gradientDirection=north;strokeWidth=2;shape=mxgraph.networks.satellite_dish;direction=east;" vertex="1" parent="1">
+          <mxGeometry x="140" y="380" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-4" value="" style="verticalLabelPosition=bottom;outlineConnect=0;align=center;dashed=0;html=1;verticalAlign=top;shape=mxgraph.pid.misc.ship" vertex="1" parent="1">
+          <mxGeometry x="431" y="414" width="39" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-5" value="" style="verticalLabelPosition=bottom;outlineConnect=0;align=center;dashed=0;html=1;verticalAlign=top;shape=mxgraph.pid.misc.ship" vertex="1" parent="1">
+          <mxGeometry x="450" y="376" width="39" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-7" value="" style="fontColor=#0066CC;verticalAlign=top;verticalLabelPosition=bottom;labelPosition=center;align=center;html=1;outlineConnect=0;fillColor=none;strokeColor=#000000;gradientColor=none;gradientDirection=north;strokeWidth=2;shape=mxgraph.networks.satellite;" vertex="1" parent="1">
+          <mxGeometry x="260" y="240" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-13" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="260" y="320" as="sourcePoint" />
+            <mxPoint x="200" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-14" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Radar echoes&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="380" y="320" width="60" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-15" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;SAR raw data downlink&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="130" y="310" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-16" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Ground-based processing&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="400" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-27" value="" style="group;rotation=45;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="330" y="340" width="60" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-24" value="" style="pointerEvents=1;verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.waveforms.sine_wave;rotation=45;" vertex="1" parent="Pwgscspz2T1ns5EhHIy8-27">
+          <mxGeometry x="6" y="-14" width="20" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-25" value="" style="pointerEvents=1;verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.waveforms.sine_wave;rotation=45;" vertex="1" parent="Pwgscspz2T1ns5EhHIy8-27">
+          <mxGeometry x="20" width="20" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="Pwgscspz2T1ns5EhHIy8-26" value="" style="pointerEvents=1;verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.waveforms.sine_wave;rotation=45;" vertex="1" parent="Pwgscspz2T1ns5EhHIy8-27">
+          <mxGeometry x="34" y="14" width="20" height="42" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
