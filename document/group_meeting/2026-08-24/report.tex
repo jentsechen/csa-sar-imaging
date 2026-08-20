@@ -71,7 +71,8 @@
     \item Research Focus: Enhanced SAR imaging
     \item Evaluation Task: YOLO-based ship detection
   \end{itemize}
-  \includegraphics[width=1.05\textwidth]{./figures/evaluation_framework.png}
+  \hspace{-0.7cm}
+  \includegraphics[width=1.1\textwidth]{./figures/evaluation_framework.png}
   \vspace{-0.4cm}
   \begin{itemize}
     \item Evaluation Metrics
@@ -159,20 +160,20 @@
 
 \begin{frame}{Point-Scatterer Echo Model: Geometry}
   \begin{columns}[T]
-    \begin{column}{0.55\textwidth}
+    \begin{column}{0.5\textwidth}
       \vspace{-0.4cm}
       \begin{center}
         \includegraphics[width=\linewidth]{./figures/point_target_geometry.png}
       \end{center}
     \end{column}
-    \begin{column}{0.55\textwidth}
+    \begin{column}{0.6\textwidth}
       \begin{itemize}
         \item Target position determines the time-varying slant range $R_k(\eta_m)$.
         \item $R_k(\eta) = \sqrt{R_{0,k}^2 + (\eta_m+\Delta\eta_k)^2 V_r^2}$
         \begin{itemize}
           \item $R_{0,k}\approx R_0+d_k$
           \item $R_0$: slant range to scene center
-          \item $d_k$: range offset of scatterer $k$
+          \item $d_k$: ground-range offset of scatterer $k$, approximated as slant-range offset
           \item $\eta_m=m\Delta\eta$: slow time
         \item $\Delta\eta_k$: azimuth-time offset of scatterer $k$
         \end{itemize}
@@ -181,7 +182,7 @@
   \end{columns}
 \end{frame}
 
-{%
+{
 \setbeamertemplate{frametitle}{%
   \vspace{0.1cm}
   \mbox{\insertframetitle}\par
@@ -189,43 +190,106 @@
 }
 \begin{frame}
   \frametitle{Point-Scatterer Echo Model: Signal Synthesis}
-  % \begin{itemize}
-  %   \item Raw echo signal matrix: $S = [s_{m,n}]_{M\times N}$
-  % \end{itemize}
-  % \begin{equation*}
-  %   s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau - \frac{2R_k(\eta)}{c}}{T_r}\right)
-  %   \cdot e^{j\pi \frac{B_r}{T_r}\left(\tau - \frac{2R_k(\eta)}{c}\right)^2}
-  %   \cdot e^{-j4\pi \frac{R_k(\eta)}{\lambda}}
-  % \end{equation*}
-  % \begin{itemize}
-  %   \item $\eta = m\Delta\eta$: slow time
-  %   \item $\tau = n\Delta\tau$: fast time
-  %   \item $A_k$: scattering coefficient of point target $k$
-  %   \item $R_k(\eta)$
-  % \end{itemize}
-  
   \begin{itemize}
     \item Geometry-Dependent Delay and Phase
     \begin{itemize}
-      \item $\tau_k(\eta_m)=\frac{2R_k(\eta_m)}{c}$
-      \item $\phi_k(\eta_m)=-4\pi\frac{R_k(\eta_m)}{\lambda}$
+      \item $\tau_k(\eta_m)=\frac{2R_k(\eta_m)}{c}$, $\phi_k(\eta_m)=-4\pi\frac{R_k(\eta_m)}{\lambda}$
     \end{itemize}
-    \item Echo Synthesis: $S = [s_{m,n}]_{M\times N}$
-    \begin{itemize}
-      \item $s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau_n - \tau_k(\eta_m)}{T_r}\right)
+    \item Echo Synthesis: $\mathbf{S} = [s_{m,n}]_{M\times N}$
+    $$
+      s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau_n - \tau_k(\eta_m)}{T_r}\right)
             \cdot e^{j\pi K_r\left(\tau_n - \tau_k(\eta_m)\right)^2}
-            \cdot e^{j\phi_k(\eta_m)}$
+            \cdot e^{j\phi_k(\eta_m)}
+    $$
+    \begin{itemize}
       \item $\eta_m = m\Delta\eta$: slow time, $\tau_n = n\Delta\tau$: fast time
       \item $A_k$: scattering coefficient of scatterer $k$, $K_r=\frac{B_r}{T_r}$
     \end{itemize}
   \end{itemize}
 \end{frame}
-}%
+}
 
-\begin{frame}{Parameters}
+% \begin{frame}{Parameters}
+%   \begin{center}
+%     \renewcommand{\arraystretch}{1.3}
+%     \begin{tabular}{|l|c|l|c|}
+%       \hline
+%       Parameter & Value & Parameter & Value \\
+%       \hline
+%       Wavelength & 0.1152 m & Closest Slant Range & 4000 m \\
+%       \hline
+%       Pulse Width & 12.5 $\mu$s & Height & 0 m \\
+%       \hline
+%       Pulse Repetition Frequency & 1 kHz & Platform Velocity & 120 m/s \\
+%       \hline
+%       Bandwidth & 50 MHz & Antenna Length & 1.2 m \\
+%       \hline
+%       Sampling Frequency & 64 MHz & & \\
+%       \hline
+%     \end{tabular}
+%   \end{center}
+% \end{frame}
+
+\begin{frame}{Conventional SAR Imaging}
+  \includegraphics[width=0.6\textwidth]{./figures/sar_imaging_pipeline.png}
+  \begin{itemize}
+    \item Forward model: $\mathbf{Y}=\mathcal{E}(\mathbf{H})+\mathbf{N}$
+    \begin{itemize}
+      \item $\mathcal{E}(.)$: echo formation operator, $\mathbf{N}$: additive thermal noise
+    \end{itemize}
+    \item Imaging goal: Recover $\mathbf{H}$ from $\mathbf{Y}$.
+    \item Conventional methods: RDA, CSA, and BP
+\end{itemize}
 \end{frame}
 
-\begin{frame}{Compressive Sensing Algorithm}
+\begin{frame}{Regularization for SAR Imaging}
+  \begin{itemize}
+      \item Forward model: $\mathbf{Y}=\mathcal{E}(\mathbf{H})+\mathbf{N}$
+      \item Regularized reconstruction:
+      $
+          \hat{\mathbf{H}}
+          =
+          \arg\min_{\mathbf{H}}
+          \underbrace{
+          \frac{1}{2}
+          \left\|
+          \mathbf{Y}-\mathcal{E}(\mathbf{H})
+          \right\|_F^2
+          }_{\text{Data fidelity}}
+          +
+          \lambda
+          \underbrace{
+          \mathcal{R}(\mathbf{H})
+          }_{\text{Regularization}}
+      $
+      
+      \begin{itemize}
+        \item $\mathcal{R}(\mathbf{H})$: prior knowledge of the SAR image
+        \item Sparse prior $\rightarrow$ Compressive Sensing (CS)-based SAR imaging
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Sparse Regularization}
+  \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c|l|}
+      \hline
+      Regularization & $\mathcal{R}(\mathbf{H})$ & Property \\
+      \hline
+      $\ell_0$ & $\|\mathbf{H}\|_0$ & Exact sparsity; non-convex \\
+      \hline
+      $\ell_1$ & $\displaystyle\sum_{i,j}|H_{i,j}|$ & Convex; tractable \\
+      \hline
+      $\ell_{1/2}$ & $\displaystyle\sum_{i,j}|H_{i,j}|^{1/2}$ & Stronger sparsity; non-convex \\
+      \hline
+      TV & $\mathrm{TV}(\mathbf{H})$ & Spatial smoothness / edge preservation \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+    \item Current implementation: $\ell_1$-regularized reconstruction
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{Prediction Result}
