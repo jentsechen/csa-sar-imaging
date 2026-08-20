@@ -68,11 +68,75 @@
 % own figure (put image files in the figures/ folder next to this report.tex).
 \begin{frame}{Evaluation Framework}
   \begin{itemize}
-    \item Ray tracing for SAR echo generation
-    \item Enhanced SAR imaging as the primary research focus
-    \item Onboard YOLO-based ship detection for performance evaluation (YOLO: You Only Look Once)
+    \item Research Focus: Enhanced SAR imaging
+    \item Evaluation Task: YOLO-based ship detection
   \end{itemize}
   \includegraphics[width=1.05\textwidth]{./figures/evaluation_framework.png}
+  \vspace{-0.4cm}
+  \begin{itemize}
+    \item Evaluation Metrics
+    \begin{itemize}
+      \item Precision: $\frac{TP}{TP+FP}$
+      \item Recall: $\frac{TP}{TP+FN}$
+      \item mAP@0.5: Mean AP across classes at IoU threshold = 0.5
+
+      {\footnotesize TP: True Positive, FP: False Positive, FN: False Negative}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+% ── f. Dataset and Detection Model Setup ───────────────────────────────────
+\begin{frame}{Dataset and Detection Model Setup}
+  \begin{columns}[T]
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item HRSID
+        \begin{itemize}
+          \item High-Resolution SAR Images Dataset
+          \item Training: 3,642 images
+          \item Validation: 1,962 images
+          \item Image size: 800 $\times$ 800 pixels
+        \end{itemize}
+        \item YOLO Detection Model
+        \begin{itemize}
+          \item YOLO11m fine-tuned on HRSID (100 epochs)
+        \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Validation Performance
+        \begin{itemize}
+          \item Precision: 0.910 
+          \item Recall: 0.840
+          \item mAP@0.5: 0.922
+        \end{itemize}
+      \end{itemize}
+      \begin{center}
+        \includegraphics[width=0.9\linewidth]{./figures/map_vs_epoch.png}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── g. YOLO Inference Result ──────────────────────────────────────────────────
+\begin{frame}{YOLO Inference Result}
+  \begin{itemize}
+    \item Hardware: Intel Core i9-12900K
+  \end{itemize}
+  \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{lccc}
+      \toprule
+       & Inshore + Offshore & Inshore & Offshore \\
+       & (1962 images) & (369 images) & (1593 images) \\
+      \midrule
+      Precision & 0.913  & 0.8034 & 0.9818 \\
+      Recall    & 0.846  & 0.7406 & 0.9651 \\
+      mAP@0.5   & 0.918  & 0.8170 & 0.9838 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
 \end{frame}
 
 \end{document}
