@@ -102,6 +102,7 @@
           \item YOLO11m fine-tuned on HRSID (100 epochs)
         \end{itemize}
       \end{itemize}
+      \includegraphics[width=0.9\linewidth]{./figures/detection_model_setup.png}
     \end{column}
     \begin{column}{0.5\textwidth}
       \begin{itemize}
@@ -112,31 +113,131 @@
           \item mAP@0.5: 0.922
         \end{itemize}
       \end{itemize}
+      \includegraphics[width=0.9\linewidth]{./figures/map_vs_epoch.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── g. YOLO Ship Detection Results ──────────────────────────────────────────────────
+\begin{frame}{YOLO Ship Detection Results (1)}
+  \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c|c|c|}
+      \hline
+       & Overall & Inshore & Offshore \\
+      \hline
+      Images    & 1,962  & 369   & 1,593 \\
+      \hline
+      Precision & 0.913  & 0.803 & 0.982 \\
+      \hline
+      Recall    & 0.846  & 0.741 & 0.965 \\
+      \hline
+      mAP@0.5   & 0.918  & 0.817 & 0.984 \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+    \item Offshore scenes achieve better detection performance than inshore scenes.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{YOLO Ship Detection Results (2)}
+  \vspace{-0.8cm}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
       \begin{center}
-        \includegraphics[width=0.9\linewidth]{./figures/map_vs_epoch.png}
+        \includegraphics[width=0.95\textwidth]{./figures/offshore_example_gt_vs_pred.png}
+      \end{center}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=0.95\textwidth]{./figures/inshore_example_gt_vs_pred.png}
       \end{center}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ── g. YOLO Inference Result ──────────────────────────────────────────────────
-\begin{frame}{YOLO Inference Result}
+\begin{frame}{Point-Scatterer Echo Model: Geometry}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \vspace{-0.4cm}
+      \begin{center}
+        \includegraphics[width=\linewidth]{./figures/point_target_geometry.png}
+      \end{center}
+    \end{column}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Target position determines the time-varying slant range $R_k(\eta_m)$.
+        \item $R_k(\eta) = \sqrt{R_{0,k}^2 + (\eta_m+\Delta\eta_k)^2 V_r^2}$
+        \begin{itemize}
+          \item $R_{0,k}\approx R_0+d_k$
+          \item $R_0$: slant range to scene center
+          \item $d_k$: range offset of scatterer $k$
+          \item $\eta_m=m\Delta\eta$: slow time
+        \item $\Delta\eta_k$: azimuth-time offset of scatterer $k$
+        \end{itemize}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+{%
+\setbeamertemplate{frametitle}{%
+  \vspace{0.1cm}
+  \mbox{\insertframetitle}\par
+  \vspace{-0.4cm}
+}
+\begin{frame}
+  \frametitle{Point-Scatterer Echo Model: Signal Synthesis}
+  % \begin{itemize}
+  %   \item Raw echo signal matrix: $S = [s_{m,n}]_{M\times N}$
+  % \end{itemize}
+  % \begin{equation*}
+  %   s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau - \frac{2R_k(\eta)}{c}}{T_r}\right)
+  %   \cdot e^{j\pi \frac{B_r}{T_r}\left(\tau - \frac{2R_k(\eta)}{c}\right)^2}
+  %   \cdot e^{-j4\pi \frac{R_k(\eta)}{\lambda}}
+  % \end{equation*}
+  % \begin{itemize}
+  %   \item $\eta = m\Delta\eta$: slow time
+  %   \item $\tau = n\Delta\tau$: fast time
+  %   \item $A_k$: scattering coefficient of point target $k$
+  %   \item $R_k(\eta)$
+  % \end{itemize}
+  
   \begin{itemize}
-    \item Hardware: Intel Core i9-12900K
+    \item Geometry-Dependent Delay and Phase
+    \begin{itemize}
+      \item $\tau_k(\eta_m)=\frac{2R_k(\eta_m)}{c}$
+      \item $\phi_k(\eta_m)=-4\pi\frac{R_k(\eta_m)}{\lambda}$
+    \end{itemize}
+    \item Echo Synthesis: $S = [s_{m,n}]_{M\times N}$
+    \begin{itemize}
+      \item $s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau_n - \tau_k(\eta_m)}{T_r}\right)
+            \cdot e^{j\pi K_r\left(\tau_n - \tau_k(\eta_m)\right)^2}
+            \cdot e^{j\phi_k(\eta_m)}$
+      \item $\eta_m = m\Delta\eta$: slow time, $\tau_n = n\Delta\tau$: fast time
+      \item $A_k$: scattering coefficient of scatterer $k$, $K_r=\frac{B_r}{T_r}$
+    \end{itemize}
   \end{itemize}
-  \begin{center}
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{lccc}
-      \toprule
-       & Inshore + Offshore & Inshore & Offshore \\
-       & (1962 images) & (369 images) & (1593 images) \\
-      \midrule
-      Precision & 0.913  & 0.8034 & 0.9818 \\
-      Recall    & 0.846  & 0.7406 & 0.9651 \\
-      mAP@0.5   & 0.918  & 0.8170 & 0.9838 \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
+\end{frame}
+}%
+
+\begin{frame}{Parameters}
+\end{frame}
+
+\begin{frame}{Compressive Sensing Algorithm}
+\end{frame}
+
+\begin{frame}{Prediction Result}
+\end{frame}
+
+\begin{frame}{Slicing}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\end{frame}
+
+\begin{frame}{Reference}
 \end{frame}
 
 \end{document}
