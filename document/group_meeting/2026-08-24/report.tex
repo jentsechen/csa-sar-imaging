@@ -10,24 +10,44 @@
 \date{2026-08-24}
 \advisor{Pei-Yun Tsai}
 
+% Section-outline recap: highlights the current section in black and grays
+% out the rest. Pass 0 for the overall outline (all items black).
+\newcommand{\dsrlabActiveSec}{0}
+\newcommand{\dsrlaboutlineitem}[2]{%
+  \ifnum\dsrlabActiveSec=0
+    \item #2
+  \else
+    \ifnum#1=\dsrlabActiveSec
+      \item #2
+    \else
+      \item {\color{dsrlabGrayLabel}#2}
+    \fi
+  \fi
+}
+\newcommand{\dsrlabSectionOutline}[1]{%
+  \renewcommand{\dsrlabActiveSec}{#1}%
+  \begin{frame}{Outline}
+    \begin{itemize}
+      \dsrlaboutlineitem{1}{Introduction and Motivation}
+      \dsrlaboutlineitem{2}{Evaluation Framework}
+      \dsrlaboutlineitem{3}{SAR Echo and Imaging Model}
+      \dsrlaboutlineitem{4}{Sparse Image Refinement}
+      \dsrlaboutlineitem{5}{Experimental Results}
+      \dsrlaboutlineitem{6}{Conclusion}
+      \dsrlaboutlineitem{7}{Reference}
+    \end{itemize}
+  \end{frame}
+}
+
 \begin{document}
 
 % ── a. Topic ────────────────────────────────────────────────────────────────
 \dsrlabtitlepage
 
 % ── b. Outline ──────────────────────────────────────────────────────────────
-\begin{frame}{Outline}
-  \begin{itemize}
-    \item Introduction
-    \item Problem and Motivation
-    \item Highlight of Contribution
-    \item System Definition
-    \item Previous Methods
-    \item Proposed Method
-    \item Comparison
-    \item Conclusion
-  \end{itemize}
-\end{frame}
+\dsrlabSectionOutline{0}
+
+\dsrlabSectionOutline{1}
 
 % ── c. Introduction ────────────────────────────────────────────────────────
 % Edit the bullet text below, and uncomment + point \includegraphics at your
@@ -63,6 +83,8 @@
   \end{itemize}
 \end{frame}
 
+\dsrlabSectionOutline{2}
+
 % ── e. Proposed Enhanced SAR Imaging and Evaluation Framework ────────────────
 % Edit the bullet text below, and uncomment + point \includegraphics at your
 % own figure (put image files in the figures/ folder next to this report.tex).
@@ -73,7 +95,7 @@
   \end{itemize}
   \hspace{-0.7cm}
   \includegraphics[width=1.1\textwidth]{./figures/pipeline/evaluation_framework.png}
-  \vspace{-0.4cm}
+  \vspace{-0.5cm}
   \begin{itemize}
     \item Evaluation Metrics
     \begin{itemize}
@@ -125,7 +147,7 @@
     \renewcommand{\arraystretch}{1.3}
     \begin{tabular}{|c|c|c|c|}
       \hline
-       & Overall & Inshore & Offshore \\
+       & \textbf{Overall} & \textbf{Inshore} & \textbf{Offshore} \\
       \hline
       Images    & 1,962  & 369   & 1,593 \\
       \hline
@@ -147,16 +169,18 @@
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \begin{center}
-        \includegraphics[width=0.95\textwidth]{./figures/yolo/offshore_example_gt_vs_pred.png}
+        \includegraphics[width=0.95\textwidth]{./figures/yolo/inshore_example_gt_vs_pred.png}
       \end{center}
     \end{column}
     \begin{column}{0.5\textwidth}
       \begin{center}
-        \includegraphics[width=0.95\textwidth]{./figures/yolo/inshore_example_gt_vs_pred.png}
+        \includegraphics[width=0.95\textwidth]{./figures/yolo/offshore_example_gt_vs_pred.png}
       \end{center}
     \end{column}
   \end{columns}
 \end{frame}
+
+\dsrlabSectionOutline{3}
 
 \begin{frame}{Point-Scatterer Echo Model: Geometry}
   \begin{columns}[T]
@@ -209,6 +233,8 @@
 \end{frame}
 }
 
+\dsrlabSectionOutline{4}
+
 \begin{frame}{Conventional SAR Imaging}
   \includegraphics[width=0.6\textwidth]{./figures/pipeline/sar_imaging_pipeline.png}
   \begin{itemize}
@@ -240,13 +266,19 @@
   \end{itemize}
 \end{frame}
 
+\dsrlabSectionOutline{5}
 
-\begin{frame}{Parameters}
+\begin{frame}{Simulation Setup}
+  \begin{itemize}
+    \item Dataset: 100 offshore SAR images
+    \item Evaluation: Ship detection on reconstructed SAR images
+    \item SAR Simulation Parameters
+  \end{itemize}
   \begin{center}
     \renewcommand{\arraystretch}{1.3}
     \begin{tabular}{|l|c|l|c|}
       \hline
-      Parameter & Value & Parameter & Value \\
+      \textbf{Parameter} & \textbf{Value} & \textbf{Parameter} & \textbf{Value} \\
       \hline
       Wavelength & 0.1152 m & Closest Slant Range & 4000 m \\
       \hline
@@ -262,14 +294,69 @@
   \end{center}
 \end{frame}
 
-\begin{frame}{Prediction Result}
+\begin{frame}{Ship Detection Performance}
+  \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|l|c|c|c|}
+      \hline
+      \textbf{Image} & \textbf{Precision} & \textbf{Recall} & \textbf{mAP@0.5} \\
+      \hline
+      Input SAR Image & 1.000 & 0.978 & 0.975 \\
+      \hline
+      CSA & 0.977 & 0.940 & 0.954 \\
+      \hline
+      CSA + Refinement & 0.993 & 0.986 & 0.985 \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+    \item Thresholding suppresses CSA-induced background artifacts and improves ship detection performance.
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{Slicing}
+\begin{frame}{Representative Example}
+  \begin{itemize}
+    \item Observation: Thresholding suppresses background artifacts while preserving the dominant ship response.
+  \end{itemize}
+  \begin{columns}[T]
+    \begin{column}{0.33\textwidth}
+      \includegraphics[width=\linewidth]{./figures/csa_example/input_sar_image.png}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \includegraphics[width=\linewidth]{./figures/csa_example/csa_output.png}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \includegraphics[width=\linewidth]{./figures/csa_example/csa_threshold_output.png}
+    \end{column}
+  \end{columns}
 \end{frame}
+
+\begin{frame}{Cross-Section Analysis}
+  \begin{itemize}
+    \item Thresholding removes low-amplitude sidelobe/background responses while retaining the dominant target structure.
+  \end{itemize}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\linewidth]{./figures/csa_example/range_cross_section.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=\linewidth]{./figures/csa_example/azimuth_cross_section.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\dsrlabSectionOutline{6}
 
 \begin{frame}{Conclusion}
+  \begin{itemize}
+    \item Established an end-to-end framework for evaluating SAR image enhancement through ship detection.
+    \item One-step sparse refinement suppresses background artifacts while preserving dominant ship responses.
+    \item CSA + refinement improves detection performance from 0.954 to 0.985 mAP@0.5.
+    \item Next step: Extend the refinement toward a lightweight DSP-based onboard SAR processing pipeline.
+  \end{itemize}
 \end{frame}
+
+\dsrlabSectionOutline{7}
 
 \begin{frame}{Reference}
 \end{frame}
