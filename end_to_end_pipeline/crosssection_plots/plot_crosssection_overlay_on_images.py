@@ -72,9 +72,9 @@ def main():
     c0, c1 = args.col_window
 
     panels = [
-        ("union_masked", "union_masked (input)", cv2.imread(union_masked_path, cv2.IMREAD_GRAYSCALE)),
-        ("csa", "CSA output", cv2.imread(csa_path, cv2.IMREAD_GRAYSCALE)),
-        (f"csa_t{args.threshold}", f"CSA output + threshold={args.threshold}",
+        ("union_masked", "Input SAR Image", cv2.imread(union_masked_path, cv2.IMREAD_GRAYSCALE)),
+        ("csa", "CSA", cv2.imread(csa_path, cv2.IMREAD_GRAYSCALE)),
+        (f"csa_t{args.threshold}", "CSA + Refinement",
          cv2.imread(thresholded_path, cv2.IMREAD_GRAYSCALE)),
     ]
 
@@ -84,10 +84,10 @@ def main():
         ax.imshow(crop, cmap="gray", vmin=0, vmax=255, extent=[c0, c1, r0, r1], origin="lower")
         ax.axhline(args.row, color="red", linestyle="-", linewidth=1.2, label=f"row={args.row}")
         ax.axvline(args.col, color="red", linestyle="-", linewidth=1.2, label=f"col={args.col}")
-        draw_boxes(ax, gt_boxes, "tab:purple", "GT box")
-        draw_boxes(ax, pred_boxes, "tab:cyan", "detect box")
+        draw_boxes(ax, gt_boxes, "tab:purple", "GT Box")
+        draw_boxes(ax, pred_boxes, "tab:cyan", "Pred Box")
         ax.legend(fontsize=8, loc="upper right")
-        ax.set_title(f"{args.stem}: {title}\n(row={args.row}, col={args.col})")
+        ax.set_title(title)
         ax.set_xlabel("range direction")
         ax.set_ylabel("azimuth direction")
         ax.tick_params(labelsize=7)

@@ -93,15 +93,31 @@ def edges_crossing(boxes, fixed_row=None, fixed_col=None):
     return edges
 
 
+def normalize_to_peak(arr, target):
+    """Scale a 1D profile so its own max within the plotted window equals
+    `target` -- ONLY for visually comparing relative shape across curves
+    whose absolute 0-255 scales are not calibrated to each other
+    (union_masked is a raw pixel value, CSA output is independently
+    re-normalized per-image to its own dB peak -- see conversation notes).
+    Not meaningful as an absolute physical quantity, observation purposes
+    only. union_masked itself is intentionally left un-normalized (its raw
+    pixel value already IS a meaningful physical quantity) -- CSA output
+    and CSA+threshold get peak-scaled to `target`, which the caller sets to
+    union_masked's own peak within the same window, so all three curves
+    reach the same visual peak height for shape comparison."""
+    peak = np.max(arr)
+    return arr * (target / peak) if peak > 0 else arr
+
+
 def draw_box_edges(ax, gt_edges, pred_edges, lo, hi):
     for i, edge in enumerate(gt_edges):
         if lo <= edge <= hi:
             ax.axvline(edge, color="tab:purple", linestyle="-", linewidth=1.3,
-                       label="GT box edge" if i == 0 else None)
+                       label="GT Box" if i == 0 else None)
     for i, edge in enumerate(pred_edges):
         if lo <= edge <= hi:
             ax.axvline(edge, color="tab:cyan", linestyle="-", linewidth=1.3,
-                       label="detect box edge" if i == 0 else None)
+                       label="Pred Box" if i == 0 else None)
 
 
 def main():
@@ -113,12 +129,24 @@ def main():
     ap.add_argument("--col-window", type=int, nargs=2, required=True, metavar=("C0", "C1"))
     ap.add_argument("--threshold", type=int, default=120)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--csa-path", default=None,
+                     help="override path to the CSA output image (e.g. from a standalone "
+                          "experiment directory with different radar parameters, such as "
+                          "half_bandwidth_experiment/csa_jpg/<stem>.jpg)")
+    ap.add_argument("--union-masked-path", default=None,
+                     help="override path to the union_masked (input) image")
     ap.add_argument("--thresholded-path", default=None,
                      help="override path to the CSA+threshold image (e.g. a lossless .png saved "
                           "alongside the pipeline's .jpg, to avoid JPEG re-compression artifacts "
                           "in the cross-section)")
     ap.add_argument("--no-boxes", action="store_true",
                      help="don't overlay GT / predicted box extents")
+    ap.add_argument("--normalize", action="store_true",
+                     help="scale CSA and CSA+threshold each to union_masked's own peak within the "
+                          "plotted window (union_masked is left as raw pixel values, unchanged), "
+                          "for OBSERVATION only -- union_masked/CSA/CSA+threshold are not on a "
+                          "shared absolute intensity scale (see conversation notes), so this is "
+                          "for comparing relative shape, not real physical values")
     args = ap.parse_args()
 
     gt_edges_h, pred_edges_h = [], []  # column positions (for the horizontal cut)
@@ -130,8 +158,8 @@ def main():
         gt_edges_v = edges_crossing(gt_boxes, fixed_col=args.col)
         pred_edges_v = edges_crossing(pred_boxes, fixed_col=args.col)
 
-    union_masked_path = os.path.join(BASE, "union_masked", "images", args.stem + ".jpg")
-    csa_path = os.path.join(BASE, "union_pipeline", "csa_jpg", args.stem + ".jpg")
+    union_masked_path = args.union_masked_path or os.path.join(BASE, "union_masked", "images", args.stem + ".jpg")
+    csa_path = args.csa_path or os.path.join(BASE, "union_pipeline", "csa_jpg", args.stem + ".jpg")
     thresholded_path = args.thresholded_path or os.path.join(
         BASE, "union_pipeline", f"csa_jpg_t{args.threshold}", args.stem + ".jpg"
     )
@@ -146,13 +174,18 @@ def main():
     fig, ax = plt.subplots(figsize=(7, 5))
     c0, c1 = args.col_window
     x = np.arange(c0, c1)
-    ax.plot(x, point_target[args.row, c0:c1], color="tab:blue", linestyle="-", label="union_masked (input)")
-    ax.plot(x, csa[args.row, c0:c1], color="tab:orange", linestyle="-", label="CSA output")
-    ax.plot(x, csa_t[args.row, c0:c1], color="tab:green", linestyle="--", label=f"CSA output + threshold={args.threshold}")
+    pt_h, csa_h, csa_t_h = point_target[args.row, c0:c1], csa[args.row, c0:c1], csa_t[args.row, c0:c1]
+    if args.normalize:
+        target_h = np.max(pt_h)
+        csa_h, csa_t_h = normalize_to_peak(csa_h, target_h), normalize_to_peak(csa_t_h, target_h)
+    ax.plot(x, pt_h, color="tab:blue", linestyle="-", label="Input SAR Image")
+    ax.plot(x, csa_h, color="tab:orange", linestyle="-", label="CSA")
+    ax.plot(x, csa_t_h, color="tab:green", linestyle="--", label="CSA + Refinement")
     draw_box_edges(ax, gt_edges_h, pred_edges_h, c0, c1)
-    ax.set_title(f"{args.stem}: horizontal cross-section (row={args.row})")
-    ax.set_xlabel("column (range direction)")
+    ax.set_title("range cross-section")
+    ax.set_xlabel("range direction")
     ax.set_ylabel("intensity (0-255)")
+    ax.set_ylim(0, 255)
     ax.legend()
     ax.grid(alpha=0.3)
     plt.tight_layout()
@@ -164,13 +197,18 @@ def main():
     fig, ax = plt.subplots(figsize=(7, 5))
     r0, r1 = args.row_window
     y = np.arange(r0, r1)
-    ax.plot(y, point_target[r0:r1, args.col], color="tab:blue", linestyle="-", label="union_masked (input)")
-    ax.plot(y, csa[r0:r1, args.col], color="tab:orange", linestyle="-", label="CSA output")
-    ax.plot(y, csa_t[r0:r1, args.col], color="tab:green", linestyle="--", label=f"CSA output + threshold={args.threshold}")
+    pt_v, csa_v, csa_t_v = point_target[r0:r1, args.col], csa[r0:r1, args.col], csa_t[r0:r1, args.col]
+    if args.normalize:
+        target_v = np.max(pt_v)
+        csa_v, csa_t_v = normalize_to_peak(csa_v, target_v), normalize_to_peak(csa_t_v, target_v)
+    ax.plot(y, pt_v, color="tab:blue", linestyle="-", label="Input SAR Image")
+    ax.plot(y, csa_v, color="tab:orange", linestyle="-", label="CSA")
+    ax.plot(y, csa_t_v, color="tab:green", linestyle="--", label="CSA + Refinement")
     draw_box_edges(ax, gt_edges_v, pred_edges_v, r0, r1)
-    ax.set_title(f"{args.stem}: vertical cross-section (col={args.col})")
-    ax.set_xlabel("row (azimuth direction)")
+    ax.set_title("azimuth cross-section")
+    ax.set_xlabel("azimuth direction")
     ax.set_ylabel("intensity (0-255)")
+    ax.set_ylim(0, 255)
     ax.legend()
     ax.grid(alpha=0.3)
     plt.tight_layout()
