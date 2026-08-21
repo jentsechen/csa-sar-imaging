@@ -97,7 +97,7 @@
   \includegraphics[width=1.1\textwidth]{./figures/pipeline/evaluation_framework.png}
   \vspace{-0.5cm}
   \begin{itemize}
-    \item Evaluation Metrics
+    \item Evaluation Metrics [1]
     \begin{itemize}
       \item Precision: $\frac{TP}{TP+FP}$
       \item Recall: $\frac{TP}{TP+FN}$
@@ -113,7 +113,7 @@
   \begin{columns}[T]
     \begin{column}{0.6\textwidth}
       \begin{itemize}
-        \item HRSID
+        \item HRSID [2]
         \begin{itemize}
           \item High-Resolution SAR Images Dataset
           \item Training: 3,642 images
@@ -160,7 +160,7 @@
     \end{tabular}
   \end{center}
   \begin{itemize}
-    \item Offshore scenes achieve better detection performance than inshore scenes.
+    \item Offshore scenes achieve better detection performance than inshore scenes [3].
   \end{itemize}
 \end{frame}
 
@@ -246,7 +246,7 @@
 
 \begin{frame}{One-Step Sparse Image Refinement}
   \begin{itemize}
-    \item Image-domain regularization
+    \item Image-domain regularization [4]
     $$
     \hat{\mathbf{H}}=\arg\min_{\mathbf{H}}
     \underbrace{\frac{1}{2}\left\|\mathbf{H}-\mathbf{H}_{\mathrm{CSA}}\right\|_F^2}_{\text{Preserve CSA image}}
@@ -270,7 +270,7 @@
 
 \begin{frame}{Simulation Setup}
   \begin{itemize}
-    \item Dataset: 100 offshore SAR images
+    \item Dataset: 100 offshore SAR images sampled from 1,593 images
     \item Evaluation: Ship detection on reconstructed SAR images
     \item SAR Simulation Parameters
   \end{itemize}
@@ -280,15 +280,13 @@
       \hline
       \textbf{Parameter} & \textbf{Value} & \textbf{Parameter} & \textbf{Value} \\
       \hline
-      Wavelength & 0.1152 m & Closest Slant Range & 4000 m \\
+      Pulse Width & 12.5 $\mu$s & Wavelength & 0.1152 m \\
       \hline
-      Pulse Width & 12.5 $\mu$s & Height & 0 m \\
+      Pulse Repetition Frequency & 1 kHz & Closest Slant Range & 4000 m \\
       \hline
-      Pulse Repetition Frequency & 1 kHz & Platform Velocity & 120 m/s \\
+      Bandwidth & 50 MHz & Platform Velocity & 120 m/s \\
       \hline
-      Bandwidth & 50 MHz & Antenna Length & 1.2 m \\
-      \hline
-      Sampling Frequency & 64 MHz & & \\
+      Sampling Frequency & 64 MHz & Antenna Length & 1.2 m \\
       \hline
     \end{tabular}
   \end{center}
@@ -352,13 +350,19 @@
     \item Established an end-to-end framework for evaluating SAR image enhancement through ship detection.
     \item One-step sparse refinement suppresses background artifacts while preserving dominant ship responses.
     \item CSA + refinement improves detection performance from 0.954 to 0.985 mAP@0.5.
-    \item Next step: Extend the refinement toward a lightweight DSP-based onboard SAR processing pipeline.
   \end{itemize}
 \end{frame}
 
 \dsrlabSectionOutline{7}
 
 \begin{frame}{Reference}
+  \setbeamerfont{itemize/enumerate body}{size=\fontsize{11}{13.2}\selectfont}
+  \begin{itemize}
+    \item[{\color{black}[1]}] F. Song, S. Yang and X. Zhou, ``SARES-DEIM: Sparse Mixture-of-Experts Meets DETR for Robust SAR Ship Detection,'' in \textit{IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing (JSTARS)}, 2026.
+    \item[{\color{black}[2]}] S. Wei, X. Zeng, Q. Qu, M. Wang, H. Su and J. Shi, ``HRSID: A High-Resolution SAR Images Dataset for Ship Detection and Instance Segmentation,'' in \textit{IEEE Access}, vol. 8, pp. 120234--120254, 2020.
+    \item[{\color{black}[3]}] T. Zhang \textit{et al.}, ``Balance Scene Learning Mechanism for Offshore and Inshore Ship Detection in SAR Images,'' in \textit{IEEE Geoscience and Remote Sensing Letters}, vol. 19, pp. 1--5, 2022.
+    \item[{\color{black}[4]}] H. Bi, G. Bi, B. Zhang, W. Hong and Y. Wu, ``From Theory to Application: Real-Time Sparse SAR Imaging,'' in \textit{IEEE Transactions on Geoscience and Remote Sensing}, vol. 58, no. 4, pp. 2928--2936, April 2020.
+  \end{itemize}
 \end{frame}
 
 \end{document}
