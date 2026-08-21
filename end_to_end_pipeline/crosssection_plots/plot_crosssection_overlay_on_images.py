@@ -81,15 +81,16 @@ def main():
     for suffix, title, img in panels:
         fig, ax = plt.subplots(figsize=(5.5, 5.5))
         crop = img[r0:r1, c0:c1]
-        ax.imshow(crop, cmap="gray", vmin=0, vmax=255, extent=[c0, c1, r1, r0])
+        ax.imshow(crop, cmap="gray", vmin=0, vmax=255, extent=[c0, c1, r0, r1], origin="lower")
         ax.axhline(args.row, color="red", linestyle="-", linewidth=1.2, label=f"row={args.row}")
         ax.axvline(args.col, color="red", linestyle="-", linewidth=1.2, label=f"col={args.col}")
         draw_boxes(ax, gt_boxes, "tab:purple", "GT box")
         draw_boxes(ax, pred_boxes, "tab:cyan", "detect box")
         ax.legend(fontsize=8, loc="upper right")
         ax.set_title(f"{args.stem}: {title}\n(row={args.row}, col={args.col})")
-        ax.set_xlabel("column (range direction)")
-        ax.set_ylabel("row (azimuth direction)")
+        ax.set_xlabel("range direction")
+        ax.set_ylabel("azimuth direction")
+        ax.tick_params(labelsize=7)
         plt.tight_layout()
         panel_path = f"{out_root}_{suffix}{out_ext}"
         plt.savefig(panel_path, dpi=150)
