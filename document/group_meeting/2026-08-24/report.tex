@@ -5,7 +5,7 @@
 \documentclass[aspectratio=169, 11pt]{beamer}
 \input{../guidelines/dsrlab_beamer_preamble.tex}
 
-\title{Real-Time SAR Ship Detection: \\ A Speckle-Model-Based DSP Pipeline}
+\title{Onboard SAR Processing for Ship \\ Detection: Modeling and Evaluation}
 \author{Jen-Tse Chen}
 \date{2026-08-24}
 \advisor{Pei-Yun Tsai}
@@ -99,11 +99,13 @@
   \begin{itemize}
     \item Evaluation Metrics [1]
     \begin{itemize}
-      \item Precision: $\frac{TP}{TP+FP}$
-      \item Recall: $\frac{TP}{TP+FN}$
-      \item mAP@0.5: Mean AP across classes at IoU threshold = 0.5
+      \item Precision: $\frac{TP}{TP+FP}$, Recall: $\frac{TP}{TP+FN}$
 
       {\footnotesize TP: True Positive, FP: False Positive, FN: False Negative}
+
+      \item mAP@0.5: Mean AP across classes at IoU threshold = 0.5
+      
+      {\footnotesize IoU = overlap area / union area of predicted and ground-truth boxes}
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -199,7 +201,7 @@
           \item $R_0$: slant range to scene center
           \item $d_k$: ground-range offset of scatterer $k$, approximated as slant-range offset
           \item $\eta_m=m\Delta\eta$: slow time
-        \item $\Delta\eta_k$: azimuth-time offset of scatterer $k$
+        \item $\Delta\eta_k$: azimuth-time offset of scatterer $T_k$
         \end{itemize}
       \end{itemize}
     \end{column}
@@ -228,6 +230,8 @@
     \begin{itemize}
       \item $\eta_m = m\Delta\eta$: slow time, $\tau_n = n\Delta\tau$: fast time
       \item $A_k$: scattering coefficient of scatterer $k$, $K_r=\frac{B_r}{T_r}$
+
+      {\footnotesize $K_r$: chirp rate, $B_r$: chirp bandwidth (Hz), $T_r$: pulse duration (sec)}
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -240,6 +244,8 @@
   \begin{itemize}
     \item Imaging goal: Recover $\mathbf{H}$ from $\mathbf{Y}$.
     \item Conventional methods: RDA, CSA, and BP
+
+    {\footnotesize RDA: Range Doppler Algorithm, CSA: Chirp Scaling Algorithm, BP: Back-Projection}
 \end{itemize}
 \end{frame}
 
@@ -308,6 +314,7 @@
     \end{tabular}
   \end{center}
   \begin{itemize}
+    \item Refinement threshold set to 120 (intensity range: 0--255)
     \item Thresholding suppresses CSA-induced background artifacts and improves ship detection performance.
   \end{itemize}
 \end{frame}
