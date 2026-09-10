@@ -37,6 +37,11 @@ __pycache__/
 !/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.pdf
 !/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.latexmkrc
 
+/document/industry_academia_collaboration/*/*
+!/document/industry_academia_collaboration/*/*.tex
+!/document/industry_academia_collaboration/*/*.pdf
+!/document/industry_academia_collaboration/*/.latexmkrc
+
 /ship_detect/results/
 /ship_detect/test_data/
 !.gitkeep
