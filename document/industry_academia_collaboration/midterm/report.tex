@@ -12,12 +12,20 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{caption}
 
-% ── CJK font (DFKai-SB / 標楷體 ships with Windows) ─────────────────────────────
+% ── CJK font: DFKai-SB (標楷體) on Windows, falling back to AR PL KaitiM Big5
+% (a metric/style-compatible open Kaiti substitute) when DFKai-SB isn't
+% installed (e.g. Linux: apt install fonts-arphic-bkai00mp).
 % fontset=none disables ctex's auto-detected Simplified-Chinese fonts
 % (SimHei/KaiTi), which aren't installed on this Traditional-Chinese system.
-\setCJKmainfont{DFKai-SB}
-\setCJKsansfont{DFKai-SB}
-\setCJKmonofont{DFKai-SB}
+\IfFontExistsTF{DFKai-SB}{%
+  \setCJKmainfont{DFKai-SB}
+  \setCJKsansfont{DFKai-SB}
+  \setCJKmonofont{DFKai-SB}
+}{%
+  \setCJKmainfont{AR PL KaitiM Big5}
+  \setCJKsansfont{AR PL KaitiM Big5}
+  \setCJKmonofont{AR PL KaitiM Big5}
+}
 
 % ── Traditional-Chinese wording overrides ──────────────────────────────────────
 % ctex's built-in auto-generated names (contentsname/figurename/refname)
@@ -31,8 +39,33 @@
 \author{陳仁澤}
 \date{\today}
 
+% plain: no running header (section name), just the page number, centered
+% at the bottom -- overrides ctexart's default "headings" style.
+\pagestyle{plain}
+
 \begin{document}
-\maketitle
+
+% ── Cover page ──────────────────────────────────────────────────────────────
+% Custom titlepage (instead of \maketitle) to show the funded project name,
+% PI, research assistant, and execution period alongside the report title.
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries 計畫名稱：基於壓縮感測之合成孔徑雷達即時成像演算法\par}
+  \vspace{1.5cm}
+  {\Large 星載合成孔徑雷達船舶偵測之建模與評估\par}
+  {\Large 期中報告\par}
+  \vspace{4cm}
+  {\large
+    \begin{tabular}{r@{\hspace{0.5em}}l}
+      計畫主持人： & 國立台灣大學重點科技學院\ 蔡佩芸 \\[0.6em]
+      研究助理：   & 陳仁澤 \\[0.6em]
+      執行期間：   & 2026/3 -- 2026/9（期中）\\
+    \end{tabular}
+  }
+  \vfill
+\end{titlepage}
+
 \tableofcontents
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -50,7 +83,7 @@
 \subsection{問題與動機}
 \begin{itemize}
   \item \textbf{地面式處理}：原始資料量大、下傳頻寬有限，導致目標資訊延遲。
-  \item \textbf{星載（onboard）處理}：可降低資料傳輸與偵測延遲，但受限於運算能力、記憶體與功耗。
+  \item \textbf{星載（onboard）處理}：僅需下傳偵測到的目標資訊而非完整原始資料，可降低下傳鏈路頻寬需求，並縮短從下傳到地端處理完成的延遲，但受限於運算能力、記憶體與功耗。
   \item \textbf{研究目標}：發展輕量化的 SAR 處理方法，以達成低延遲的船舶偵測。
 \end{itemize}
 
@@ -78,6 +111,12 @@
     \item[] IoU（Intersection over Union）＝ 預測框與真實框的重疊面積 / 聯集面積
   \end{itemize}
 \end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.35\textwidth]{../../group_meeting/figures/pipeline/iou_def.png}
+  \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
+\end{figure}
 上述指標定義參考自文獻 \cite{sares_deim}。
 
 \subsection{資料集與偵測模型設定}
@@ -111,6 +150,7 @@
 
 \subsection{YOLO 船舶偵測結果}
 在 HRSID 驗證集（1,962 張影像，其中近岸 369 張、離岸 1,593 張）上，依場景分類的偵測結果如表 \ref{tab:yolo-results} 所示；離岸場景的偵測表現優於近岸場景 \cite{balance_scene}。
+表 \ref{tab:val-perf} 使用 GPU 進行 inference，表 \ref{tab:yolo-results} 改用 CPU 進行 inference，因此兩表數值略有差異；表 \ref{tab:yolo-results} 之後的所有實驗皆使用 CPU 進行 inference。
 
 \begin{table}[htbp]
   \centering
@@ -148,6 +188,8 @@
 \section{SAR 回波與成像模型}
 
 \subsection{點散射體回波模型：幾何關係}
+輸入 SAR 影像中每個像素的 range location（行）、azimuth location（列）與 intensity（強度值），分別轉換為對應散射體的 range、Doppler（即下述之距離偏移 $d_k$、方位時間偏移 $\Delta\eta_k$）與 magnitude（散射係數 $A_k$，見下節訊號合成）。由於 SAR 系統量測的是斜距，此處假設場景平面高度為零，即斜距（slant range）等於地距（ground range），因此可直接以像素對應的地距偏移作為斜距偏移的近似。
+
 目標位置決定了隨慢時間 $\eta_m$ 變化的斜距 $R_k(\eta_m)$：
 \begin{equation}
   R_k(\eta_m) = \sqrt{R_{0,k}^2 + (\eta_m + \Delta\eta_k)^2 V_r^2}
@@ -209,7 +251,7 @@
     \underbrace{\frac{1}{2}\left\|\mathbf{H}-\mathbf{H}_{\mathrm{CSA}}\right\|_F^2}_{\text{保留 CSA 影像資訊}}
     + \lambda \underbrace{\left\|\mathbf{H}\right\|_1}_{\text{提升稀疏性}}
 \end{equation}
-此問題具有封閉解（soft-thresholding）：
+此問題可逐元素求得閉式解（soft-thresholding）：
 \begin{equation}
   \hat{\mathbf{H}} = \mathcal{S}_\lambda(\mathbf{H}_{\mathrm{CSA}}), \qquad
   \mathcal{S}_\lambda(x) = \frac{x}{|x|}\max(|x|-\lambda, 0),\ x \neq 0
@@ -240,9 +282,11 @@
     \bottomrule
   \end{tabular}
 \end{table}
+目前參數設定採用機載（airborne）平台（如平台速度 120 m/s、最近斜距 4000 m），後續將調整為星載（spaceborne）SAR 系統的典型參數。
 
 \subsection{船舶偵測表現}
 精修門檻值設為 120（強度範圍 0–255）。門檻化能抑制 CSA 造成的背景假影，並提升船舶偵測表現，如表 \ref{tab:ship-perf}。
+由於本實驗僅自離岸影像中取樣 100 張進行模擬，表 \ref{tab:ship-perf} 中「原始 SAR 影像」的偵測表現與表 \ref{tab:yolo-results}並不完全相同；但由於原始 SAR 影像、CSA、CSA + 稀疏精修三者皆在同一組 100 張影像上評估，彼此之間的比較仍然公平。
 
 \begin{table}[htbp]
   \centering
@@ -286,7 +330,8 @@
 \end{figure}
 
 \subsection{剖面分析}
-門檻化能移除低振幅的旁瓣／背景響應，同時保留主要目標結構，如圖 \ref{fig:cross-section} 的距離向與方位向剖面所示。
+門檻化能移除低振幅的旁瓣/背景響應，同時保留主要目標結構，如圖 \ref{fig:cross-section} 的距離向與方位向剖面所示。
+為了方便比較，圖 \ref{fig:cross-section} 繪製前對強度值做了正規化處理（僅用於繪圖呈現，非 onboard processing 流程的一部分）：soft-thresholding 的結果加回了 $\lambda$（見 4.2 節），且 CSA 與 CSA + 稀疏精修的輸出皆將其峰值正規化至與原始 SAR 影像的峰值一致。
 
 \begin{figure}[htbp]
   \centering
@@ -307,11 +352,19 @@
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{結論}
+
+\subsection{本階段已完成的工作}
 \begin{itemize}
   \item 建立了以船舶偵測評估 SAR 影像強化效果的端對端框架。
   \item One-step 稀疏精修能在保留主要船舶響應的同時抑制背景假影。
   \item CSA + 稀疏精修將偵測表現由 mAP@0.5 = 0.954 提升至 0.985。
-  \item 下一步：將此精修方法延伸至輕量化 DSP 星載 SAR 處理管線。
+\end{itemize}
+
+\subsection{後續工作}
+\begin{itemize}
+  \item 嘗試不同的影像域正則化方法。
+  \item 將 speckle noise 納入模擬情境中一併評估。
+  \item 將模擬參數由機載（airborne）調整為星載（spaceborne）SAR 系統的典型參數。
 \end{itemize}
 
 % ══════════════════════════════════════════════════════════════════════════════

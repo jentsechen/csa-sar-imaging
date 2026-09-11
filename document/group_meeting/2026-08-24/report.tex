@@ -104,10 +104,14 @@
       {\footnotesize TP: True Positive, FP: False Positive, FN: False Negative}
 
       \item mAP@0.5: Mean AP across classes at IoU threshold = 0.5
-      
+
       {\footnotesize IoU = overlap area / union area of predicted and ground-truth boxes}
     \end{itemize}
   \end{itemize}
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=south east] at ([xshift=-0.5cm, yshift=1.3cm]current page.south east)
+      {\includegraphics[width=0.13\textwidth]{../figures/pipeline/iou_def.png}};
+  \end{tikzpicture}
 \end{frame}
 
 % ── f. Dataset and Detection Model Setup ───────────────────────────────────
