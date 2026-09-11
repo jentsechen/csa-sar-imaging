@@ -57,3 +57,7 @@ end_to_end_pipeline/union_pipeline
 end_to_end_pipeline/union_csa_t80_union_eval
 end_to_end_pipeline/union_csa_t100_union_eval
 end_to_end_pipeline/union_csa_t120_union_eval
+end_to_end_pipeline/union_csa_lee_union_eval
+
+end_to_end_pipeline/single_point_target/echo_signal/*.npy
+end_to_end_pipeline/single_point_target/focused_image/*.npy
