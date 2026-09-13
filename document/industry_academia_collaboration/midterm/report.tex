@@ -68,6 +68,7 @@
 
 \tableofcontents
 
+\newpage
 % ══════════════════════════════════════════════════════════════════════════════
 \section{緒論與研究動機}
 
@@ -80,12 +81,77 @@
   \caption{地面式 SAR 船舶偵測處理流程示意圖。}
 \end{figure}
 
+本計畫的核心精神，是利用壓縮感測（Compressed Sensing, CS）理論：若待重建訊號具有稀疏性（sparsity），便可由遠少於 Nyquist 取樣定理所需的量測數，透過稀疏正則化準確重建 \cite{donoho_cs, candes_cs}：
+\begin{equation}
+  \hat{\mathbf{H}} = \arg\min_{\mathbf{H}}
+    \underbrace{\frac{1}{2}\left\|\mathbf{Y} - \mathcal{A}(\mathbf{H})\right\|_F^2}_{\text{符合觀測到的回波}}
+    + \lambda \underbrace{R(\mathbf{H})}_{\text{稀疏性限制}}
+  \label{eq:cs-formulation}
+\end{equation}
+其中 $\mathbf{Y}$ 為原始回波、$\mathbf{H}$ 為待重建之場景反射率影像、$\mathcal{A}(\cdot)$ 為成像前向算子（見 4.2 節），$R(\mathbf{H})$ 為稀疏誘導正則項：理想上應為 $\ell_0$ 範數，但非凸且 NP-hard，故常以其凸鬆弛 $\ell_1$（或 $\ell_p$，$0<p<1$）取代。本報告以 $R(\mathbf{H})=\left\|\mathbf{H}\right\|_1$ 作為現階段示範（對應第 5.2 節之 soft-thresholding 解），並非最終選定，後續將視需要延伸至其他形式。
+
+海面 SAR 場景恰好符合此稀疏性假設：海面雜訊背景均勻、反射率低，船舶則是少數強散射點，使場景反射率 $\mathbf{H}$ 本身即具稀疏結構。這也是本研究以「船舶偵測」作為評估任務的原因：偵測表現的提升與否，可直接反映稀疏正則化（式 \eqref{eq:cs-formulation}）強化 SAR 影像的實際效益。
+
 \subsection{問題與動機}
+本研究欲解決以下問題：
 \begin{itemize}
-  \item \textbf{地面式處理}：原始資料量大、下傳頻寬有限，導致目標資訊延遲。
-  \item \textbf{星載（onboard）處理}：僅需下傳偵測到的目標資訊而非完整原始資料，可降低下傳鏈路頻寬需求，並縮短從下傳到地端處理完成的延遲，但受限於運算能力、記憶體與功耗。
-  \item \textbf{研究目標}：發展輕量化的 SAR 處理方法，以達成低延遲的船舶偵測。
+  \item 地面式處理：原始資料量大、下傳頻寬有限，導致目標資訊延遲。
+  \item 星載（onboard）處理：僅需下傳偵測到的目標資訊而非完整原始資料，可降低下傳鏈路頻寬需求，並縮短從下傳到地端處理完成的延遲，但受限於運算能力、記憶體與功耗。
+  \item Speckle noise 干擾：SAR 屬同調成像系統，影像中不可避免存在乘性 speckle noise；雜訊亮點可能被誤判為船舶（false positive），也可能掩蓋真實的弱散射目標（false negative），須加以抑制才能確保偵測結果可信。
 \end{itemize}
+上述問題中，星載運算資源有限與 speckle noise 抑制看似為兩個獨立需求，但壓縮感測可一併回應：真實場景反射率本身是稀疏的（見 1.1 節），而 speckle noise 是疊加在每個像素上的乘性擾動，會使原本接近零的背景像素被抬高、變得雜訊化；式 \eqref{eq:cs-formulation} 之稀疏正則化利用場景稀疏的先驗，將振幅低（多為雜訊擾動的背景）的像素壓制為零，同時保留振幅本來就高的目標像素，因此能以同一套輕量化框架兼顧抑制 speckle noise 與低運算量兩項需求。
+
+\subsection{研究目標}
+本計畫原訂之研究範疇涵蓋 speckle 統計建模與噪聲注入模擬、以壓縮感測為基礎的即時 SAR 成像、去斑（despeckle）方法比較、以及以 YOLO 為基礎之船舶偵測評估等階段。本節之研究目標即回應 1.2 節所列之三項痛點：
+
+\begin{itemize}
+  \item 即時性之必要性：船舶偵測若僅能於地面事後處理完成，則難以支援即時海事監控需求；成像方法須兼顧運算效率，使其可行於星載平台之算力與功耗限制下，方能達成低延遲之目標資訊回傳。
+  \item 為何引入壓縮感測：如 1.1、1.2 節所述，星載平台受限於運算資源，須採用輕量化的成像方法；而壓縮感測之稀疏正則化機制，在以遠少於 Nyquist 取樣所需的量測數重建場景的同時，天然具備抑制 speckle noise 的能力。因此壓縮感測可同時回應「低運算量」與「speckle noise 抑制」兩項需求，是本計畫選擇以其為核心方法的原因。
+  \item 如何處理 speckle noise：規劃先以統計方式建模 SAR 影像中 speckle noise 的分布與 number of looks 等參數，並將其注入模擬回波中，以在具真實統計特性的資料上，比較稀疏正則化與傳統去斑方法之效果。
+\end{itemize}
+
+\newpage
+上述痛點與研究目標之關係，以及各階段工作項目如何串接，如圖 \ref{fig:research-goal-diagram} 所示。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../../group_meeting/figures/intro/flow.png}
+  \caption{研究目標概念圖：由 SAR 船舶影像資料集出發，經 speckle noise 注入與點散射體回波模型模擬，送入星載（onboard）處理流程——強化 SAR 成像、去斑、YOLO 船舶偵測——最終產出 Precision/Recall/mAP@0.5 等效能指標（指標定義詳見 3.3 節）。圖中綠色標示已完成之工作項目，灰色標示尚未完成之項目。}
+  \label{fig:research-goal-diagram}
+\end{figure}
+
+目前已完成之工作項目：
+\begin{itemize}
+  \item 建立以船舶偵測評估 SAR 影像強化效果的端對端評估框架（第 3 節）。
+  \item 完成點散射體回波模型與訊號合成（第 4 節）。
+  \item 提出並驗證 One-step 稀疏影像精修方法，證實其能在保留船舶響應之同時抑制背景假影（第 5、6 節）。
+\end{itemize}
+尚未完成之工作項目包含：speckle noise 統計建模與注入以及傳統去斑方法之比較，將於後續階段完成。
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{文獻探討}
+
+\subsection{壓縮感測於 SAR 影像重建之應用}
+稀疏正則化已廣泛用於 SAR 影像重建，但訴求多為提升重建影像品質，而非下游應用任務：
+\begin{itemize}
+  \item Bi \textit{et al.} \cite{sparse_sar_imaging}：$\ell_1$ 正則化＋soft-thresholding，訴求降低運算複雜度以利即時成像（本報告 5.2 節即參考此法）。
+  \item Zhang \textit{et al.} \cite{zhang_reweighted}：multi-segment-reweighted 正則化，訴求改善 $\ell_1$ 造成的振幅失真。
+  \item Liu \textit{et al.} \cite{liu_compound_reg}：$\ell_{1/2}$＋TV 複合正則化，訴求處理低過採樣資料並保留空間結構。
+\end{itemize}
+三者皆以影像品質指標評估，未涉及下游偵測任務。
+
+\subsection{SAR 船舶偵測之既有研究}
+近期研究多將 speckle noise 抑制放在偵測網路的特徵層級，而非影像域：
+\begin{itemize}
+  \item SARES-DEIM \cite{sares_deim}：DETR + Mixture-of-Experts，特徵層級抑制 speckle noise，於 HRSID 上 mAP@0.5:0.95 由 YOLOv11 之 67.7\% 提升至 76.4\%。
+  \item CVMT \cite{cvmt}：雙分支複數值 Transformer，以 Super Feature Learning 於特徵層級抑制雜訊，於 OpenSARShip／FAIR-CSAR 達 SOTA。
+\end{itemize}
+兩者皆以已成像影像為輸入、採大型 Transformer 架構，訓練與推論成本高。
+
+\subsection{本研究之定位與差異性}
+本研究將稀疏正則化直接嵌入「回波 $\to$ 成像 $\to$ 稀疏精修」流程，並以船舶偵測表現（Precision/Recall/mAP@0.5）評估其效益——相較 2.1 節僅評估影像品質，本研究更貼近實際應用；相較 2.2 節之 Transformer 架構，本研究改用計算量低廉、具封閉解的 $\ell_1$ soft-thresholding（見 5.2 節）搭配輕量化 YOLO，較適合星載平台之算力限制。
+
+可能缺點：目前僅用影像域 $\ell_1$ 正則化，尚未與特徵層級抑制或傳統去斑濾波器比較，其在近岸雜訊、小型目標上的效果仍待驗證（見 1.3 節未完成工作項目）。
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{評估架構}
@@ -96,28 +162,9 @@
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{../../group_meeting/figures/pipeline/evaluation_framework.png}
-  \caption{評估架構管線：點散射體回波模型 $\to$ 強化 SAR 成像（研究重點）$\to$ YOLO 船舶偵測 $\to$ 效能評估。}
+  \caption{評估架構管線}
   \label{fig:eval-framework}
 \end{figure}
-
-\subsection{評估指標}
-\begin{itemize}
-  \item Precision $= \dfrac{TP}{TP+FP}$，Recall $= \dfrac{TP}{TP+FN}$
-  \begin{itemize}
-    \item[] TP：True Positive；FP：False Positive；FN：False Negative
-  \end{itemize}
-  \item mAP@0.5：在 IoU 門檻值 0.5 下，跨類別的平均精確度（Mean Average Precision）
-  \begin{itemize}
-    \item[] IoU（Intersection over Union）＝ 預測框與真實框的重疊面積 / 聯集面積
-  \end{itemize}
-\end{itemize}
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.35\textwidth]{../../group_meeting/figures/pipeline/iou_def.png}
-  \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
-\end{figure}
-上述指標定義參考自文獻 \cite{sares_deim}。
 
 \subsection{資料集與偵測模型設定}
 本研究使用 HRSID（High-Resolution SAR Images Dataset）資料集 \cite{hrsid}：
@@ -147,6 +194,25 @@
   \includegraphics[width=0.6\textwidth]{../../group_meeting/figures/yolo/map_vs_epoch.png}
   \caption{訓練過程中 mAP@0.5 隨 epoch 數的變化。}
 \end{figure}
+
+\subsection{評估指標}
+\begin{itemize}
+  \item Precision $= \dfrac{TP}{TP+FP}$，Recall $= \dfrac{TP}{TP+FN}$
+  \begin{itemize}
+    \item[] TP：True Positive；FP：False Positive；FN：False Negative
+  \end{itemize}
+  \item mAP@0.5：在 IoU 門檻值 0.5 下，跨類別的平均精確度（Mean Average Precision）
+  \begin{itemize}
+    \item[] IoU（Intersection over Union）＝ 預測框與真實框的重疊面積 / 聯集面積
+  \end{itemize}
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.35\textwidth]{../../group_meeting/figures/pipeline/iou_def.png}
+  \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
+\end{figure}
+上述指標定義參考自文獻 \cite{sares_deim}。
 
 \subsection{YOLO 船舶偵測結果}
 在 HRSID 驗證集（1,962 張影像，其中近岸 369 張、離岸 1,593 張）上，依場景分類的偵測結果如表 \ref{tab:yolo-results} 所示；離岸場景的偵測表現優於近岸場景 \cite{balance_scene}。
@@ -231,18 +297,27 @@
 \section{稀疏影像精修}
 
 \subsection{傳統 SAR 成像}
-成像目標為由回波 $\mathbf{Y}$ 還原場景反射率 $\mathbf{H}$。傳統成像方法包含：
-\begin{itemize}
-  \item RDA（Range Doppler Algorithm，距離都卜勒演算法）
-  \item CSA（Chirp Scaling Algorithm，chirp scaling 演算法）
-  \item BP（Back-Projection，反投影法）
-\end{itemize}
+成像目標為由回波 $\mathbf{Y}$ 還原場景反射率 $\mathbf{H}$。傳統成像方法包含 RDA（Range Doppler Algorithm）、CSA（Chirp Scaling Algorithm）、BP（Back-Projection）三類，本研究選擇 \textbf{CSA} 作為基礎成像演算法。
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.5\textwidth]{../../group_meeting/figures/pipeline/sar_imaging_pipeline.png}
   \caption{傳統 SAR 成像管線：點散射體回波模型 $\to$ 傳統 SAR 成像。}
 \end{figure}
+
+CSA 之處理流程共七步驟 \cite{cumming_wong}，如圖 \ref{fig:csa-flow} 所示：
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../../group_meeting/figures/pipeline/csa_flow.png}
+  \caption{CSA 七步驟處理流程}
+  \label{fig:csa-flow}
+\end{figure}
+其中 Chirp Scaling 步驟（演算法命名之由來）以下式相位相乘，修正隨距離變化之徙動量：
+\begin{equation}
+  \exp\left\{j\pi K_m\left[\frac{D(f_{\eta_{\mathrm{ref}}})}{D(f_\eta)}-1\right]\left(\tau - \frac{2R_{\mathrm{ref}}}{cD(f_\eta)}\right)^2\right\}, \qquad
+  D(f_\eta) = \sqrt{1-\frac{c^2f_\eta^2}{4V_r^2f_0^2}}
+\end{equation}
+$D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm{ref}}$ 為參考距離。此相位相乘使不同距離目標之徙動量趨於一致，後續距離壓縮即可對全場景套用同一匹配濾波器，避免內插運算。
 
 \subsection{One-Step 稀疏影像精修}
 在影像域施加稀疏正則化 \cite{sparse_sar_imaging}：
@@ -331,7 +406,7 @@
 
 \subsection{剖面分析}
 門檻化能移除低振幅的旁瓣/背景響應，同時保留主要目標結構，如圖 \ref{fig:cross-section} 的距離向與方位向剖面所示。
-為了方便比較，圖 \ref{fig:cross-section} 繪製前對強度值做了正規化處理（僅用於繪圖呈現，非 onboard processing 流程的一部分）：soft-thresholding 的結果加回了 $\lambda$（見 4.2 節），且 CSA 與 CSA + 稀疏精修的輸出皆將其峰值正規化至與原始 SAR 影像的峰值一致。
+為了方便比較，圖 \ref{fig:cross-section} 繪製前對強度值做了正規化處理（僅用於繪圖呈現，非 onboard processing 流程的一部分）：soft-thresholding 的結果加回了 $\lambda$（見 5.2 節），且 CSA 與 CSA + 稀疏精修的輸出皆將其峰值正規化至與原始 SAR 影像的峰值一致。
 
 \begin{figure}[htbp]
   \centering
@@ -370,6 +445,12 @@
 % ══════════════════════════════════════════════════════════════════════════════
 \begin{thebibliography}{9}
 
+\bibitem{donoho_cs}
+D. L. Donoho, ``Compressed Sensing,'' in \textit{IEEE Transactions on Information Theory}, vol. 52, no. 4, pp. 1289--1306, April 2006.
+
+\bibitem{candes_cs}
+E. J. Cand\`es, J. Romberg and T. Tao, ``Robust Uncertainty Principles: Exact Signal Reconstruction from Highly Incomplete Frequency Information,'' in \textit{IEEE Transactions on Information Theory}, vol. 52, no. 2, pp. 489--509, February 2006.
+
 \bibitem{sares_deim}
 F. Song, S. Yang and X. Zhou, ``SARES-DEIM: Sparse Mixture-of-Experts Meets DETR for Robust SAR Ship Detection,'' in \textit{IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing (JSTARS)}, 2026.
 
@@ -381,6 +462,18 @@ T. Zhang \textit{et al.}, ``Balance Scene Learning Mechanism for Offshore and In
 
 \bibitem{sparse_sar_imaging}
 H. Bi, G. Bi, B. Zhang, W. Hong and Y. Wu, ``From Theory to Application: Real-Time Sparse SAR Imaging,'' in \textit{IEEE Transactions on Geoscience and Remote Sensing}, vol. 58, no. 4, pp. 2928--2936, April 2020.
+
+\bibitem{zhang_reweighted}
+Y. Zhang, B. Zhang and Y. Wu, ``Undistorted and Consistent Enhancement of Automotive SAR Image via Multi-Segment-Reweighted Regularization,'' in \textit{Remote Sensing}, vol. 17, no. 9, Art. no. 1483, April 2025.
+
+\bibitem{liu_compound_reg}
+M. Liu, J. Pan, J. Zhu, Z. Chen, B. Zhang and Y. Wu, ``A Sparse SAR Imaging Method for Low-Oversampled Staggered Mode via Compound Regularization,'' in \textit{Remote Sensing}, vol. 16, no. 8, Art. no. 1459, April 2024.
+
+\bibitem{cvmt}
+K. Ni, P. Wang, Z. Zheng and Y. Zhong, ``Complex-Value Transformer for SAR Ship Detection,'' in \textit{ISPRS Journal of Photogrammetry and Remote Sensing}, 2026.
+
+\bibitem{cumming_wong}
+I. G. Cumming and F. H. Wong, \textit{Digital Processing of Synthetic Aperture Radar Data: Algorithms and Implementation}, Artech House, 2005.
 
 \end{thebibliography}
 
