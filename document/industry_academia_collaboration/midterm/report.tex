@@ -144,7 +144,7 @@
 近期研究多將 speckle noise 抑制放在偵測網路的特徵層級，而非影像域：
 \begin{itemize}
   \item SARES-DEIM \cite{sares_deim}：DETR + Mixture-of-Experts，特徵層級抑制 speckle noise，於 HRSID 上 mAP@0.5:0.95 由 YOLOv11 之 67.7\% 提升至 76.4\%。
-  \item CVMT \cite{cvmt}：雙分支複數值 Transformer，以 Super Feature Learning 於特徵層級抑制雜訊，於 OpenSARShip／FAIR-CSAR 達 SOTA。
+  \item CVMT \cite{cvmt}：雙分支複數值 Transformer，以 Super Feature Learning 於特徵層級抑制雜訊，於 OpenSARShip / FAIR-CSAR 達 SOTA。
 \end{itemize}
 兩者皆以已成像影像為輸入、採大型 Transformer 架構，訓練與推論成本高。
 
@@ -216,7 +216,7 @@
 
 \subsection{YOLO 船舶偵測結果}
 在 HRSID 驗證集（1,962 張影像，其中近岸 369 張、離岸 1,593 張）上，依場景分類的偵測結果如表 \ref{tab:yolo-results} 所示；離岸場景的偵測表現優於近岸場景 \cite{balance_scene}。
-表 \ref{tab:val-perf} 使用 GPU 進行 inference，表 \ref{tab:yolo-results} 改用 CPU 進行 inference，因此兩表數值略有差異；表 \ref{tab:yolo-results} 之後的所有實驗皆使用 CPU 進行 inference。
+表 \ref{tab:val-perf} 使用 GPU 進行 inference，表 \ref{tab:yolo-results} 改用 CPU 進行 inference，因此兩表數值略有差異；表 \ref{tab:yolo-results} 之後的所有實驗皆使用 CPU 進行 inference。近岸與離岸場景之偵測範例如圖 \ref{fig:gt-vs-pred} 所示。
 
 \begin{table}[htbp]
   \centering
@@ -248,22 +248,25 @@
     \caption*{離岸範例}
   \end{minipage}
   \caption{真實標註框（GT）與預測框（Pred）比較範例。}
+  \label{fig:gt-vs-pred}
 \end{figure}
 
+\newpage
 % ══════════════════════════════════════════════════════════════════════════════
 \section{SAR 回波與成像模型}
 
 \subsection{點散射體回波模型：幾何關係}
-輸入 SAR 影像中每個像素的 range location（行）、azimuth location（列）與 intensity（強度值），分別轉換為對應散射體的 range、Doppler（即下述之距離偏移 $d_k$、方位時間偏移 $\Delta\eta_k$）與 magnitude（散射係數 $A_k$，見下節訊號合成）。由於 SAR 系統量測的是斜距，此處假設場景平面高度為零，即斜距（slant range）等於地距（ground range），因此可直接以像素對應的地距偏移作為斜距偏移的近似。
+\label{subsec:point-scatterer}
+輸入 SAR 影像中每個像素的 range location（行）、azimuth location（列）與 intensity（強度值），分別轉換為對應散射體的 range、Doppler（即下述之距離偏移 $d_k$、方位時間偏移 $\Delta\eta_k$）與 magnitude（散射係數 $A_k$，見下節訊號合成）。成像於斜距（slant range）方向進行，像素對應的距離偏移即為散射體 $k$ 之斜距偏移 $d_k$。
 
 目標位置決定了隨慢時間 $\eta_m$ 變化的斜距 $R_k(\eta_m)$：
 \begin{equation}
   R_k(\eta_m) = \sqrt{R_{0,k}^2 + (\eta_m + \Delta\eta_k)^2 V_r^2}
 \end{equation}
-其中 $R_{0,k} \approx R_0 + d_k$：
+其中 $R_{0,k} = R_0 + d_k$：
 \begin{itemize}
   \item $R_0$：場景中心的斜距
-  \item $d_k$：散射體 $k$ 相對場景中心的距離偏移（以斜距方向近似）
+  \item $d_k$：散射體 $k$ 相對場景中心之斜距方向距離偏移
   \item $\eta_m = m\Delta\eta$：慢時間
   \item $\Delta\eta_k$：散射體 $k$ 相對場景中心的方位時間偏移
 \end{itemize}
@@ -297,7 +300,8 @@
 \section{稀疏影像精修}
 
 \subsection{傳統 SAR 成像}
-成像目標為由回波 $\mathbf{Y}$ 還原場景反射率 $\mathbf{H}$。傳統成像方法包含 RDA（Range Doppler Algorithm）、CSA（Chirp Scaling Algorithm）、BP（Back-Projection）三類，本研究選擇 \textbf{CSA} 作為基礎成像演算法。
+\label{subsec:conventional-sar}
+成像目標為由回波 $\mathbf{Y}$ 還原場景反射率 $\mathbf{H}$。傳統成像方法包含 RDA（Range Doppler Algorithm）、CSA（Chirp Scaling Algorithm）、BP（Back-Projection）三類，本研究選擇 CSA 作為基礎成像演算法。
 
 \begin{figure}[htbp]
   \centering
@@ -318,6 +322,8 @@ CSA 之處理流程共七步驟 \cite{cumming_wong}，如圖 \ref{fig:csa-flow} 
   D(f_\eta) = \sqrt{1-\frac{c^2f_\eta^2}{4V_r^2f_0^2}}
 \end{equation}
 $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm{ref}}$ 為參考距離。此相位相乘使不同距離目標之徙動量趨於一致，後續距離壓縮即可對全場景套用同一匹配濾波器，避免內插運算。
+
+參考距離 $R_{\mathrm{ref}}$ 設為模擬場景正中央對應的斜距，與第 \ref{subsec:point-scatterer} 節之場景中心斜距 $R_0$ 為同一值（幅寬 swath width、幅長 swath length 之定義見第 \ref{subsec:sim-setup} 節）；場景中其餘散射體之距離、方位偏移 $d_k$、$\Delta\eta_k$（第 \ref{subsec:point-scatterer} 節）皆相對此中心點定義。
 
 \subsection{One-Step 稀疏影像精修}
 在影像域施加稀疏正則化 \cite{sparse_sar_imaging}：
@@ -340,6 +346,7 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
 \section{實驗結果}
 
 \subsection{模擬設定}
+\label{subsec:sim-setup}
 自 1,593 張離岸 SAR 影像中取樣 100 張作為模擬資料集，於重建後的 SAR 影像上進行船舶偵測評估。SAR 模擬參數如表 \ref{tab:sim-params}。
 
 \begin{table}[htbp]
@@ -357,6 +364,8 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
     \bottomrule
   \end{tabular}
 \end{table}
+表 \ref{tab:sim-params} 中的最近斜距即第 \ref{subsec:conventional-sar} 節之參考距離 $R_{\mathrm{ref}}$（$=R_0$），設為模擬場景正中央對應的斜距。模擬影像尺寸為 $800\times800$ 像素：距離向幅寬（swath width）為影像距離向像素數乘上距離向像素間距，即 $800 \times c/(2f_s) \approx 1875$ m；方位向幅長（swath length）為影像方位向像素數乘上方位向像素間距，即 $800 \times V_r/\mathrm{PRF} = 96$ m；其中取樣頻率 $f_s$ 與平台速度 $V_r$ 之數值代入表 \ref{tab:sim-params}。$R_{\mathrm{ref}}$ 對應距離向幅寬正中央的斜距，方位時間零點（$\eta_m=0$）則對應方位向幅長的正中央。
+
 目前參數設定採用機載（airborne）平台（如平台速度 120 m/s、最近斜距 4000 m），後續將調整為星載（spaceborne）SAR 系統的典型參數。
 
 \subsection{船舶偵測表現}
@@ -378,6 +387,7 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
   \end{tabular}
 \end{table}
 
+\newpage
 \subsection{代表性範例}
 門檻化能在保留主要船舶響應的同時抑制背景假影，如圖 \ref{fig:representative}。
 
@@ -406,7 +416,7 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
 
 \subsection{剖面分析}
 門檻化能移除低振幅的旁瓣/背景響應，同時保留主要目標結構，如圖 \ref{fig:cross-section} 的距離向與方位向剖面所示。
-為了方便比較，圖 \ref{fig:cross-section} 繪製前對強度值做了正規化處理（僅用於繪圖呈現，非 onboard processing 流程的一部分）：soft-thresholding 的結果加回了 $\lambda$（見 5.2 節），且 CSA 與 CSA + 稀疏精修的輸出皆將其峰值正規化至與原始 SAR 影像的峰值一致。
+為了方便比較，圖 \ref{fig:cross-section} 繪製前對強度值做了正規化處理（僅用於繪圖呈現，非 onboard processing 流程的一部分）：soft-thresholding 的結果加回了 $\lambda$（見 5.2 節；本實驗 $\lambda=120$，即 6.2 節之精修門檻值），且 CSA 與 CSA + 稀疏精修的輸出皆將其峰值正規化至與原始 SAR 影像的峰值一致。
 
 \begin{figure}[htbp]
   \centering
@@ -440,6 +450,7 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
   \item 嘗試不同的影像域正則化方法。
   \item 將 speckle noise 納入模擬情境中一併評估。
   \item 將模擬參數由機載（airborne）調整為星載（spaceborne）SAR 系統的典型參數。
+  \item 提升成像解析度（如提高頻寬以改善距離向解析度），並探討解析度對船舶偵測辨識率的影響。
 \end{itemize}
 
 % ══════════════════════════════════════════════════════════════════════════════
