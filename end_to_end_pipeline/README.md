@@ -147,6 +147,15 @@ python plot_crosssection_scene.py <stem> \
 #                           from re-encoding a thresholded array as JPEG
 #   --out PATH.png          override the output path (still split into
 #                           PATH_horizontal.png / PATH_vertical.png)
+#   --normalize             scale each curve to its own peak (=1.0) within
+#                           the plotted window -- OBSERVATION ONLY. union_masked
+#                           (raw pixel value) and CSA output (independently
+#                           re-normalized per-image to its own dB peak, see
+#                           csa_to_jpg_union_batch.py) are not on a shared
+#                           absolute intensity scale, so raw 0-255 values are
+#                           not directly comparable across the three curves --
+#                           this flag makes relative shape/magnitude comparable
+#                           instead. Without it, y-axis stays raw 0-255.
 
 # Same cut row/col, but shown directly on the cropped images themselves
 # (three separate .png files: _union_masked / _csa / _csa_t<T>), with a red

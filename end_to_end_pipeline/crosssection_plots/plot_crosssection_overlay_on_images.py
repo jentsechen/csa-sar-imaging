@@ -53,6 +53,15 @@ def main():
                      help="crop window (cols) shown in each panel")
     ap.add_argument("--threshold", type=int, default=120)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--refined-path", default=None,
+                     help="override path to the 'CSA + Refinement' image (e.g. the output of "
+                          "a different refinement algorithm, such as "
+                          "union_pipeline/csa_jpg_lee/<stem>.png from lee_filter_experiment.py, "
+                          "instead of the default fixed-threshold csa_jpg_t<threshold>/<stem>.jpg)")
+    ap.add_argument("--out-suffix", default=None,
+                     help="override the third panel's output filename suffix (default: "
+                          "'csa_t<threshold>') -- use this when --refined-path points to a "
+                          "non-threshold algorithm so its filename doesn't say 'csa_t120'")
     ap.add_argument("--no-boxes", action="store_true",
                      help="don't overlay GT / predicted box rectangles")
     args = ap.parse_args()
@@ -61,7 +70,10 @@ def main():
 
     union_masked_path = os.path.join(BASE, "union_masked", "images", args.stem + ".jpg")
     csa_path = os.path.join(BASE, "union_pipeline", "csa_jpg", args.stem + ".jpg")
-    thresholded_path = os.path.join(BASE, "union_pipeline", f"csa_jpg_t{args.threshold}", args.stem + ".jpg")
+    thresholded_path = args.refined_path or os.path.join(
+        BASE, "union_pipeline", f"csa_jpg_t{args.threshold}", args.stem + ".jpg"
+    )
+    refined_suffix = args.out_suffix or f"csa_t{args.threshold}"
     os.makedirs(DIAGRAM_DIR, exist_ok=True)
     out_base = args.out or os.path.join(
         DIAGRAM_DIR, f"image_overlay_{args.stem}_t{args.threshold}.png"
@@ -74,7 +86,7 @@ def main():
     panels = [
         ("union_masked", "Input SAR Image", cv2.imread(union_masked_path, cv2.IMREAD_GRAYSCALE)),
         ("csa", "CSA", cv2.imread(csa_path, cv2.IMREAD_GRAYSCALE)),
-        (f"csa_t{args.threshold}", "CSA + Refinement",
+        (refined_suffix, "CSA + Refinement",
          cv2.imread(thresholded_path, cv2.IMREAD_GRAYSCALE)),
     ]
 
