@@ -27,7 +27,9 @@ int main(int argc, char *argv[])
                                    input_par.find("snr_db")->get<double>(),
                                    input_par.find("coherent_scatter_en")->get<bool>());
     std::cout << input_par.find("height_m")->get<double>() << std::endl;
-    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>());
+    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>(),
+                           input_par.value("sensor_speed_m_s", 120.0),
+                           input_par.value("azimuth_aperture_len_m", 1.2));
     json output_par{{"range_time_axis_sec", imaging_par.range_time_axis_sec},
                     {"range_freq_axis_hz", imaging_par.range_freq_axis_hz},
                     {"azimuth_time_axis_sec", imaging_par.azimuth_time_axis_sec},
@@ -45,7 +47,7 @@ int main(int argc, char *argv[])
         double azimuth_offset_m = std::stod(argv[2]);
         double range_offset_m   = std::stod(argv[3]);
         save_mat_to_npy("./echo_signal/single_point_target.npy",
-                        imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(azimuth_offset_m, range_offset_m)})),
+                        imaging_par.gen_point_target_echo_signal(std::vector<PointTarget>({PointTarget(azimuth_offset_m, range_offset_m, 1.0)})),
                         imaging_par.n_row, imaging_par.n_col);
     }
     else

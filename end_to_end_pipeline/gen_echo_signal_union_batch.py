@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 """Batch-generate echo signals from the union-masked images (union_masked/images/*.jpg
 -- pixels outside GT-union-predicted-box zeroed, raw pixel values kept inside),
-using a separate self-contained working directory so it doesn't collide with
-the threshold=60 pipeline already in point_target_location/ and echo_signal/.
+using a separate self-contained working directory (union_pipeline/) so it
+doesn't collide with the threshold=60 pipeline already in
+point_target_location/ and echo_signal/.
 
 Unlike jpg_to_point_target.py, no additional intensity threshold is applied --
 the union mask itself is the "thresholding method" here, so every nonzero
 pixel inside the box is fed to gen_echo_signal as a scatterer.
 
+INPUT_PAR is the spaceborne (Sentinel-1B S3-SM-like) parameter set --
+wavelength_m/pulse_width_sec/pulse_rep_freq_hz/sampling_freq_hz were nudged
+slightly off their reference-table values so n_row and n_col both come out
+to exactly 3200 (n_row/4 == n_col/4 == 800), matching the 800x800 source
+image grid; see conversation notes. sensor_speed_m_s and
+azimuth_aperture_len_m require the ImagingPar constructor changes in
+gen_echo_signal.cpp (input_par.value(key, default) reads them from this
+JSON; both fall back to the old airborne defaults 120 / 1.2 if omitted).
 azi_win_en is set to False for this run (per instruction).
 
 Runtime is predicted the same way as gen_echo_signal_batch.py (~0.0462 s per
-nonzero pixel, r=0.9999 fit); scenes whose predicted runtime exceeds
---max-seconds are skipped up front, with a subprocess timeout as a safety net.
+nonzero pixel, r=0.9999 fit, measured on the original airborne parameters --
+kept as an estimate since n_row/n_col match); scenes whose predicted runtime
+exceeds --max-seconds are skipped up front, with a subprocess timeout as a
+safety net.
 
 Usage:
     python gen_echo_signal_union_batch.py --max-seconds 300
@@ -38,18 +49,20 @@ TIMING_LOG = os.path.join(BASE, "echo_signal_timing.csv")
 SECONDS_PER_NONZERO_PIXEL = 0.0462  # measured across 99 threshold=60 scenes, r=0.9999
 
 INPUT_PAR = {
-    "wavelength_m": 0.1152,
-    "pulse_width_sec": 1.25e-5,
-    "pulse_rep_freq_hz": 1e3,
+    "wavelength_m": 0.0555042,
+    "pulse_width_sec": 11.99e-6,
+    "pulse_rep_freq_hz": 6648.15,
     "bandwidth_hz": 50e6,
-    "sampling_freq_hz": 64e6,
-    "closest_slant_range_m": 4e3,
+    "sampling_freq_hz": 66.728e6,
+    "closest_slant_range_m": 800e3,
     "height_m": 0.0,
     "azi_win_en": False,   # per instruction
     "rng_pad_time": 4,
     "noise_en": False,
     "snr_db": 25.0,
     "coherent_scatter_en": False,
+    "sensor_speed_m_s": 7500,
+    "azimuth_aperture_len_m": 12.3,
 }
 
 

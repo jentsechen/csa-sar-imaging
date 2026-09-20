@@ -27,7 +27,9 @@ int main(int argc, char *argv[])
                                    input_par.find("rng_pad_time")->get<size_t>(),
                                    input_par.find("noise_en")->get<bool>(),
                                    input_par.find("snr_db")->get<double>());
-    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>());
+    ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>(),
+                           input_par.value("sensor_speed_m_s", 120.0),
+                           input_par.value("azimuth_aperture_len_m", 1.2));
     ChirpScalingAlgo chirp_scaling_algo(imaging_par);
 
     if (std::string(argv[1]) == "par")
