@@ -22,8 +22,9 @@ Pixel spacing (see src/ImagingPar.cpp):
     range spacing   = c / (2 * sampling_freq_hz)             (no resampling
                        between echo_signal and focused_image -- same axes)
     azimuth spacing = sensor_speed_m_s / pulse_rep_freq_hz    (sensor_speed_m_s
-                       defaults to 120 m/s, hardcoded in ImagingPar.h -- not
-                       read from input_par.json)
+                       is read from input_par.json, falling back to the
+                       airborne default 120 m/s if omitted -- see
+                       ImagingPar.h / gen_echo_signal.cpp)
 
 Usage:
     python gen_single_point_target.py
@@ -46,24 +47,29 @@ TEST_MULTI_POINT_TARGET_BIN = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "bu
 TARGET = "single_point_target"
 
 SPEED_OF_LIGHT_M_S = 299792458.0
-SENSOR_SPEED_M_S = 120.0  # hardcoded default in src/ImagingPar.h, not overridable via input_par.json
 UPSAMPLE_FACTOR = 16
 
-# same sensor params as union_pipeline/input_par.json, for consistency with the rest of this pipeline
+# same spaceborne sensor params as gen_echo_signal_union_batch.py's INPUT_PAR
+# (Sentinel-1B S3-SM-like; wavelength_m/pulse_width_sec/pulse_rep_freq_hz/
+# sampling_freq_hz nudged so n_row == n_col == 3200, matching the 800x800
+# source-image grid used elsewhere in this pipeline -- see conversation notes)
 INPUT_PAR = {
-    "wavelength_m": 0.1152,
-    "pulse_width_sec": 1.25e-5,
-    "pulse_rep_freq_hz": 1e3,
+    "wavelength_m": 0.0555042,
+    "pulse_width_sec": 11.99e-6,
+    "pulse_rep_freq_hz": 6648.15,
     "bandwidth_hz": 50e6,
-    "sampling_freq_hz": 64e6,
-    "closest_slant_range_m": 4e3,
+    "sampling_freq_hz": 66.728e6,
+    "closest_slant_range_m": 800e3,
     "height_m": 0.0,
     "azi_win_en": False,
     "rng_pad_time": 4,
     "noise_en": False,
     "snr_db": 25.0,
     "coherent_scatter_en": False,
+    "sensor_speed_m_s": 7500,
+    "azimuth_aperture_len_m": 12.3,
 }
+SENSOR_SPEED_M_S = INPUT_PAR["sensor_speed_m_s"]  # must match input_par.json for azimuth_spacing_m below
 
 
 def run_cpp(binary, args):
