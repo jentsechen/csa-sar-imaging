@@ -84,9 +84,15 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
     size_t azi_n_smp = this->azimuth_time_axis_sec.size();
     size_t rng_n_smp = this->range_time_axis_sec.size();
     std::vector<std::complex<double>> point_target_echo_signal(azi_n_smp * rng_n_smp, std::complex<double>(0.0));
-    OMP_FOR
+    // Parallelize over azimuth row (i), not over target_index: every thread then
+    // owns a disjoint set of output rows, so the += below is race-free. Looping
+    // over targets in the outer, sequential position and parallelizing the inner
+    // i-loop instead of the reverse avoids the unprotected concurrent += into the
+    // same output cell that a target-parallel loop would cause whenever two
+    // targets' range windows overlap the same pixel.
     for (auto target_index = 0; target_index < point_target_list.size(); target_index++)
     {
+        OMP_FOR
         for (auto i = 0; i < azi_n_smp; i++)
         {
             double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i], point_target_list[target_index].azimuth_offset_sec, point_target_list[target_index].range_offset_m);
