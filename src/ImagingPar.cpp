@@ -45,7 +45,7 @@ void ImagingPar::gen_range_time_axis_sec()
 
 void ImagingPar::gen_azimuth_time_axis_sec()
 {
-    int azimuth_time_axis_sec_len = static_cast<int>(floor(synthetic_aperture_time_sec * sig_par.pulse_rep_freq_hz / 2) * 2);
+    int azimuth_time_axis_sec_len = static_cast<int>(floor(this->echo_sig_gen_par.azi_pad_time * synthetic_aperture_time_sec * sig_par.pulse_rep_freq_hz / 2) * 2);
     this->azimuth_time_axis_sec = std::vector<double>(azimuth_time_axis_sec_len);
     for (auto i = 0; i < azimuth_time_axis_sec_len; i++)
     {
@@ -79,6 +79,24 @@ std::vector<bool> ImagingPar::apply_range_window(double round_trip_time_sec)
     return output;
 }
 
+// Per-target hard azimuth window, mirroring apply_range_window: a target only
+// contributes while it is within the antenna's synthetic aperture illumination
+// time, centered on -azimuth_offset_sec (when the platform passes the target).
+// Without this, azi_win_en=False leaves every target contributing at full
+// amplitude across the entire (possibly azi_pad_time-padded) azimuth axis, so
+// padding alone creates no true zero margin and provides no protection against
+// circular-convolution wraparound during azimuth compression.
+std::vector<bool> ImagingPar::apply_azimuth_window(double azimuth_offset_sec)
+{
+    std::vector<bool> output(this->azimuth_time_axis_sec.size());
+    for (auto i = 0; i < this->azimuth_time_axis_sec.size(); i++)
+    {
+        double relative_time = this->azimuth_time_axis_sec[i] + azimuth_offset_sec;
+        output[i] = (relative_time < this->synthetic_aperture_time_sec / 2.0) && (relative_time > -this->synthetic_aperture_time_sec / 2.0);
+    }
+    return output;
+}
+
 std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const std::vector<PointTarget> &point_target_list)
 {
     size_t azi_n_smp = this->azimuth_time_axis_sec.size();
@@ -92,9 +110,14 @@ std::vector<std::complex<double>> ImagingPar::gen_point_target_echo_signal(const
     // targets' range windows overlap the same pixel.
     for (auto target_index = 0; target_index < point_target_list.size(); target_index++)
     {
+        std::vector<bool> azimuth_window = this->apply_azimuth_window(point_target_list[target_index].azimuth_offset_sec);
         OMP_FOR
         for (auto i = 0; i < azi_n_smp; i++)
         {
+            if (!azimuth_window[i])
+            {
+                continue;
+            }
             double slant_range_m = this->calc_slant_range_m(this->azimuth_time_axis_sec[i], point_target_list[target_index].azimuth_offset_sec, point_target_list[target_index].range_offset_m);
             double round_trip_time_sec = this->calc_round_trip_time_sec(slant_range_m);
             std::vector<bool> range_window = this->apply_range_window(round_trip_time_sec);

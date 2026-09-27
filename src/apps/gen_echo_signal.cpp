@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
                                    input_par.find("rng_pad_time")->get<size_t>(),
                                    input_par.find("noise_en")->get<bool>(),
                                    input_par.find("snr_db")->get<double>(),
-                                   input_par.find("coherent_scatter_en")->get<bool>());
+                                   input_par.find("coherent_scatter_en")->get<bool>(),
+                                   input_par.value("azi_pad_time", 1.0));
     std::cout << input_par.find("height_m")->get<double>() << std::endl;
     ImagingPar imaging_par(sig_par, echo_sig_gen_par, input_par.find("closest_slant_range_m")->get<double>(), input_par.find("height_m")->get<double>(),
                            input_par.value("sensor_speed_m_s", 120.0),

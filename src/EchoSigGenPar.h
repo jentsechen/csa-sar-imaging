@@ -8,7 +8,8 @@ public:
     bool azi_win_en, noise_en, coherent_scatter_en;
     size_t rng_pad_time;
     double snr_db;
-    EchoSigGenPar(bool azi_win_en = false, size_t rng_pad_time = 1, bool noise_en = false, double snr_db = 25.0, bool coherent_scatter_en = false);
+    double azi_pad_time;
+    EchoSigGenPar(bool azi_win_en = false, size_t rng_pad_time = 1, bool noise_en = false, double snr_db = 25.0, bool coherent_scatter_en = false, double azi_pad_time = 1.0);
 };
 
 #endif

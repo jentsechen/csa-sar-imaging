@@ -7,10 +7,10 @@
   "peak_col": 1600,
   "upsample_factor": 16,
   "range_spacing_m": 2.246376768373097,
-  "azimuth_spacing_m": 1.1281333904920918,
-  "range_irw_px": 1.1780435417153967,
-  "azimuth_irw_px": 4.821838131688764,
-  "range_resolution_m": 2.6463296442414306,
-  "azimuth_resolution_m": 5.439676599906099,
+  "azimuth_spacing_m": 4.512533561968367,
+  "range_irw_px": 1.1780217411135254,
+  "azimuth_irw_px": 1.2022168556484303,
+  "range_resolution_m": 2.64628067187585,
+  "azimuth_resolution_m": 5.425043909877622,
   "theoretical_range_resolution_m": 2.99792458
 }

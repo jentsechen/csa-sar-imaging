@@ -18,6 +18,7 @@ private:
     double calc_slant_range_m(double azimuth_time_sec, double azimuth_offset_sec, double range_offset_m);
     double calc_round_trip_time_sec(double slant_range_m);
     std::vector<bool> apply_range_window(double round_trip_time_sec);
+    std::vector<bool> apply_azimuth_window(double azimuth_offset_sec);
 
 public:
     SigPar sig_par;

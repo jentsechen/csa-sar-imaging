@@ -9,21 +9,30 @@ Unlike jpg_to_point_target.py, no additional intensity threshold is applied --
 the union mask itself is the "thresholding method" here, so every nonzero
 pixel inside the box is fed to gen_echo_signal as a scatterer.
 
-INPUT_PAR is the spaceborne (Sentinel-1B S3-SM-like) parameter set --
-wavelength_m/pulse_width_sec/pulse_rep_freq_hz/sampling_freq_hz were nudged
-slightly off their reference-table values so n_row and n_col both come out
-to exactly 3200 (n_row/4 == n_col/4 == 800), matching the 800x800 source
-image grid; see conversation notes. sensor_speed_m_s and
+INPUT_PAR is the spaceborne (Sentinel-1B S3-SM-like) parameter set, using the
+real reference pulse_rep_freq_hz (1662.0375 Hz) rather than a 4x-inflated
+value. n_row is padded back up to 3200 (n_row/4 == n_col/4 == 800, matching
+the 800x800 source image grid) via azi_pad_time=4 -- see
+ImagingPar::gen_azimuth_time_axis_sec(), which multiplies the axis length by
+azi_pad_time exactly like rng_pad_time already does for range. This padding
+only creates genuine zero margin (avoiding azimuth-compression circular-
+convolution wraparound) because ImagingPar::apply_azimuth_window() now zeros
+each target's contribution outside its own synthetic-aperture illumination
+window, computed per target from its azimuth_offset_sec -- without that hard
+window, azi_win_en=False (still the case here) would leave every target
+contributing at full amplitude across the whole padded axis, and padding
+alone would provide no wraparound protection. sensor_speed_m_s and
 azimuth_aperture_len_m require the ImagingPar constructor changes in
 gen_echo_signal.cpp (input_par.value(key, default) reads them from this
-JSON; both fall back to the old airborne defaults 120 / 1.2 if omitted).
-azi_win_en is set to False for this run (per instruction).
+JSON; both fall back to the old airborne defaults 120 / 1.2 if omitted, and
+azi_pad_time falls back to 1.0 i.e. no padding).
 
 Runtime is predicted the same way as gen_echo_signal_batch.py (~0.0462 s per
-nonzero pixel, r=0.9999 fit, measured on the original airborne parameters --
-kept as an estimate since n_row/n_col match); scenes whose predicted runtime
-exceeds --max-seconds are skipped up front, with a subprocess timeout as a
-safety net.
+nonzero pixel, r=0.9999 fit, measured on the original airborne parameters);
+kept as a conservative estimate since n_row/n_col still match, though the
+azimuth window now skips out-of-view (target, row) pairs so actual runtime
+tends to be somewhat lower. Scenes whose predicted runtime exceeds
+--max-seconds are skipped up front, with a subprocess timeout as a safety net.
 
 Usage:
     python gen_echo_signal_union_batch.py --max-seconds 300
@@ -51,7 +60,7 @@ SECONDS_PER_NONZERO_PIXEL = 0.0462  # measured across 99 threshold=60 scenes, r=
 INPUT_PAR = {
     "wavelength_m": 0.0555042,
     "pulse_width_sec": 11.99e-6,
-    "pulse_rep_freq_hz": 6648.15,
+    "pulse_rep_freq_hz": 1662.0375,   # real reference PRF (was 4x-inflated to 6648.15)
     "bandwidth_hz": 50e6,
     "sampling_freq_hz": 66.728e6,
     "closest_slant_range_m": 800e3,
@@ -63,6 +72,7 @@ INPUT_PAR = {
     "coherent_scatter_en": False,
     "sensor_speed_m_s": 7500,
     "azimuth_aperture_len_m": 12.3,
+    "azi_pad_time": 4,   # pads n_row back to 3200 at the real PRF; needs apply_azimuth_window to be genuine zero-padding
 }
 
 

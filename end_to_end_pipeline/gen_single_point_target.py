@@ -50,13 +50,13 @@ SPEED_OF_LIGHT_M_S = 299792458.0
 UPSAMPLE_FACTOR = 16
 
 # same spaceborne sensor params as gen_echo_signal_union_batch.py's INPUT_PAR
-# (Sentinel-1B S3-SM-like; wavelength_m/pulse_width_sec/pulse_rep_freq_hz/
-# sampling_freq_hz nudged so n_row == n_col == 3200, matching the 800x800
-# source-image grid used elsewhere in this pipeline -- see conversation notes)
+# (Sentinel-1B S3-SM-like; real reference pulse_rep_freq_hz, padded back to
+# n_row == n_col == 3200 via azi_pad_time=4 -- see
+# ImagingPar::gen_azimuth_time_axis_sec()/apply_azimuth_window())
 INPUT_PAR = {
     "wavelength_m": 0.0555042,
     "pulse_width_sec": 11.99e-6,
-    "pulse_rep_freq_hz": 6648.15,
+    "pulse_rep_freq_hz": 1662.0375,
     "bandwidth_hz": 50e6,
     "sampling_freq_hz": 66.728e6,
     "closest_slant_range_m": 800e3,
@@ -68,6 +68,7 @@ INPUT_PAR = {
     "coherent_scatter_en": False,
     "sensor_speed_m_s": 7500,
     "azimuth_aperture_len_m": 12.3,
+    "azi_pad_time": 4,
 }
 SENSOR_SPEED_M_S = INPUT_PAR["sensor_speed_m_s"]  # must match input_par.json for azimuth_spacing_m below
 
