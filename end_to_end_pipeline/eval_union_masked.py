@@ -3,7 +3,7 @@
 union zeroed out) to confirm detection performance matches the original.
 
 Usage:
-    python eval_union_masked.py --device cpu
+    python eval_union_masked.py
 """
 import argparse
 import os
@@ -51,7 +51,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     args = ap.parse_args()
 
     stems = sorted(os.path.splitext(f)[0] for f in os.listdir(MASKED_IMAGES_DIR) if f.endswith(".jpg"))

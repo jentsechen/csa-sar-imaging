@@ -5,7 +5,7 @@ fixed intensity threshold applied (see threshold_union_csa.py), over the
 same scene set.
 
 Usage:
-    python eval_union_csa_threshold.py --threshold 120 --device cpu
+    python eval_union_csa_threshold.py --threshold 120
 """
 import argparse
 import os
@@ -75,7 +75,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     args = ap.parse_args()
 
     thresholded_dir = os.path.join(BASE, "union_pipeline", f"csa_jpg_t{args.threshold}")

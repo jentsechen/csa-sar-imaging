@@ -3,8 +3,8 @@
 union-mask CSA pipeline (azi_win_en=False), over the same scene set.
 
 Usage:
-    python eval_union_csa.py --device cpu
-    python eval_union_csa.py --device 0 --csa-dir union_pipeline/runs/<run>/csa/jpg --name <run>
+    python eval_union_csa.py
+    python eval_union_csa.py --csa-dir union_pipeline/runs/<run>/csa/jpg --name <run>
 """
 import argparse
 import os
@@ -85,7 +85,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     ap.add_argument("--csa-dir", default=UNION_CSA_DIR, help="JPG directory to evaluate against the originals")
     ap.add_argument("--name", default="union_csa", help="set name; eval dir is <name>_union_eval/")
     args = ap.parse_args()

@@ -8,7 +8,7 @@ This does NOT re-run inference on the masked images -- that's a separate,
 later step. This script only masks + measures nonzero pixel percentage.
 
 Usage:
-    python mask_outside_gt_pred_union.py --device cpu
+    python mask_outside_gt_pred_union.py
 """
 import argparse
 import os
@@ -57,7 +57,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     args = ap.parse_args()
 
     stems = sorted(os.path.splitext(f)[0] for f in os.listdir(SRC_IMAGES_DIR) if f.endswith(".jpg"))

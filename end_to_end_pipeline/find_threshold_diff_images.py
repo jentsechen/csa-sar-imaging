@@ -15,7 +15,7 @@ producing per-image TP/FP/FN counts. A scene is a good demo candidate when:
     the baseline
 
 Usage:
-    python find_threshold_diff_images.py --threshold 120 --device cpu
+    python find_threshold_diff_images.py --threshold 120
 """
 import argparse
 import json
@@ -99,7 +99,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     args = ap.parse_args()
 
     thresholded_dir = os.path.join(BASE, "union_pipeline", f"csa_jpg_t{args.threshold}")

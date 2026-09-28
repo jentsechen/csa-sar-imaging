@@ -7,7 +7,7 @@ eval_union_csa_threshold.py, swapping the fixed-threshold set for the Lee
 filter set.
 
 Usage:
-    python eval_union_csa_lee.py --device cpu
+    python eval_union_csa_lee.py
 """
 import argparse
 import os
@@ -77,7 +77,7 @@ def main():
     ap.add_argument("--imgsz", type=int, default=800)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="0")
     args = ap.parse_args()
 
     sets = {

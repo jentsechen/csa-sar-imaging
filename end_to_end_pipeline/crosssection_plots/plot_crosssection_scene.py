@@ -63,7 +63,7 @@ def load_yolo_labels(label_path, img_w, img_h):
     return boxes
 
 
-def get_gt_and_pred_boxes(stem, imgsz=800, conf=0.25, iou=0.45, device="cpu"):
+def get_gt_and_pred_boxes(stem, imgsz=800, conf=0.25, iou=0.45, device="0"):
     """GT boxes and predicted boxes on the ORIGINAL image, kept separate --
     mask_outside_gt_pred_union.py unions these two sets to build
     union_masked/images/, but here we want to tell them apart."""
