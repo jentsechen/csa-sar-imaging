@@ -39,15 +39,29 @@ def list_targets(n):
     return stems[:n]
 
 
+MAX_SUBPROCESS_RETRIES = 8  # TestMultiPointTarget intermittently segfaults (~15-20% per
+                            # call, not a race -- reproduces even with OMP_NUM_THREADS=1;
+                            # likely marginal hardware). Retrying the same call in-process
+                            # avoids restarting this whole script (and its directory listing)
+                            # on every crash.
+
+
 def run_cpp(mode, arg):
-    proc = subprocess.run(
-        [TEST_MULTI_POINT_TARGET_BIN, mode, arg],
-        cwd=BASE,
-        capture_output=True,
-        text=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(f"TestMultiPointTarget {mode} {arg} failed:\n{proc.stderr}")
+    last_stderr = ""
+    for attempt in range(MAX_SUBPROCESS_RETRIES):
+        proc = subprocess.run(
+            [TEST_MULTI_POINT_TARGET_BIN, mode, arg],
+            cwd=BASE,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0:
+            return
+        last_stderr = proc.stderr
+        print(f"    [retry] TestMultiPointTarget {mode} {arg} exit={proc.returncode} "
+              f"(attempt {attempt+1}/{MAX_SUBPROCESS_RETRIES})", flush=True)
+    raise RuntimeError(f"TestMultiPointTarget {mode} {arg} failed after "
+                       f"{MAX_SUBPROCESS_RETRIES} attempts:\n{last_stderr}")
 
 
 def mag_db_to_gray_jpg(target):
@@ -97,8 +111,14 @@ def main():
     print(f"Processing {len(todo)} scene(s) ({skipped} already done, skipped)...")
 
     totals = []
+    failed = []
     for target in todo:
-        timing = process_target(target)
+        try:
+            timing = process_target(target)
+        except RuntimeError as e:
+            print(f"  {target}: FAILED after retries, skipping -- {e}", flush=True)
+            failed.append(target)
+            continue
         totals.append(timing["total_s"])
         print(f"  {target}: focus={timing['focus_s']:.3f}s "
               f"calc_mag={timing['calc_mag_s']:.3f}s jpg={timing['jpg_s']:.3f}s "
@@ -107,6 +127,12 @@ def main():
     total = sum(totals)
     avg = total / len(totals) if totals else 0.0
     print(f"\nTotal (this run): {total:.3f} s over {len(totals)} scene(s)  (avg {avg:.3f} s/scene)")
+    if failed:
+        failed_log = os.path.join(BASE, "csa_failed_scenes.txt")
+        with open(failed_log, "a") as f:
+            for t in failed:
+                f.write(t + "\n")
+        print(f"{len(failed)} scene(s) failed after {MAX_SUBPROCESS_RETRIES} retries each -> {failed_log}")
 
 
 if __name__ == "__main__":

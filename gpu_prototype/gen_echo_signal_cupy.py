@@ -17,11 +17,13 @@ end_to_end_pipeline/gen_echo_signal_union_batch.py), then benchmarks NumPy
 (CPU, small subset only) vs CuPy (GPU, full target list) for the identical
 vectorized computation.
 
-See README.md in this directory for the measured results and an important
-correctness caveat: gen_echo_signal's default multi-threaded OpenMP build has
-a data race (unprotected += into a shared output array across the
-parallel-for target loop), so only compare against a single-threaded
-(OMP_NUM_THREADS=1) reference run, not the default build's output.
+See README.md in this directory for the measured results. gen_echo_signal's
+former data race (unprotected += into a shared output array across a
+target-parallel loop) has since been fixed (parallelizes over azimuth row
+instead), so the default multi-threaded build's output is a valid reference
+again. Also mirrors ImagingPar's azi_pad_time / apply_azimuth_window (real
+reference PRF + genuine azimuth zero-padding), added after the initial
+prototype -- see git history.
 
 Usage:
     python gen_echo_signal_cupy.py --target P0033_1800_2600_4200_5000
@@ -52,6 +54,8 @@ def build_imaging_axes(par):
 
     range_fm_rate_hz_s = par["bandwidth_hz"] / pulse_width_sec
 
+    azi_pad_time = par.get("azi_pad_time", 1.0)
+
     closest_ground_range_m = np.sqrt(closest_slant_range_m**2 - height_m**2)
     beamwidth_rad = wavelength_m / azimuth_aperture_len_m
     synthetic_aperture_len_m = beamwidth_rad * closest_slant_range_m
@@ -61,7 +65,7 @@ def build_imaging_axes(par):
     range_time_axis_sec = (np.arange(n_col) - n_col // 2) / sampling_freq_hz + \
         2.0 * closest_slant_range_m / LIGHT_SPEED_M_S
 
-    n_row = int(np.floor(synthetic_aperture_time_sec * pulse_rep_freq_hz / 2)) * 2
+    n_row = int(np.floor(azi_pad_time * synthetic_aperture_time_sec * pulse_rep_freq_hz / 2)) * 2
     azimuth_time_axis_sec = (np.arange(n_row) - n_row // 2) / pulse_rep_freq_hz
 
     return dict(
@@ -71,6 +75,7 @@ def build_imaging_axes(par):
         closest_slant_range_m=closest_slant_range_m, height_m=height_m,
         closest_ground_range_m=closest_ground_range_m,
         sensor_speed_m_s=sensor_speed_m_s,
+        synthetic_aperture_time_sec=synthetic_aperture_time_sec,
         n_row=n_row, n_col=n_col,
         range_time_axis_sec=range_time_axis_sec,
         azimuth_time_axis_sec=azimuth_time_axis_sec,
@@ -88,9 +93,15 @@ def build_point_target_list(mask, n_row, n_col, pulse_rep_freq_hz, sampling_freq
     return azimuth_offset_sec, range_offset_m, scatter
 
 
-def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef):
+def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef, deadline=None):
     """Vectorized (over i and j) port of ImagingPar::gen_point_target_echo_signal,
-    for azi_win_en=False, noise_en=False, coherent_scatter_en=False."""
+    for azi_win_en=False, noise_en=False, coherent_scatter_en=False. Includes the
+    per-target apply_azimuth_window hard cutoff (see ImagingPar.cpp) -- without
+    it, azi_pad_time padding creates no true zero margin.
+
+    If `deadline` (a time.perf_counter() timestamp) is given, checks it once per
+    target and bails out early (returning a partial, incomplete result) if
+    exceeded. Returns (output, timed_out: bool)."""
     n_row, n_col = ax["n_row"], ax["n_col"]
     range_time_axis_sec = xp.asarray(ax["range_time_axis_sec"])
     azimuth_time_axis_sec = xp.asarray(ax["azimuth_time_axis_sec"])
@@ -100,6 +111,7 @@ def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef):
     pulse_width_sec = ax["pulse_width_sec"]
     range_fm_rate_hz_s = ax["range_fm_rate_hz_s"]
     wavelength_m = ax["wavelength_m"]
+    synthetic_aperture_time_sec = ax["synthetic_aperture_time_sec"]
 
     output = xp.zeros((n_row, n_col), dtype=xp.complex128)
 
@@ -109,9 +121,15 @@ def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef):
 
     n_targets = azimuth_offset_sec.shape[0]
     for t in range(n_targets):
+        if deadline is not None and time.perf_counter() > deadline:
+            return output, True
         az_off = azimuth_offset_sec[t]
         rg_off = range_offset_m[t]
         coef = scatter_coef[t]
+
+        azimuth_rel_time = azimuth_time_axis_sec + az_off  # (n_row,)
+        azimuth_window = (azimuth_rel_time < synthetic_aperture_time_sec / 2.0) & \
+                          (azimuth_rel_time > -synthetic_aperture_time_sec / 2.0)
 
         ground_term = closest_ground_range_m + rg_off
         slant_range_m = xp.sqrt(
@@ -122,6 +140,7 @@ def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef):
 
         rel_time = range_time_axis_sec[None, :] - round_trip_time_sec[:, None]  # (n_row, n_col)
         window = (rel_time < pulse_width_sec / 2.0) & (rel_time > -pulse_width_sec / 2.0)
+        window = window & azimuth_window[:, None]
 
         chirp_term = xp.exp(1j * xp.pi * range_fm_rate_hz_s * rel_time**2)  # (n_row, n_col)
         carrier_term = xp.exp(-1j * xp.pi * 4.0 * slant_range_m / wavelength_m)  # (n_row,)
@@ -129,7 +148,7 @@ def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef):
         sample = chirp_term * carrier_term[:, None] * coef
         output += xp.where(window, sample, 0.0)
 
-    return output
+    return output, False
 
 
 def main():
@@ -157,8 +176,6 @@ def main():
     cpp_path = f"{PIPE}/echo_signal/{args.target}.npy"
     cpp_out = np.load(cpp_path)
     print(f"C++ reference output: {cpp_path}, shape={cpp_out.shape}, dtype={cpp_out.dtype}")
-    print("NOTE: this must be a single-threaded (OMP_NUM_THREADS=1) run -- the default "
-          "multi-threaded build has a known data race (see README.md).")
     if cpp_out.shape != (ax["n_row"], ax["n_col"]):
         cpp_out = cpp_out.reshape(ax["n_row"], ax["n_col"])
 
@@ -167,7 +184,7 @@ def main():
     # C++ math before trusting the full GPU run below.
     n_subset = min(args.cpu_subset, n_targets)
     t0 = time.perf_counter()
-    out_cpu_subset = gen_echo_signal(np, ax, az_off[:n_subset], rg_off[:n_subset], coef[:n_subset])
+    out_cpu_subset, _ = gen_echo_signal(np, ax, az_off[:n_subset], rg_off[:n_subset], coef[:n_subset])
     t_cpu_subset = time.perf_counter() - t0
     print(f"\nNumPy sanity check ({n_subset} targets, 1 core): {t_cpu_subset:.3f} s")
 
@@ -177,7 +194,7 @@ def main():
     cp.cuda.Stream.null.synchronize()
 
     t0 = time.perf_counter()
-    out_gpu_subset = gen_echo_signal(cp, ax, az_off[:n_subset], rg_off[:n_subset], coef[:n_subset])
+    out_gpu_subset, _ = gen_echo_signal(cp, ax, az_off[:n_subset], rg_off[:n_subset], coef[:n_subset])
     cp.cuda.Stream.null.synchronize()
     print(f"CuPy same {n_subset}-target subset: {time.perf_counter()-t0:.3f} s")
     subset_diff = np.max(np.abs(cp.asnumpy(out_gpu_subset) - out_cpu_subset))
@@ -186,7 +203,7 @@ def main():
 
     print(f"\nRunning full {n_targets}-target computation on GPU...")
     t0 = time.perf_counter()
-    out_gpu = gen_echo_signal(cp, ax, az_off, rg_off, coef)
+    out_gpu, _ = gen_echo_signal(cp, ax, az_off, rg_off, coef)
     cp.cuda.Stream.null.synchronize()
     t_gpu = time.perf_counter() - t0
     print(f"CuPy (GPU, full {n_targets} targets): {t_gpu:.3f} s")

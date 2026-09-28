@@ -13,36 +13,43 @@ into an output image. Every `(target, i, j)` triple is independent except for
 the final accumulation — a classic embarrassingly-parallel, trig-heavy,
 low-memory-bandwidth workload.
 
-## Correctness finding: a pre-existing race condition in `gen_echo_signal`
+## Correctness findings (both since fixed)
 
-`ImagingPar::gen_point_target_echo_signal` parallelizes the **outer loop over
-point targets** with `OMP_FOR` (`#pragma omp parallel for`), but every thread
-writes into the **same shared output array** with an unprotected `+=`. When
-two targets' range windows overlap the same output pixel — routine for a
-dense scatterer mask — concurrent threads race on that pixel and updates get
-lost.
+Two real bugs were found and fixed in `src/ImagingPar.cpp` while building this
+prototype; this script was updated to match both.
 
-This was confirmed empirically: running the exact same binary on the exact
-same input twice produced different output (max abs diff ~470–478 out of a
-peak magnitude of ~5.2e4, i.e. ~0.9% relative error), and a single-threaded
-(`OMP_NUM_THREADS=1`) run — for which no race is possible — differed from both
-multi-threaded runs by the same magnitude.
+**1. A data race in `gen_point_target_echo_signal`'s OpenMP parallelization.**
+It used to parallelize the **outer loop over point targets** with `OMP_FOR`,
+but every thread wrote into the **same shared output array** with an
+unprotected `+=`. When two targets' range windows overlapped the same output
+pixel — routine for a dense scatterer mask — concurrent threads raced on that
+pixel and updates got lost (confirmed empirically: running the same binary
+twice on the same input gave different output, ~0.9% relative error). Fixed
+by parallelizing the inner azimuth-row loop instead (each thread then owns a
+disjoint set of output rows). The default multi-threaded build's output is a
+valid reference again.
 
-**Consequence:** don't validate against the default multi-threaded build's
-output. Always compare against a `OMP_NUM_THREADS=1` reference run, and be
-aware that any of this project's existing echo-signal `.npy` outputs
-generated with the default multi-threaded build may be silently wrong.
+**2. Azimuth had no genuine zero-padding.** Range has `rng_pad_time`, which
+extends its axis while keeping the sample rate fixed, and `apply_range_window`
+gives each target a hard, bounded nonzero region — real zero-padding. Azimuth
+had neither: `n_row` was driven directly by `pulse_rep_freq_hz` with no
+separate padding factor, and with `azi_win_en=False` every target contributed
+at full amplitude across the *entire* axis. `EchoSigGenPar::azi_pad_time` and
+`ImagingPar::apply_azimuth_window()` now mirror range's mechanism, and
+`end_to_end_pipeline` switched to the real reference PRF (1662.0375 Hz,
+previously inflated 4x to 6648.15 Hz purely to make `n_row` land on 3200).
 
-## Benchmark (measured 2026-09-27, target `P0033_1800_2600_4200_5000`, 2372 point targets, 3200x3200 grid)
+## Benchmark (measured 2026-09-28, target `P0033_1800_2600_4200_5000`, 2372 point targets, 3200x3200 grid, real PRF=1662.0375 + azi_pad_time=4)
 
 | Version | Time | Notes |
 |---|---|---|
-| C++, single-threaded (`OMP_NUM_THREADS=1`) | 1289.7 s (21m30s) | Correct, race-free — the real baseline |
-| C++, default (24-core OpenMP) | ~74 s | **Has the race bug above — result is wrong by ~0.9%** |
-| CuPy (this prototype, RTX 5090) | ~6.7 s | Matches the single-threaded reference to ~1e-8 relative (float noise only) |
+| C++, default (24-core OpenMP) | 58.1 s | Correct (race fixed); azimuth window also skips out-of-view work |
+| CuPy (this prototype, RTX 5090) | 6.8 s | Matches the C++ reference to ~1.1e-8 relative (float noise only) |
 
-- Speedup vs. the correct single-threaded baseline: **~192x**
-- Speedup vs. the (buggy) default multi-threaded build: **~11x**, while also being correct
+- **Speedup: ~8.5x**, down from the ~11x measured before the azimuth-window
+  fix — expected, since the window now makes the C++ side skip a lot of
+  previously-wasted work too, not because the GPU got slower (6.7s -> 6.8s,
+  essentially unchanged).
 
 ## Where the time goes in this prototype (and the obvious next step)
 
@@ -73,5 +80,4 @@ python ../gpu_prototype/gen_echo_signal_cupy.py --target <stem>
 ```
 
 The script validates its GPU output against the C++ `.npy` already on disk
-under `union_pipeline/echo_signal/` — regenerate that reference with
-`OMP_NUM_THREADS=1` first if you want a guaranteed race-free comparison.
+under `union_pipeline/echo_signal/`.
