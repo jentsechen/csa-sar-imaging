@@ -41,7 +41,8 @@ def list_targets(n):
 
 MAX_SUBPROCESS_RETRIES = 8  # TestMultiPointTarget intermittently segfaults (~15-20% per
                             # call, not a race -- reproduces even with OMP_NUM_THREADS=1;
-                            # likely marginal hardware). Retrying the same call in-process
+                            # every crash in the kernel log is on CPU 1 (core 4), a faulty
+                            # core: run under `taskset -c 0,2-23`). Retrying the same call in-process
                             # avoids restarting this whole script (and its directory listing)
                             # on every crash.
 

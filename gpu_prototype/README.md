@@ -51,7 +51,87 @@ previously inflated 4x to 6648.15 Hz purely to make `n_row` land on 3200).
   previously-wasted work too, not because the GPU got slower (6.7s -> 6.8s,
   essentially unchanged).
 
-## Where the time goes in this prototype (and the obvious next step)
+## Hand-written CUDA kernel (`gen_echo_signal_cuda.py`)
+
+Implements the thread-per-pixel design proposed below as a CuPy `RawKernel`
+(NVRTC-compiled, no C++/CMake changes). Each thread owns one output pixel and
+accumulates in registers, writing once. Two prunings avoid wasted work:
+
+- Targets are sorted by azimuth offset, so the targets whose azimuth window
+  covers row `i` are a contiguous slice `[row_lo[i], row_hi[i])` (host
+  `searchsorted`; the kernel repeats the exact window test).
+- Each block (one row x 256 columns) walks that slice in tiles: slant range,
+  round-trip time and carrier x scatter are computed once per (row, target)
+  per block, and targets whose range window misses the block's columns are
+  dropped with an order-preserving (deterministic) shared-memory compaction.
+
+Phases use `sincospi` (exact argument reduction for the ~1.8e8 rad carrier).
+
+| Scene | Targets | CuPy vectorized | CUDA kernel |
+|---|---|---|---|
+| `P0033_1800_2600_4200_5000` | 2372 | 6.86 s | **0.10 s** (68x) |
+| `P0126_4200_5000_5400_6200` | 52855 | >120 s (timed out) | **2.14 s** |
+| `P0131_12000_12800_10200_11000` | 120788 | >120 s (timed out) | **4.77 s** |
+
+Matches the reference `.npy` for P0033 to 8.5e-9 relative (max abs diff
+4.4e-4 vs max |ref| 5.2e4). `end_to_end_pipeline/gen_echo_signal_union_batch_cupy.py`
+now uses it by default (`--backend cupy` selects the old path); the four
+scenes in `skipped_scenes.txt` fit comfortably under the 120 s cap now.
+
+```bash
+python gen_echo_signal_cuda.py --target <stem> [--compare-cupy]
+```
+
+### Full batch (1593 scenes, measured 2026-09-28)
+
+| Run | Wall time |
+|---|---|
+| CuPy vectorized (from `echo_signal_timing_cupy.csv`) | 4.3 h (4 scenes hit the 120 s cap) |
+| CUDA kernel, compute only (`--no-save`) | **4.3 min** (221 s GPU, avg 0.14 s/scene) |
+| CUDA kernel, writing every `echo_signal/*.npy` | disk-bound: hours |
+
+The last row is not a GPU limit: `/home` is a Seagate ST4000DM004 (SMR hard
+drive) that sustains only ~20 MB/s of large writes, and the full echo set is
+~261 GB. So downstream stages should not round-trip the echo signal through
+disk -- see the fused CSA pipeline below.
+
+## CuPy CSA (`csa_cupy.py`)
+
+NumPy/CuPy port of `ChirpScalingAlgo::apply_csa` + `calc_mag`. The five phase
+filters are built once and reused for every scene; FFTs run on cuFFT.
+
+- Matches the C++ `focused_image/*.npy` to **5-8e-16 relative** (double
+  rounding), `_mag_db` to ~3e-12 dB (P0033 and P0048, whose echo inputs are
+  the original C++ outputs).
+- **8-35 ms/scene** on the GPU for CSA + magnitude.
+
+`end_to_end_pipeline/csa_to_jpg_union_batch_cupy.py` fuses point-target JSON
+-> echo kernel -> CSA -> dB -> crop/clip/normalize -> JPG entirely on the GPU,
+writing only the 800x800 JPG (default output `union_pipeline/csa_jpg_gpu/`).
+**All 1593 scenes end to end: 4.5 min** (GPU avg 0.146 s/scene).
+On 50 scenes, 0.0015% of pixels differ from the C++ pipeline's `csa_jpg/`, by at most 3
+gray levels (the ~1e-8 echo differences flip an occasional uint8 truncation,
+and JPEG spreads it to neighbouring pixels).
+Over all 1593 scenes: 949 identical, all others within 6 gray levels, except
+**`P0062_3500_4300_1800_2600`**, where the *C++* `csa_jpg/` output is corrupt:
+its `focused_image` crop is a flat 206.94 dB (+-0.0002 dB), so the JPG is
+normalized noise (mean 124 vs ~0.3 for its neighbours). The CuPy CSA on the
+same echo `.npy` gives a normal image. Most likely silent corruption from the
+faulty CPU core below; any evaluation using `csa_jpg/` included this image.
+
+## CPU 1 (core 4) is faulty -- pin jobs away from it
+
+All 1285 segfault/GPF kernel-log records from the last 3 days that name a CPU point to **CPU 1
+(core 4)**, across both `TestMultiPointTarget` and Python itself (plus a
+`[Hardware Error]` record). This is the cause of the "~15-20% intermittent
+segfault" in `csa_to_jpg_union_batch.py`, and it also crashed a long Python
+batch. Run long jobs with:
+
+```bash
+taskset -c 0,2-23 python <script>.py ...
+```
+
+## Where the time goes in the CuPy prototype (and the obvious next step)
 
 This prototype is a straightforward CuPy port: a Python-level loop over point
 targets, each iteration doing several unfused elementwise ops (`sqrt`,

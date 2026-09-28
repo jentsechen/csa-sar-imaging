@@ -40,6 +40,7 @@ images/<stem>.jpg  (100 offshore scenes, HRSID val)
 | `eval_union_masked.py` | `union_masked/images` | `union_masked_eval/` (YOLO val run) | Sanity check: confirms masking alone doesn't change detection metrics |
 | `gen_echo_signal_union_batch.py --max-seconds N` | `union_masked/images` | `union_pipeline/point_target_location/*.json`, `union_pipeline/echo_signal/*.npy`, `union_pipeline/echo_signal_timing.csv`, `union_pipeline/skipped_scenes.txt` | Wraps `../build/gen_echo_signal`; writes its own `input_par.json` with `azi_win_en=False`; scenes whose predicted runtime exceeds `--max-seconds` are skipped |
 | `csa_to_jpg_union_batch.py --n N` | `union_pipeline/echo_signal/*.npy` | `union_pipeline/focused_image/*.npy`, `union_pipeline/focused_image/*_mag_db.npy`, `union_pipeline/csa_jpg/*.jpg` | Wraps `../build/TestMultiPointTarget focus` + `calc_mag`; crops center 800x800, 30dB dynamic range |
+| `csa_to_jpg_union_batch_cupy.py` (GPU, recommended) | `union_pipeline/point_target_location/*.json` (or `--source echo_npy`) | `union_pipeline/csa_jpg_gpu/*.jpg` | Fused echo CUDA kernel -> CuPy CSA -> JPG on the GPU, nothing large written to disk; ~0.15 s/scene. See `../gpu_prototype/README.md`. Run under `taskset -c 0,2-23` (CPU 1 is faulty) |
 | `eval_union_csa.py` | `images/`, `union_pipeline/csa_jpg/`, `labels/` | `original_union_eval/`, `union_csa_union_eval/` | Precision/Recall/mAP@0.5, original vs union-mask-CSA, over the same scene set |
 
 `gen_echo_signal_union_batch.py` and `csa_to_jpg_union_batch.py` only process
