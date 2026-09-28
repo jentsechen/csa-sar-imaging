@@ -1,15 +1,13 @@
-#!/usr/bin/env python3
-"""Hand-written CUDA kernel (CuPy RawKernel, compiled via NVRTC) for
-ImagingPar::gen_point_target_echo_signal (src/ImagingPar.cpp).
+"""Point-target echo generation: hand-written CUDA kernel (CuPy RawKernel,
+compiled via NVRTC) for ImagingPar::gen_point_target_echo_signal
+(src/ImagingPar.cpp), for azi_win_en=False, noise_en=False,
+coherent_scatter_en=False.
 
-Same math and same (azi_win_en=False, noise_en=False, coherent_scatter_en=False)
-configuration as gen_echo_signal_cupy.py, but instead of a Python loop over
-targets launching several full-grid elementwise kernels each, a single kernel
-runs with one thread per output pixel, accumulating in registers and writing
-each pixel exactly once:
+One thread per output pixel, accumulating in registers and writing each pixel
+exactly once:
 
-  * Targets are sorted by azimuth offset (build_point_target_list already emits
-    them that way), so the targets whose azimuth window covers row i form a
+  * Targets are sorted by azimuth offset (build_point_target_list emits them
+    that way), so the targets whose azimuth window covers row i form a
     contiguous slice [row_lo[i], row_hi[i]) -- computed on the host.
   * Each block covers one azimuth row x blockDim range columns. It walks that
     slice in tiles: each thread computes the slant range / round-trip time /
@@ -20,19 +18,13 @@ each pixel exactly once:
 
 Phases use sincospi() (argument pre-divided by pi) -- exact reduction, so the
 large carrier phase (~1.8e8 rad) is not hurt by rounding pi*4*R/lambda.
-
-Usage:
-    python gen_echo_signal_cuda.py --target P0033_1800_2600_4200_5000
+Matches the C++ reference to ~5e-9 relative (see sarsim/validate.py).
 """
-import argparse
-import json
-import os
 import time
 
 import numpy as np
 
-from gen_echo_signal_cupy import (PIPE, LIGHT_SPEED_M_S, build_imaging_axes,
-                                  build_point_target_list)
+from .params import LIGHT_SPEED_M_S
 
 BLOCK = 256  # threads per block == targets per tile
 
@@ -148,9 +140,9 @@ def _get_kernel():
     return _kernel
 
 
-def gen_echo_signal_cuda(ax, azimuth_offset_sec, range_offset_m, scatter_coef,
-                         deadline=None, rows_per_launch=256):
-    """Drop-in replacement for gen_echo_signal(cp, ...) in gen_echo_signal_cupy.py.
+def gen_echo_signal(ax, azimuth_offset_sec, range_offset_m, scatter_coef,
+                    deadline=None, rows_per_launch=256):
+    """(n_row, n_col) complex128 echo, computed and kept on the GPU.
 
     Launches the kernel in chunks of `rows_per_launch` azimuth rows so that
     `deadline` (a time.perf_counter() timestamp) can be checked between chunks.
@@ -197,56 +189,3 @@ def gen_echo_signal_cuda(ax, azimuth_offset_sec, range_offset_m, scatter_coef,
             f64(ax["synthetic_aperture_time_sec"]), f64(LIGHT_SPEED_M_S),
             output))
     return output, False
-
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--target", default="P0033_1800_2600_4200_5000",
-                    help="stem under union_pipeline/point_target_location and echo_signal")
-    ap.add_argument("--compare-cupy", action="store_true",
-                    help="also time the vectorized CuPy version for comparison")
-    args = ap.parse_args()
-
-    import cupy as cp
-    with open(f"{PIPE}/input_par.json") as f:
-        par = json.load(f)
-    with open(f"{PIPE}/point_target_location/{args.target}.json") as f:
-        mask = json.load(f)
-
-    ax = build_imaging_axes(par)
-    az_off, rg_off, coef = build_point_target_list(
-        mask, ax["n_row"], ax["n_col"], ax["pulse_rep_freq_hz"], ax["sampling_freq_hz"])
-    print(f"n_row={ax['n_row']} n_col={ax['n_col']}, point targets: {len(az_off)}")
-
-    _get_kernel().compile()
-    gen_echo_signal_cuda(ax, az_off[:1], rg_off[:1], coef[:1])  # warm-up
-    cp.cuda.Stream.null.synchronize()
-
-    t0 = time.perf_counter()
-    out, _ = gen_echo_signal_cuda(ax, az_off, rg_off, coef)
-    cp.cuda.Stream.null.synchronize()
-    t_kernel = time.perf_counter() - t0
-    print(f"CUDA kernel: {t_kernel:.3f} s")
-    out_host = cp.asnumpy(out)
-
-    cpp_path = f"{PIPE}/echo_signal/{args.target}.npy"
-    if os.path.exists(cpp_path):
-        ref = np.load(cpp_path).reshape(ax["n_row"], ax["n_col"])
-        max_abs = np.max(np.abs(ref))
-        diff = np.max(np.abs(out_host - ref))
-        print(f"vs reference {cpp_path}: max abs diff = {diff:.3e} "
-              f"(max |ref|={max_abs:.3e}, rel={diff / max_abs:.3e})")
-
-    if args.compare_cupy:
-        from gen_echo_signal_cupy import gen_echo_signal
-        t0 = time.perf_counter()
-        out_cp, _ = gen_echo_signal(cp, ax, az_off, rg_off, coef)
-        cp.cuda.Stream.null.synchronize()
-        t_cupy = time.perf_counter() - t0
-        diff = float(cp.max(cp.abs(out_cp - out)))
-        print(f"CuPy vectorized: {t_cupy:.3f} s (speedup {t_cupy / t_kernel:.1f}x), "
-              f"max abs diff vs kernel = {diff:.3e}")
-
-
-if __name__ == "__main__":
-    main()

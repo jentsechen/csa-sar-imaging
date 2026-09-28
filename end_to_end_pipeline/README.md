@@ -8,14 +8,26 @@ pipeline script").
 
 ## Pipeline
 
+The echo + imaging stages now run on the GPU via [`sarsim`](../sarsim/README.md)
+(recommended); the original C++ wrappers are kept below as the legacy path.
+
 ```
-images/<stem>.jpg  (100 offshore scenes, HRSID val)
+images/<stem>.jpg  (1593 scenes, HRSID val)
   -> [mask_outside_gt_pred_union.py]
        run inference on original_eval/images, zero out every pixel outside
        the union of (GT boxes) and (predicted boxes)
        -> union_masked/images/<stem>.jpg
        -> union_masked/nonzero_pct.csv  (% nonzero pixels kept per image)
+       -> union_pipeline/point_target_location/<stem>.json
+          (written by gen_echo_signal_union_batch.py)
 
+  GPU path (python -m sarsim.pipeline --run <run> --algo csa):
+       point_target_location/<stem>.json -> echo (CUDA kernel, stays on GPU)
+       -> CSA (CuPy/cuFFT) -> crop + |x|^2 + 30dB clip
+       -> union_pipeline/runs/<run>/csa/jpg/<stem>.jpg
+       -> union_pipeline/runs/<run>/csa/power/<stem>.npy  (float32 linear power)
+
+  Legacy C++ path:
   -> [gen_echo_signal_union_batch.py]
        union_masked jpg -> union_pipeline/point_target_location/<stem>.json
        (no additional intensity threshold -- the box union IS the mask)
@@ -39,66 +51,62 @@ images/<stem>.jpg  (100 offshore scenes, HRSID val)
 | `mask_outside_gt_pred_union.py` | `original_eval/images`, `original_eval/labels` | `union_masked/images/*.jpg`, `union_masked/nonzero_pct.csv` | Runs inference once on the original images; zeroes pixels outside GT∪Pred box union |
 | `eval_union_masked.py` | `union_masked/images` | `union_masked_eval/` (YOLO val run) | Sanity check: confirms masking alone doesn't change detection metrics |
 | `gen_echo_signal_union_batch.py --max-seconds N` | `union_masked/images` | `union_pipeline/point_target_location/*.json`, `union_pipeline/echo_signal/*.npy`, `union_pipeline/echo_signal_timing.csv`, `union_pipeline/skipped_scenes.txt` | Wraps `../build/gen_echo_signal`; writes its own `input_par.json` with `azi_win_en=False`; scenes whose predicted runtime exceeds `--max-seconds` are skipped |
-| `csa_to_jpg_union_batch.py --n N` | `union_pipeline/echo_signal/*.npy` | `union_pipeline/focused_image/*.npy`, `union_pipeline/focused_image/*_mag_db.npy`, `union_pipeline/csa_jpg/*.jpg` | Wraps `../build/TestMultiPointTarget focus` + `calc_mag`; crops center 800x800, 30dB dynamic range |
-| `csa_to_jpg_union_batch_cupy.py` (GPU, recommended) | `union_pipeline/point_target_location/*.json` (or `--source echo_npy`) | `union_pipeline/csa_jpg_gpu/*.jpg` | Fused echo CUDA kernel -> CuPy CSA -> JPG on the GPU, nothing large written to disk; ~0.15 s/scene. See `../gpu_prototype/README.md`. Run under `taskset -c 0,2-23` (CPU 1 is faulty) |
-| `eval_union_csa.py` | `images/`, `union_pipeline/csa_jpg/`, `labels/` | `original_union_eval/`, `union_csa_union_eval/` | Precision/Recall/mAP@0.5, original vs union-mask-CSA, over the same scene set |
+| `csa_to_jpg_union_batch.py --n N` (legacy) | `union_pipeline/echo_signal/*.npy` | `union_pipeline/focused_image/*.npy`, `union_pipeline/focused_image/*_mag_db.npy`, `union_pipeline/csa_jpg/*.jpg` | Wraps `../build/TestMultiPointTarget focus` + `calc_mag`; crops center 800x800, 30dB dynamic range |
+| `python -m sarsim.pipeline --run R --algo csa` (from repo root; recommended) | `union_pipeline/point_target_location/*.json` | `union_pipeline/runs/R/{csa/jpg,csa/power,metrics.csv,manifest.json}` | Echo CUDA kernel -> CuPy CSA -> JPG on the GPU, no echo/focused `.npy` written; ~4.7 min for all 1593 scenes. Several `--algo` share each echo. See `../sarsim/README.md` |
+| `eval_union_csa.py [--csa-dir DIR --name NAME]` | `images/`, `DIR` (default `union_pipeline/csa_jpg/`), `labels/` | `original_union_eval/`, `NAME_union_eval/` | Precision/Recall/mAP@0.5, original vs union-mask-CSA, over exactly the stems present in `DIR` |
 
-`gen_echo_signal_union_batch.py` and `csa_to_jpg_union_batch.py` only process
-scenes that completed the previous stage and skip ones already done, so
-interrupted runs (e.g. after a disconnect) resume without recomputation.
+`gen_echo_signal_union_batch.py`, `csa_to_jpg_union_batch.py` and
+`sarsim.pipeline` only process scenes not yet done, so interrupted runs (e.g.
+after a disconnect) resume without recomputation.
+
+**Faulty CPU:** every segfault on this workstation happens on CPU 1 (core 4);
+`sarsim` avoids it automatically, other long jobs should run under
+`taskset -c 0,2-23`. See `../gpu_prototype/README.md`.
 
 ## Directories
 
-- `images/`, `labels/` — the 100 selected source JPGs + ground-truth YOLO labels (all offshore)
-- `original_eval/` — the same 100 images repackaged as a YOLO eval set (images+labels symlinks); source for the union mask
+- `images/`, `labels/` — the selected source JPGs + ground-truth YOLO labels
+- `original_eval/` — the same images repackaged as a YOLO eval set (images+labels symlinks); source for the union mask
 - `union_masked/` — masked JPGs + per-image nonzero-pixel-percentage CSV
 - `union_masked_eval/` — temp YOLO eval set for `union_masked/images`
-- `union_pipeline/` — self-contained working dir for the echo/CSA stages: `point_target_location/`, `echo_signal/`, `focused_image/`, `csa_jpg/`, its own `input_par.json` (azi_win_en=False), `echo_signal_timing.csv`, `skipped_scenes.txt`
-- `original_union_eval/`, `union_csa_union_eval/` — temp YOLO eval sets built by `eval_union_csa.py`
+- `union_pipeline/` — working dir for the echo/imaging stages:
+  - `point_target_location/`, `input_par.json` (azi_win_en=False) — shared input to both paths
+  - `runs/<run>/` — `sarsim.pipeline` outputs (JPG, float32 power, metrics, manifest)
+  - `reference/` — two scenes' C++ echo + focused `.npy`, used by `python -m sarsim.validate`
+  - `csa_jpg/` — legacy C++ JPGs (1583 scenes; `P0062_3500_4300_1800_2600` is corrupt, see below)
+  - `echo_signal/`, `focused_image/` — legacy C++ intermediates, 164 MB/scene; deleted 2026-09-28 (~670 GB), recreated only if the legacy scripts are rerun
+- `*_union_eval/` — temp YOLO eval sets built by `eval_union_csa*.py` (git-ignored)
 
 ## Status
 
-100 images selected (offshore only); **92/100** completed the full union-mask
-pipeline (8 skipped — scenes whose union-mask region was too dense to finish
-within the time cap; see `union_pipeline/skipped_scenes.txt`).
+### GPU pipeline result (2026-09-28, 1593 scenes, 3081 GT instances)
 
-### Masking sanity check (100 images, no echo/CSA)
-
-| Set | Precision | Recall | mAP@0.5 |
-|---|---|---|---|
-| original | 1.0000 | 0.9820 | 0.9850 |
-| union_masked | 1.0000 | 0.9880 | 0.9850 |
-
-Confirms masking alone (zeroing pixels outside the GT∪Pred box union, avg
-0.41% pixels retained) does not degrade detection — a few borderline
-IoU=0.5 flips occur (see conversation history / notes below) but net effect
-is neutral to slightly positive.
-
-### Full pipeline result (92 images, 138 GT instances)
+`python -m sarsim.pipeline --run baseline_csa --algo csa`, then
+`eval_union_csa.py --device 0 --csa-dir union_pipeline/runs/baseline_csa/csa/jpg --name baseline_csa`:
 
 | Set | Precision | Recall | mAP@0.5 |
 |---|---|---|---|
-| original | 1.0000 | 0.9783 | 0.9750 |
-| union_csa (azi_win_en=False) | 0.9774 | 0.9399 | 0.9538 |
+| original | 0.9818 | 0.9651 | 0.9838 |
+| baseline_csa (GPU, azi_win_en=False) | 0.9741 | 0.9753 | 0.9843 |
 
-This is a smaller drop than the earlier intensity-threshold-based CSA
-experiment (which had shown Precision 0.871 / Recall 0.822 / mAP@0.5 0.847
-against the same kind of original baseline) — the union-mask approach
-preserves more detection-relevant information into the CSA reconstruction
-than a fixed brightness threshold does.
+Legacy C++ `csa_jpg/` on its 1583 scenes, for comparison:
 
-**Open question:** the improvement could be due to the union-mask strategy,
-`azi_win_en=False`, or both — no controlled experiment has isolated the two
-factors yet (would need a union-mask run with `azi_win_en=True` for
-comparison).
+| Set | Precision | Recall | mAP@0.5 |
+|---|---|---|---|
+| original | 0.9841 | 0.9663 | 0.9844 |
+| union_csa (C++) | 0.9740 | 0.9756 | 0.9844 |
+
+The GPU and C++ pipelines give the same detection performance, and CSA
+reconstruction of the union-mask scenes no longer costs mAP@0.5: recall rises
+~1 pt and precision drops ~0.8 pt relative to the original images. The C++
+set includes one corrupt image (`P0062_3500_4300_1800_2600`, flat focused
+output — see `../gpu_prototype/README.md`) and lacks the 10 scenes that were
+skipped or failed there.
 
 ## Timing
 
-- Echo signal generation (union mask, 92 scenes): ~2.86 hours total, runtime
-  scales linearly with nonzero pixel count (~0.0462 s/px, r=0.9999)
-- CSA focus + dB + JPG conversion (92 scenes): 201.4 s total (~2.19 s/scene)
-- 8 scenes skipped at `--max-seconds 300` (predicted 301–767s); see
-  `union_pipeline/skipped_scenes.txt` for the list
+- GPU (`sarsim.pipeline`, RTX 5090, 1593 scenes): 4.7 min end to end
+  (echo ~0.14 s + CSA ~0.02 s per scene).
 
 ## Configuration
 
@@ -178,27 +186,3 @@ boxes come from `labels/<stem>.txt`) -- this is the same box source
 `mask_outside_gt_pred_union.py` unions to build `union_masked/`, just kept
 as two separate sets here instead of merged, so GT vs. detection can be
 compared directly.
-
-### Findings so far (92 scenes)
-
-| Set | Precision | Recall | mAP@0.5 |
-|---|---|---|---|
-| original | 1.0000 | 0.9783 | 0.9750 |
-| union_csa (no threshold) | 0.9774 | 0.9399 | 0.9538 |
-| union_csa_t80 | 0.9847 | 0.9855 | 0.9841 |
-| union_csa_t100 | 0.9918 | 0.9855 | 0.9844 |
-| union_csa_t120 | 0.9927 | 0.9855 | 0.9847 |
-
-Thresholding the CSA output (on top of the union mask) recovers most of the
-gap to `original` -- Recall saturates at 0.9855 from T=80 upward, while
-Precision/mAP keep improving only marginally as T increases to 120. Isolated
-per-scene inspection (`find_threshold_diff_images.py` +
-`crosssection_plots/`) shows two distinct mechanisms behind this recovery:
-thresholding can either clean up an unrelated false-positive elsewhere in
-the scene, or directly narrow a ship's own CSA-blurred signal enough to push
-its detection IoU back above 0.5 (e.g. `P0070_600_1400_3600_4400`, where
-narrowing the box from IoU=0.44 to IoU=0.71 flips a miss into a match).
-Pushing the threshold higher than ~120 (tested up to 150 on a single crop)
-does not converge to a clean ship -- it keeps eroding real signal at the
-same rate it removes residual background, since the two overlap in
-intensity.

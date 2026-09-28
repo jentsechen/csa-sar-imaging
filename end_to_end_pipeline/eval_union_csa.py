@@ -4,6 +4,7 @@ union-mask CSA pipeline (azi_win_en=False), over the same scene set.
 
 Usage:
     python eval_union_csa.py --device cpu
+    python eval_union_csa.py --device 0 --csa-dir union_pipeline/runs/<run>/csa/jpg --name <run>
 """
 import argparse
 import os
@@ -16,14 +17,10 @@ UNION_CSA_DIR = os.path.join(BASE, "union_pipeline", "csa_jpg")
 LABELS_DIR = os.path.join(BASE, "labels")
 WEIGHTS = os.path.join(BASE, "..", "sar_ship_detect", "weights", "best.pt")
 
-SETS = {
-    "original": ORIGINAL_DIR,
-    "union_csa": UNION_CSA_DIR,
-}
 
 
-def processed_stems():
-    return sorted(os.path.splitext(f)[0] for f in os.listdir(UNION_CSA_DIR) if f.endswith(".jpg"))
+def processed_stems(csa_dir):
+    return sorted(os.path.splitext(f)[0] for f in os.listdir(csa_dir) if f.endswith(".jpg"))
 
 
 def build_eval_set(image_dir, eval_dir, stems):
@@ -31,6 +28,17 @@ def build_eval_set(image_dir, eval_dir, stems):
     labels_out = os.path.join(eval_dir, "labels")
     os.makedirs(images_out, exist_ok=True)
     os.makedirs(labels_out, exist_ok=True)
+
+    # Drop links left over from earlier runs over a different scene set, so
+    # every set in one comparison covers exactly the same stems.
+    wanted = set(stems)
+    for d in (images_out, labels_out):
+        for f in os.listdir(d):
+            if os.path.splitext(f)[0] not in wanted:
+                os.remove(os.path.join(d, f))
+    cache = os.path.join(eval_dir, "labels.cache")
+    if os.path.exists(cache):
+        os.remove(cache)
 
     for stem in stems:
         img_link = os.path.join(images_out, stem + ".jpg")
@@ -78,22 +86,26 @@ def main():
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--csa-dir", default=UNION_CSA_DIR, help="JPG directory to evaluate against the originals")
+    ap.add_argument("--name", default="union_csa", help="set name; eval dir is <name>_union_eval/")
     args = ap.parse_args()
 
-    stems = processed_stems()
+    csa_dir = os.path.abspath(args.csa_dir)
+    sets = {"original": ORIGINAL_DIR, args.name: csa_dir}
+    stems = processed_stems(csa_dir)
     print(f"Comparing on {len(stems)} scene(s)\n")
 
     model = YOLO(WEIGHTS)
 
     results = {}
-    for name, image_dir in SETS.items():
+    for name, image_dir in sets.items():
         eval_dir = os.path.join(BASE, f"{name}_union_eval")
         yaml_path = build_eval_set(image_dir, eval_dir, stems)
         results[name] = run_val(model, yaml_path, eval_dir, args)
 
-    print(f"{'Set':<12} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
+    print(f"{'Set':<24} {'Precision':>10} {'Recall':>8} {'mAP@0.5':>9}")
     for name, (p, r, map50) in results.items():
-        print(f"{name:<12} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
+        print(f"{name:<24} {p:>10.4f} {r:>8.4f} {map50:>9.4f}")
 
 
 if __name__ == "__main__":
