@@ -3,8 +3,10 @@
 same union_masked/images/*.jpg -> point_target_location/*.json construction,
 same union_pipeline/ working directory and echo_signal/*.npy output format --
 only the echo-signal computation itself runs on the GPU via
-gpu_prototype/gen_echo_signal_cupy.py instead of shelling out to the C++
-gen_echo_signal binary.
+gpu_prototype/gen_echo_signal_cuda.py's hand-written CUDA kernel (default,
+--backend kernel) or gpu_prototype/gen_echo_signal_cupy.py's vectorized CuPy
+version (--backend cupy) instead of shelling out to the C++ gen_echo_signal
+binary.
 
 Per-image wall-clock time cap: if a scene doesn't finish within --max-seconds,
 it is aborted (partial/incomplete result discarded) and logged to
@@ -26,6 +28,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, os.path.join(REPO, "gpu_prototype"))
 from gen_echo_signal_cupy import build_imaging_axes, build_point_target_list, gen_echo_signal  # noqa: E402
+from gen_echo_signal_cuda import gen_echo_signal_cuda  # noqa: E402
 
 UNION_MASKED_IMAGES_DIR = os.path.join(SCRIPT_DIR, "union_masked", "images")
 
@@ -33,7 +36,10 @@ BASE = os.path.join(SCRIPT_DIR, "union_pipeline")
 POINT_TARGET_DIR = os.path.join(BASE, "point_target_location")
 ECHO_SIGNAL_DIR = os.path.join(BASE, "echo_signal")
 SKIPPED_LOG = os.path.join(BASE, "skipped_scenes.txt")
-TIMING_LOG = os.path.join(BASE, "echo_signal_timing_cupy.csv")
+TIMING_LOGS = {
+    "kernel": os.path.join(BASE, "echo_signal_timing_kernel.csv"),
+    "cupy": os.path.join(BASE, "echo_signal_timing_cupy.csv"),
+}
 
 # Same parameter set as gen_echo_signal_union_batch.py -- see that file's
 # docstring for the azi_pad_time / real-PRF rationale.
@@ -74,9 +80,9 @@ def build_point_target_jsons():
     return stems
 
 
-def log_timing(target, n_targets, elapsed, timed_out):
-    write_header = not os.path.exists(TIMING_LOG)
-    with open(TIMING_LOG, "a") as f:
+def log_timing(timing_log, target, n_targets, elapsed, timed_out):
+    write_header = not os.path.exists(timing_log)
+    with open(timing_log, "a") as f:
         if write_header:
             f.write("target,n_targets,elapsed_s,timed_out\n")
         f.write(f"{target},{n_targets},{elapsed:.3f},{timed_out}\n")
@@ -87,6 +93,13 @@ def main():
     ap.add_argument("--n", type=int, default=100000, help="number of echo signals to generate")
     ap.add_argument("--max-seconds", type=float, default=120,
                      help="per-scene wall-clock cap; scenes exceeding this are aborted and logged as skipped")
+    ap.add_argument("--backend", choices=["kernel", "cupy"], default="kernel",
+                     help="kernel: hand-written CUDA kernel (fast); cupy: vectorized CuPy reference")
+    ap.add_argument("--overwrite", action="store_true",
+                     help="regenerate scenes even if echo_signal/<target>.npy already exists")
+    ap.add_argument("--no-save", action="store_true",
+                     help="benchmark only: compute every scene but write no .npy / timing log "
+                          "(implies --overwrite)")
     args = ap.parse_args()
 
     os.makedirs(BASE, exist_ok=True)
@@ -102,7 +115,9 @@ def main():
 
     all_stems = build_point_target_jsons()
     targets = all_stems[: args.n]
-    todo = [t for t in targets if not os.path.exists(os.path.join(ECHO_SIGNAL_DIR, t + ".npy"))]
+    todo = [t for t in targets
+            if args.overwrite or args.no_save or not os.path.exists(os.path.join(ECHO_SIGNAL_DIR, t + ".npy"))]
+    timing_log = TIMING_LOGS[args.backend]
     already_done = len(targets) - len(todo)
 
     print(f"{already_done} already done, {len(todo)} to process", flush=True)
@@ -119,7 +134,10 @@ def main():
 
         t0 = time.perf_counter()
         deadline = t0 + args.max_seconds
-        out, timed_out = gen_echo_signal(cp, ax, az_off, rg_off, coef, deadline=deadline)
+        if args.backend == "kernel":
+            out, timed_out = gen_echo_signal_cuda(ax, az_off, rg_off, coef, deadline=deadline)
+        else:
+            out, timed_out = gen_echo_signal(cp, ax, az_off, rg_off, coef, deadline=deadline)
         cp.cuda.Stream.null.synchronize()
         elapsed = time.perf_counter() - t0
 
@@ -127,12 +145,14 @@ def main():
             print(f"  [{idx+1}/{len(todo)}] {target}: TIMED OUT after {elapsed:.1f}s "
                   f"(n_targets={n_targets}, cap={args.max_seconds}s)", flush=True)
             skipped.append((target, n_targets, elapsed))
-            log_timing(target, n_targets, elapsed, True)
+            if not args.no_save:
+                log_timing(timing_log, target, n_targets, elapsed, True)
         else:
-            out_host = cp.asnumpy(out)
-            np.save(os.path.join(ECHO_SIGNAL_DIR, target + ".npy"), out_host)
+            if not args.no_save:
+                out_host = cp.asnumpy(out)
+                np.save(os.path.join(ECHO_SIGNAL_DIR, target + ".npy"), out_host)
+                log_timing(timing_log, target, n_targets, elapsed, False)
             times.append(elapsed)
-            log_timing(target, n_targets, elapsed, False)
             if (idx + 1) % 20 == 0 or idx == 0:
                 cum = time.perf_counter() - run_t0
                 print(f"  [{idx+1}/{len(todo)}] {target}: {elapsed:.2f}s (n_targets={n_targets}) "
@@ -142,7 +162,7 @@ def main():
         if (idx + 1) % 50 == 0:
             cp.get_default_memory_pool().free_all_blocks()
 
-    if skipped:
+    if skipped and not args.no_save:
         write_header = not os.path.exists(SKIPPED_LOG)
         with open(SKIPPED_LOG, "a") as f:
             if write_header:
@@ -156,8 +176,8 @@ def main():
     print(f"\n{already_done} already done, {len(times)} generated, {len(skipped)} timed out this run", flush=True)
     print(f"Total GPU compute time (this run): {total:.1f} s over {len(times)} scene(s) (avg {avg:.2f} s/scene)", flush=True)
     print(f"Total wall time (this run): {wall:.1f} s ({wall/60:.1f} min)", flush=True)
-    if times:
-        print(f"Timing logged -> {TIMING_LOG}", flush=True)
+    if times and not args.no_save:
+        print(f"Timing logged -> {timing_log}", flush=True)
     if skipped:
         print(f"Skipped/timed-out scenes logged -> {SKIPPED_LOG}", flush=True)
 
