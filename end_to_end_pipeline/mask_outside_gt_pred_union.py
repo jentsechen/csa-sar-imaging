@@ -7,10 +7,20 @@ per image.
 This does NOT re-run inference on the masked images -- that's a separate,
 later step. This script only masks + measures nonzero pixel percentage.
 
+The same in-memory masked array is written twice:
+  - union_masked/images/<stem>.jpg -- detector input (lossy, like the originals)
+  - union_pipeline/point_target_location/<stem>.png -- lossless echo-simulation
+    input (sarsim reads it; every nonzero pixel is a point scatterer)
+Deriving the point targets from the JPG instead would add JPEG ringing around
+every box as spurious low-amplitude scatterers (~11% of all targets).
+--json additionally writes <stem>.json (masked.tolist()) for the legacy C++
+gen_echo_signal path.
+
 Usage:
-    python mask_outside_gt_pred_union.py
+    python mask_outside_gt_pred_union.py [--json]
 """
 import argparse
+import json
 import os
 
 import cv2
@@ -23,6 +33,7 @@ SRC_LABELS_DIR = os.path.join(BASE, "original_eval", "labels")
 OUT_DIR = os.path.join(BASE, "union_masked")
 OUT_IMAGES_DIR = os.path.join(OUT_DIR, "images")
 RESULTS_CSV = os.path.join(OUT_DIR, "nonzero_pct.csv")
+POINT_TARGET_DIR = os.path.join(BASE, "union_pipeline", "point_target_location")
 WEIGHTS = os.path.join(BASE, "..", "sar_ship_detect", "weights", "best.pt")
 
 
@@ -58,10 +69,13 @@ def main():
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.45)
     ap.add_argument("--device", default="0")
+    ap.add_argument("--json", action="store_true",
+                    help="also write point_target_location/<stem>.json for the legacy C++ path")
     args = ap.parse_args()
 
     stems = sorted(os.path.splitext(f)[0] for f in os.listdir(SRC_IMAGES_DIR) if f.endswith(".jpg"))
     os.makedirs(OUT_IMAGES_DIR, exist_ok=True)
+    os.makedirs(POINT_TARGET_DIR, exist_ok=True)
 
     model = YOLO(WEIGHTS)
 
@@ -79,6 +93,10 @@ def main():
 
         masked = mask_outside_union(img, gt_boxes, pred_boxes)
         cv2.imwrite(os.path.join(OUT_IMAGES_DIR, stem + ".jpg"), masked)
+        cv2.imwrite(os.path.join(POINT_TARGET_DIR, stem + ".png"), masked)
+        if args.json:
+            with open(os.path.join(POINT_TARGET_DIR, stem + ".json"), "w") as f:
+                json.dump(masked.tolist(), f)
 
         pct = (masked != 0).sum() / masked.size * 100
         rows.append((stem, len(gt_boxes), len(pred_boxes), pct))
@@ -90,7 +108,7 @@ def main():
             f.write(f"{stem},{n_gt},{n_pred},{pct:.4f}\n")
 
     avg_pct = sum(r[3] for r in rows) / len(rows) if rows else 0.0
-    print(f"\n{len(rows)} images -> {OUT_IMAGES_DIR}")
+    print(f"\n{len(rows)} images -> {OUT_IMAGES_DIR} (jpg), {POINT_TARGET_DIR} (png)")
     print(f"Average nonzero pixel percentage: {avg_pct:.4f}%")
     print(f"Per-image results -> {RESULTS_CSV}")
 

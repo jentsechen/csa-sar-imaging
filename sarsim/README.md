@@ -1,7 +1,7 @@
 # sarsim — GPU SAR simulation + imaging pipeline
 
 ```
-point_target_location/<stem>.json
+point_target_location/<stem>.png   lossless masked image (mask_outside_gt_pred_union.py)
   └─► echo.py      CUDA kernel (CuPy RawKernel)    echo stays on the GPU (never written)
         └─► imaging/<algo>.py   (CuPy / cuFFT)      same echo shared by every --algo
               └─► postproc.py   scene crop, |x|^2, 30 dB clip → JPG
@@ -10,7 +10,7 @@ point_target_location/<stem>.json
 
 | Module | Role |
 |---|---|
-| `params.py` | Axes / geometry (ports of `SigPar`, `ImagingPar`) and point-target list |
+| `params.py` | Axes / geometry (ports of `SigPar`, `ImagingPar`), point-target mask loading (PNG, legacy JSON) and point-target list |
 | `echo.py` | Thread-per-pixel echo kernel; ~0.14 s/scene on an RTX 5090 |
 | `imaging/base.py` | `ImagingAlgorithm` interface + `@register` registry |
 | `imaging/csa.py` | Chirp Scaling Algorithm; ~10–35 ms/scene |
@@ -22,10 +22,10 @@ point_target_location/<stem>.json
 
 ```bash
 python -m sarsim.validate                                  # echo ~8e-9, CSA ~5e-16 vs C++
-python -m sarsim.pipeline --run baseline_csa --algo csa    # all 1593 scenes, ~5 min
+python -m sarsim.pipeline --run union_png --algo csa       # all 1593 scenes, ~4 min
 python -m sarsim.pipeline --run cmp --algo csa,rda --n 50  # several algorithms, same echoes
-cd end_to_end_pipeline && python eval_union_csa.py --device 0 \
-    --csa-dir union_pipeline/runs/baseline_csa/csa/jpg --name baseline_csa
+cd end_to_end_pipeline && python eval_union_csa.py \
+    --csa-dir union_pipeline/runs/union_png/csa/jpg --name union_png
 ```
 
 The pipeline resumes (skips scenes whose JPGs exist for every requested
@@ -42,6 +42,9 @@ workstation that causes random segfaults.
   quantized. dB is `10*log10(power)`.
 - `metrics.csv` — per scene/algorithm: target count, echo / focus time, peak dB, entropy.
 - `manifest.json` — `input_par`, git commit, algorithms, output formats.
+
+Point targets come from the lossless PNG, never from `union_masked/*.jpg`:
+JPEG ringing around the boxes would add ~11% spurious scatterers.
 
 Full-size echo / focused `.npy` files (164 MB each) are deliberately not
 stored: regenerating an echo (0.14 s) is faster than reading one back from

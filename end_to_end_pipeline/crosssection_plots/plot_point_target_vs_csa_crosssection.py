@@ -7,11 +7,11 @@ profile relative to both the raw CSA reconstruction and the masked input.
 
 The "input" line is read directly from union_masked/images/<stem>.jpg (the
 GT-union-predicted-box-masked original, raw pixel values kept inside the
-mask) -- NOT from union_pipeline/point_target_location/<stem>.json, even
-though the two are byte-identical (gen_echo_signal_union_batch.py builds the
-point_target_location JSON by dumping this exact image with img.tolist()).
-Reading union_masked directly makes clear this is the masked *input image*,
-not a sparse point-scatterer representation.
+mask) -- NOT from union_pipeline/point_target_location/<stem>.png, the
+lossless copy of the same masked array that the echo simulation actually
+uses. The JPG additionally carries JPEG ringing (faint nonzero pixels around
+the boxes), so it is the masked *input image* as the detector sees it, not
+the exact point-scatterer set.
 
 Does not modify any existing pipeline code -- standalone experiment script.
 

@@ -107,7 +107,7 @@ def gen_echo_signal(xp, ax, azimuth_offset_sec, range_offset_m, scatter_coef, de
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default="P0033_1800_2600_4200_5000",
-                     help="stem under union_pipeline/point_target_location and echo_signal")
+                     help="stem under union_pipeline/reference/{point_target_location,echo_signal}")
     ap.add_argument("--cpu-subset", type=int, default=30,
                      help="number of targets for the single-core NumPy sanity check "
                           "(the full target list is too slow on 1 CPU core)")
@@ -115,7 +115,7 @@ def main():
 
     with open(f"{PIPE}/input_par.json") as f:
         par = json.load(f)
-    with open(f"{PIPE}/point_target_location/{args.target}.json") as f:
+    with open(f"{PIPE}/reference/point_target_location/{args.target}.json") as f:
         mask = json.load(f)
 
     ax = build_imaging_axes(par)

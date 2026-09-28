@@ -1,7 +1,9 @@
 """Imaging geometry / axes, mirroring src/SigPar.cpp and src/ImagingPar.cpp, and
 the point-target list construction of src/apps/gen_echo_signal.cpp."""
 import json
+import os
 
+import cv2
 import numpy as np
 
 LIGHT_SPEED_M_S = 3e8
@@ -11,6 +13,32 @@ PI = 3.14159265358979323846
 def load_input_par(path):
     with open(path) as f:
         return json.load(f)
+
+
+POINT_TARGET_EXTS = (".png", ".json")
+
+
+def list_point_target_stems(point_target_dir):
+    """Scene stems with a point-target mask (<stem>.png preferred, or legacy <stem>.json)."""
+    stems = set()
+    for f in os.listdir(point_target_dir):
+        stem, ext = os.path.splitext(f)
+        if ext in POINT_TARGET_EXTS:
+            stems.add(stem)
+    return sorted(stems)
+
+
+def load_point_target_mask(point_target_dir, stem):
+    """uint8 scatterer mask: the lossless <stem>.png written by
+    mask_outside_gt_pred_union.py, else a legacy <stem>.json (nested list)."""
+    png = os.path.join(point_target_dir, stem + ".png")
+    if os.path.exists(png):
+        mask = cv2.imread(png, cv2.IMREAD_UNCHANGED)
+        if mask is None or mask.ndim != 2:
+            raise ValueError(f"{png}: expected a single-channel image")
+        return mask
+    with open(os.path.join(point_target_dir, stem + ".json")) as f:
+        return np.asarray(json.load(f))
 
 
 def freq_axis(sampling_freq_hz, n):

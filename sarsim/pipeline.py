@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end GPU batch: point-target JSON -> echo (CUDA kernel) -> one or more
+"""End-to-end GPU batch: point-target mask (PNG) -> echo (CUDA kernel) -> one or more
 imaging algorithms -> scene crop -> JPG + float32 linear-power crop + metrics.
 
 The 164 MB echo never leaves the GPU: it is regenerated on demand (~0.14 s)
@@ -73,7 +73,8 @@ def main():
     import cv2
     from .echo import gen_echo_signal
     from .imaging import ALGORITHMS
-    from .params import build_imaging_axes, build_point_target_list, load_input_par
+    from .params import (build_imaging_axes, build_point_target_list, list_point_target_stems,
+                         load_input_par, load_point_target_mask)
     from .postproc import process
 
     algos = [a.strip() for a in args.algo.split(",") if a.strip()]
@@ -112,7 +113,7 @@ def main():
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
 
-    stems = sorted(os.path.splitext(f)[0] for f in os.listdir(args.point_target_dir) if f.endswith(".json"))
+    stems = list_point_target_stems(args.point_target_dir)
     if args.n is not None:
         stems = stems[: args.n]
 
@@ -134,8 +135,7 @@ def main():
     run_t0 = time.perf_counter()
     for idx, stem in enumerate(todo):
         try:
-            with open(os.path.join(args.point_target_dir, stem + ".json")) as f:
-                mask = np.asarray(json.load(f))
+            mask = load_point_target_mask(args.point_target_dir, stem)
             az_off, rg_off, coef = build_point_target_list(
                 mask, ax["n_row"], ax["n_col"], ax["pulse_rep_freq_hz"], ax["sampling_freq_hz"])
 

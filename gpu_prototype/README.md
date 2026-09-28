@@ -114,7 +114,8 @@ filters are built once and reused for every scene; FFTs run on cuFFT.
   `_mag_db` to ~3e-12 dB, on the two reference scenes.
 - **8-35 ms/scene** on the GPU for CSA + magnitude.
 - Full echo → CSA → JPG over all 1593 scenes: **~4.7 min**
-  (`python -m sarsim.pipeline --run baseline_csa`).
+  (`python -m sarsim.pipeline --run baseline_csa`; ~3.8 min with the lossless
+  PNG point targets used since, run `union_png`).
 
 Against the C++ pipeline's `union_pipeline/csa_jpg/`: most scenes are
 bit-identical and the rest differ by at most a few gray levels (the ~1e-8 echo

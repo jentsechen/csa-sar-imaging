@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Batch-generate echo signals from the union-masked images (union_masked/images/*.jpg
--- pixels outside GT-union-predicted-box zeroed, raw pixel values kept inside),
+"""Batch-generate echo signals from the union-masked images
+(union_pipeline/point_target_location/*.png, the lossless copy written by
+mask_outside_gt_pred_union.py -- pixels outside GT-union-predicted-box zeroed,
+raw pixel values kept inside; the C++ binary reads the <stem>.json built from it),
 using a separate self-contained working directory (union_pipeline/) so it
 doesn't collide with the threshold=60 pipeline already in
 point_target_location/ and echo_signal/.
@@ -46,8 +48,6 @@ import time
 import cv2
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-UNION_MASKED_IMAGES_DIR = os.path.join(SCRIPT_DIR, "union_masked", "images")
-
 BASE = os.path.join(SCRIPT_DIR, "union_pipeline")
 POINT_TARGET_DIR = os.path.join(BASE, "point_target_location")
 ECHO_SIGNAL_DIR = os.path.join(BASE, "echo_signal")
@@ -83,12 +83,14 @@ def write_input_par():
 
 def build_point_target_jsons():
     os.makedirs(POINT_TARGET_DIR, exist_ok=True)
-    stems = sorted(os.path.splitext(f)[0] for f in os.listdir(UNION_MASKED_IMAGES_DIR) if f.endswith(".jpg"))
+    # Built from the lossless PNG, not union_masked/images/*.jpg: JPEG ringing
+    # would add spurious scatterers around every box.
+    stems = sorted(os.path.splitext(f)[0] for f in os.listdir(POINT_TARGET_DIR) if f.endswith(".png"))
     for stem in stems:
         out_path = os.path.join(POINT_TARGET_DIR, stem + ".json")
         if os.path.exists(out_path):
             continue
-        img = cv2.imread(os.path.join(UNION_MASKED_IMAGES_DIR, stem + ".jpg"), cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(os.path.join(POINT_TARGET_DIR, stem + ".png"), cv2.IMREAD_GRAYSCALE)
         with open(out_path, "w") as f:
             json.dump(img.tolist(), f)
     return stems
