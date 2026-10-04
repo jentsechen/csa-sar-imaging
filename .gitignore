@@ -43,6 +43,7 @@ __pycache__/
 !/document/industry_academia_collaboration/*/*.tex
 !/document/industry_academia_collaboration/*/*.pdf
 !/document/industry_academia_collaboration/*/.latexmkrc
+!/document/industry_academia_collaboration/*/figures/
 
 # MOE scholarship application: track sources, PDFs, figures, Makefile; ignore LaTeX build files
 /document/moe_scholarship/**/*.aux

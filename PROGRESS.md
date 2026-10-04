@@ -23,3 +23,8 @@ Format: date, what was done, any key decision or finding.
 - Proposal figure uses an unmasked P0033 scene (whole image as scatterers): CSA misses a small ship, CSA + threshold recovers it; Lee filter only smooths background (mean level unchanged), so it was left out
 - Wrote 研究優異表現證明 (ICC 2023 NII internship paper + master's thesis/APWCS 2023), descriptions checked against both paper PDFs
 - Wrote 個人學經歷摘要 (education, 4-year SAR digital front-end industry work split into algorithm/RTL/FPGA integration, job end date stated for MOE non-employment rule); NII internship marked remote
+
+## 2026-10-05
+- Added `document/industry_academia_collaboration/midterm/review_response.tex`: English response to the 4 midterm review comments, with Appendix A proving the CSA matrix is unitary (Hadamard-product phases + DFTs), so the echo-domain and image-domain fidelity terms in Eq. (1)/(6) are equal
+- Single-point-target overlay (`plot_single_point_threshold.py`): hard threshold at 120 narrows the mainlobe extent 2.50→2.25 px (range) / 2.62→2.25 px (azimuth); first sidelobes (−13.3 dB) survive, so a threshold at the peak sidelobe level would remove all sidelobes
+- Key decision: report states CS is used for enhancement of fully sampled echo, not sub-Nyquist reconstruction; noise symbol renamed to W to avoid clashing with N (range samples)
