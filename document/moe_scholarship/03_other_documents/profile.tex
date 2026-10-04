@@ -1,22 +1,58 @@
 % ══════════════════════════════════════════════════════════════════════════════
-% 其他有利審查文件：個人學經歷摘要（單頁，無頁碼）— 待補
+% 其他有利審查文件：個人學經歷摘要（單頁，無頁碼）
 % 編譯方式：LuaLaTeX，見 .latexmkrc；整份申請文件見 ../moe_scholarship.tex
 % ══════════════════════════════════════════════════════════════════════════════
 \documentclass[11pt,fontset=none]{ctexart}
 
-\usepackage[margin=0.8in]{geometry}
+\usepackage[margin=0.8in, top=0.7in, bottom=0.7in]{geometry}
+\usepackage{tabularx}
+\usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 
 \input{../common/preamble.tex}
+
+% Same compact style as the research proposal
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+\ctexset{
+  section = {format=\large\bfseries, beforeskip=8pt, afterskip=3pt},
+}
+\setlength{\parskip}{3pt}
+\linespread{1.15}\selectfont
+
+% Entry heading: organization/role on the left, period on the right
+\newcommand{\entry}[2]{\noindent\textbf{#1}\hfill #2\par}
 
 \pagestyle{empty}
 
 \begin{document}
 
 \begin{center}
-  {\Large\bfseries 學經歷摘要\par}
+  {\Large\bfseries 個人學經歷摘要\par}
 \end{center}
 
-% TODO: 內容待補
+% ══════════════════════════════════════════════════════════════════════════════
+\section{學歷}
+
+\entry{國立清華大學\ 通訊工程研究所\ 碩士}{2020/9--2022/8}
+\begin{itemize}
+  \item 碩士論文：波束成型輔助之低軌道衛星合作式定位系統用於用戶終端
+  \item 碩士期間於日本國立情報學研究所（NII）遠端研究實習近一年（研究成果詳見研究優異表現證明）
+\end{itemize}
+\entry{國立清華大學\ 電機資訊學院學士班}{2016/9--2020/6}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{業界經歷}
+
+\entry{創未來科技股份有限公司\ 數位系統設計工程師}{2022/9--2026/8（四年，已離職）}
+\begin{itemize}
+  \item 演算法設計：主導合成孔徑雷達（Synthetic Aperture Radar, SAR）數位前端之訊號處理演算法開發，包括濾波、等化、波束成型、資料壓縮與射頻校準；並建立與硬體逐位元一致之軟體模型，作為硬體實作之驗證基準。
+  \item 硬體電路（RTL）實作：以硬體描述語言實作上述演算法，在 FPGA 資源與時脈限制下進行架構取捨與效能最佳化。
+  \item FPGA 整合驗證：負責 SAR 數位前端於 FPGA 上之系統整合與控制流程設計，並完成資料正確性與效能驗證。
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{業界經驗對研究之助益}
+
+上述經驗使本人能獨立將演算法落實為硬體，並在設計演算法時即兼顧準確度與硬體成本；對實際 SAR 系統之熟悉，亦使研究成果更貼近實際應用之需求。
 
 \end{document}
