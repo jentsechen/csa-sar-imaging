@@ -21,3 +21,4 @@ Format: date, what was done, any key decision or finding.
 ## 2026-10-04
 - Added `document/moe_scholarship/`: 3-page Chinese research proposal (3-year plan through FPGA, TikZ architecture diagram + Gantt), placeholders for 研究優異表現證明 and 個人學經歷摘要, merged into one PDF via pdfpages + `make`
 - Proposal figure uses an unmasked P0033 scene (whole image as scatterers): CSA misses a small ship, CSA + threshold recovers it; Lee filter only smooths background (mean level unchanged), so it was left out
+- Wrote 研究優異表現證明 (ICC 2023 NII internship paper + master's thesis/APWCS 2023), descriptions checked against both paper PDFs

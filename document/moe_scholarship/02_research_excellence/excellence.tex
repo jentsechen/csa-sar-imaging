@@ -1,13 +1,27 @@
 % ══════════════════════════════════════════════════════════════════════════════
-% 研究優異表現證明（單頁，無頁碼）— 待補
+% 研究優異表現證明（單頁，無頁碼）
 % 編譯方式：LuaLaTeX，見 .latexmkrc；整份申請文件見 ../moe_scholarship.tex
 % ══════════════════════════════════════════════════════════════════════════════
 \documentclass[11pt,fontset=none]{ctexart}
 
-\usepackage[margin=0.8in]{geometry}
+\usepackage[margin=0.8in, top=0.7in, bottom=0.7in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 
 \input{../common/preamble.tex}
+
+% Same compact style as the research proposal
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+\ctexset{
+  section = {format=\large\bfseries, beforeskip=8pt, afterskip=3pt},
+}
+\setlength{\parskip}{3pt}
+\linespread{1.15}\selectfont
+
+% Printed + clickable link, so the proof also works on paper
+\newcommand{\paperlink}[2]{\href{#1}{\small IEEE Xplore：\texttt{#1}（DOI：#2）}}
 
 \pagestyle{empty}
 
@@ -17,6 +31,50 @@
   {\Large\bfseries 研究優異表現證明\par}
 \end{center}
 
-% TODO: 內容待補
+% ══════════════════════════════════════════════════════════════════════════════
+\section{成果總覽}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X l l}
+  \toprule
+  論文 & 發表 & 作者序 \\
+  \midrule
+  An Auction-Based Assignment Method for LoRa Multi-Gateway Networks
+    & IEEE ICC 2023 & 第一作者 \\
+  Cooperative Beamforming-Assisted LEO Satellite Positioning for V2X
+    & IEEE APWCS 2023 & 第一作者 \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{研究能力總結}
+
+\begin{itemize}
+  \item 碩士班期間（2020/9--2022/8）完成兩項研究，皆以第一作者發表於 IEEE 國際會議，其中一篇發表於通訊領域旗艦會議 ICC。
+  \item 具備完整研究流程之能力：從發現既有方法忽略之實際限制、建立數學模型、設計演算法，到模擬驗證與論文撰寫，皆由本人主導；其中 ICC 論文之數學建模由本人與 Megumi Kaneko 教授共同完成。
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{成果一：國際合作研究（IEEE ICC 2023，第一作者）}
+
+\begin{itemize}
+  \item 研究經歷：碩士班期間（2021/10--2022/8）於日本國立情報學研究所（National Institute of Informatics, NII）實習，由 NII 之 Megumi Kaneko 教授指導。
+  \item 研究內容：物聯網中多個接收站共同接收大量裝置之訊號，但每個接收站能同時處理的訊號數量有限（現行晶片僅能同時處理 8 筆）。本研究提出以拍賣機制預先決定每個裝置由哪個接收站負責，避免同一筆訊號被重複處理，使整體成功接收之訊號數最大；並設計將裝置分組、平行處理之低複雜度版本。
+  \item 研究成果：成功接收之訊號數與總傳輸率皆大幅優於比較方法，總傳輸率與理想上限（不限處理數量）之差距在 15\% 以內，且執行時間較隨機分配更短；效益在數十至數百毫秒之時間尺度最為顯著，適合移動式物聯網應用。發表於 IEEE 通訊學會旗艦國際會議 ICC 2023。
+  \item \paperlink{https://ieeexplore.ieee.org/document/10278835}{10.1109/ICC45041.2023.10278835}
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{成果二：碩士論文（IEEE APWCS 2023，第一作者）}
+
+\begin{itemize}
+  \item 論文題目：波束成型輔助之低軌道衛星合作式定位系統用於用戶終端（國立清華大學通訊工程研究所，指導教授：吳仁銘，2022/8）。
+  \item 研究內容：低軌衛星定位之延遲與功耗較傳統衛星定位低，但精度未必較佳。本研究利用天線波束掃描估計鄰近車輛之間的相對方向，結合鄰近車輛之位置資訊，反覆修正彼此之定位結果。
+  \item 研究成果：車輛定位模擬中，於量測雜訊標準差 5 公尺時，定位誤差由 4.8 公尺降至 3.0 公尺（降低 36.8\%），且雜訊越大改善越多；每次修正僅需 2×2 矩陣運算，運算量極低。研究成果發表於 IEEE APWCS 2023。
+  \item \paperlink{https://ieeexplore.ieee.org/document/10234031}{10.1109/APWCS60142.2023.10234031}
+\end{itemize}
 
 \end{document}
