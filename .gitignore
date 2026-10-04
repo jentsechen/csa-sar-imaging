@@ -44,6 +44,14 @@ __pycache__/
 !/document/industry_academia_collaboration/*/*.pdf
 !/document/industry_academia_collaboration/*/.latexmkrc
 
+# MOE scholarship application: track sources, PDFs, figures, Makefile; ignore LaTeX build files
+/document/moe_scholarship/**/*.aux
+/document/moe_scholarship/**/*.log
+/document/moe_scholarship/**/*.out
+/document/moe_scholarship/**/*.fls
+/document/moe_scholarship/**/*.fdb_latexmk
+/document/moe_scholarship/**/*.synctex.gz
+
 /ship_detect/results/
 /ship_detect/test_data/
 !.gitkeep

@@ -1,0 +1,23 @@
+% ══════════════════════════════════════════════════════════════════════════════
+% 教育部獎學金申請文件之共用設定（字型與中文標籤）。
+% 各份文件以 \documentclass[...,fontset=none]{ctexart} 開頭，再 \input 本檔：
+%   \input{../common/preamble.tex}
+% 版面（geometry、行距、頁碼）由各份文件自行設定。
+% ══════════════════════════════════════════════════════════════════════════════
+
+% ── CJK font: DFKai-SB (標楷體) on Windows, falling back to AR PL KaitiM Big5
+% when DFKai-SB isn't installed (same setup as the midterm report).
+\IfFontExistsTF{DFKai-SB}{%
+  \setCJKmainfont{DFKai-SB}
+  \setCJKsansfont{DFKai-SB}
+  \setCJKmonofont{DFKai-SB}
+}{%
+  \setCJKmainfont{AR PL KaitiM Big5}
+  \setCJKsansfont{AR PL KaitiM Big5}
+  \setCJKmonofont{AR PL KaitiM Big5}
+}
+
+% ── Traditional-Chinese wording overrides ──────────────────────────────────────
+\renewcommand{\figurename}{圖}
+\renewcommand{\tablename}{表}
+\renewcommand{\refname}{參考文獻}
