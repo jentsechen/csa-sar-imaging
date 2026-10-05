@@ -115,7 +115,10 @@ refinement, the mainlobe extent decreases from 2.50 to 2.25 pixels in range
 and from 2.62 to 2.25 pixels in azimuth, and all sidelobes are removed except
 the tips of the first sidelobes. Setting $\lambda$ to the peak sidelobe level
 ($-13.3$~dB) may perform better, removing all sidelobes, but may also
-suppress weak targets; this will be evaluated in future work.
+suppress weak targets. Since thresholding sees only pixel intensity, it also
+cannot tell a sidelobe from overlapping sinc responses of nearby targets, so
+it is expected to help mainly isolated targets or object edges in sparse
+scenes; both points will be evaluated in future work.
 
 \begin{figure}[H]
   \centering
