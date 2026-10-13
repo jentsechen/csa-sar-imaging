@@ -189,3 +189,184 @@ def gen_echo_signal(ax, azimuth_offset_sec, range_offset_m, scatter_coef,
             f64(ax["synthetic_aperture_time_sec"]), f64(LIGHT_SPEED_M_S),
             output))
     return output, False
+
+
+# --------------------------------------------------------------------------
+# Multi-set, mixed-precision variant.
+#
+# Same thread-per-pixel structure, target slicing and block compaction as
+# echo_kernel, but:
+#   * N_SETS coefficient sets (complex) share one pass: the geometry, the
+#     window tests and the chirp are evaluated once per (pixel, target) and
+#     multiplied into every set (e.g. clean scene + speckle realizations);
+#   * per-target geometry and the carrier phase stay in FP64 (once per target
+#     per block); the inner per-pixel loop is FP32: the round-trip time is kept
+#     relative to the block's first column (|rel| <= pulse width, ~1e-12 s
+#     resolution in FP32), the chirp uses sincospif, and the sum over each tile
+#     of <= BLOCK targets is FP32 before being added to FP64 accumulators.
+# Consumer GPUs run FP64 at 1/64 of the FP32 rate, so the inner loop is where
+# the time goes.
+# --------------------------------------------------------------------------
+_MULTI_SRC = r"""
+#define BLOCK %(BLOCK)d
+#define N_WARPS (BLOCK / 32)
+#define N_SETS %(N_SETS)d
+
+extern "C" __global__ void __launch_bounds__(BLOCK)
+echo_kernel_multi(const double* __restrict__ range_time,
+                  const double* __restrict__ azimuth_time,
+                  const double* __restrict__ az_off,
+                  const double* __restrict__ rg_off,
+                  const double* __restrict__ coef_re,   // [N_SETS][n_targets]
+                  const double* __restrict__ coef_im,
+                  const int* __restrict__ row_lo,
+                  const int* __restrict__ row_hi,
+                  const int n_col, const int n_row, const int row0, const int n_targets,
+                  const double closest_ground_range_m, const double height_m,
+                  const double sensor_speed_m_s, const double pulse_width_sec,
+                  const double range_fm_rate_hz_s, const double wavelength_m,
+                  const double synthetic_aperture_time_sec, const double light_speed_m_s,
+                  double2* __restrict__ out)                // [N_SETS][n_row][n_col]
+{
+    __shared__ float s_rtt[BLOCK];
+    __shared__ float2 s_c[N_SETS * BLOCK];
+    __shared__ int s_warp_off[N_WARPS + 1];
+
+    const int tid = threadIdx.x;
+    const int lane = tid & 31, warp = tid >> 5;
+    const int i = row0 + blockIdx.y;
+    const int col0 = blockIdx.x * BLOCK;
+    const int j = col0 + tid;
+    const int col_last = min(col0 + BLOCK, n_col) - 1;
+
+    const double half_pw = pulse_width_sec / 2.0;
+    const double half_sat = synthetic_aperture_time_sec / 2.0;
+    const double tau0 = range_time[col0];
+    const float dtau = (j < n_col) ? (float)(range_time[j] - tau0) : 0.0f;
+    const float half_pw_f = (float)half_pw;
+    const float k_f = (float)range_fm_rate_hz_s;
+    const double slack = 1e-9;
+    const double rtt_min = range_time[col0] - half_pw - slack;
+    const double rtt_max = range_time[col_last] + half_pw + slack;
+    const double t_i = azimuth_time[i];
+    const double h2 = height_m * height_m;
+
+    double acc_re[N_SETS], acc_im[N_SETS];
+    #pragma unroll
+    for (int q = 0; q < N_SETS; q++) { acc_re[q] = 0.0; acc_im[q] = 0.0; }
+    const int lo = row_lo[i], hi = row_hi[i];
+
+    for (int base = lo; base < hi; base += BLOCK) {
+        const int k = base + tid;
+        bool keep = false;
+        double rtt = 0.0, cc = 0.0, cs = 0.0;
+        if (k < hi) {
+            const double a = az_off[k];
+            const double rel_az = t_i + a;
+            if (rel_az < half_sat && rel_az > -half_sat) {
+                const double g = closest_ground_range_m + rg_off[k];
+                const double gr = sqrt(h2 + g * g);
+                const double v = sensor_speed_m_s * (t_i + a);
+                const double slant = sqrt(gr * gr + v * v);
+                rtt = 2.0 * slant / light_speed_m_s;
+                if (rtt > rtt_min && rtt < rtt_max) {
+                    keep = true;
+                    sincospi(-4.0 * slant / wavelength_m, &cs, &cc);  // carrier
+                }
+            }
+        }
+        const unsigned ballot = __ballot_sync(0xffffffffu, keep);
+        __syncthreads();
+        if (lane == 0) s_warp_off[warp + 1] = __popc(ballot);
+        __syncthreads();
+        if (tid == 0) {
+            s_warp_off[0] = 0;
+            for (int w = 0; w < N_WARPS; w++) s_warp_off[w + 1] += s_warp_off[w];
+        }
+        __syncthreads();
+        if (keep) {
+            const int pos = s_warp_off[warp] + __popc(ballot & ((1u << lane) - 1u));
+            s_rtt[pos] = (float)(rtt - tau0);
+            #pragma unroll
+            for (int q = 0; q < N_SETS; q++) {
+                const double re = coef_re[(size_t)q * n_targets + k], im = coef_im[(size_t)q * n_targets + k];
+                s_c[q * BLOCK + pos] = make_float2((float)(cc * re - cs * im), (float)(cc * im + cs * re));
+            }
+        }
+        __syncthreads();
+        const int n_kept = s_warp_off[N_WARPS];
+        float t_re[N_SETS], t_im[N_SETS];
+        #pragma unroll
+        for (int q = 0; q < N_SETS; q++) { t_re[q] = 0.0f; t_im[q] = 0.0f; }
+        for (int m = 0; m < n_kept; m++) {
+            const float rel = dtau - s_rtt[m];
+            if (rel < half_pw_f && rel > -half_pw_f) {
+                float s, c;
+                sincospif(k_f * rel * rel, &s, &c);  // chirp
+                #pragma unroll
+                for (int q = 0; q < N_SETS; q++) {
+                    const float2 w = s_c[q * BLOCK + m];
+                    t_re[q] += c * w.x - s * w.y;
+                    t_im[q] += c * w.y + s * w.x;
+                }
+            }
+        }
+        #pragma unroll
+        for (int q = 0; q < N_SETS; q++) { acc_re[q] += t_re[q]; acc_im[q] += t_im[q]; }
+    }
+    if (j < n_col) {
+        #pragma unroll
+        for (int q = 0; q < N_SETS; q++)
+            out[((size_t)q * n_row + i) * n_col + j] = make_double2(acc_re[q], acc_im[q]);
+    }
+}
+"""
+
+_multi_kernels = {}
+
+
+def _get_multi_kernel(n_sets):
+    if n_sets not in _multi_kernels:
+        import cupy as cp
+        _multi_kernels[n_sets] = cp.RawKernel(_MULTI_SRC % {"BLOCK": BLOCK, "N_SETS": n_sets},
+                                              "echo_kernel_multi", options=("-std=c++11",))
+    return _multi_kernels[n_sets]
+
+
+def gen_echo_signals(ax, azimuth_offset_sec, range_offset_m, coef_sets, rows_per_launch=256):
+    """Echoes of the same targets for several complex coefficient sets, in one pass
+    (mixed precision, see _MULTI_SRC). coef_sets: (n_sets, n_targets) complex.
+    Returns a cupy complex128 array (n_sets, n_row, n_col)."""
+    import cupy as cp
+
+    n_row, n_col = ax["n_row"], ax["n_col"]
+    coef_sets = np.atleast_2d(np.asarray(coef_sets, dtype=np.complex128))
+    n_sets, n_targets = coef_sets.shape
+    az = np.asarray(azimuth_offset_sec, dtype=np.float64)
+    rg = np.asarray(range_offset_m, dtype=np.float64)
+    order = np.argsort(az, kind="stable")
+    az, rg, coef_sets = az[order], rg[order], coef_sets[:, order]
+
+    t = np.asarray(ax["azimuth_time_axis_sec"], dtype=np.float64)
+    half_sat = ax["synthetic_aperture_time_sec"] / 2.0
+    eps = 1e-9
+    row_lo = np.searchsorted(az, -half_sat - t - eps, side="left").astype(np.int32)
+    row_hi = np.searchsorted(az, half_sat - t + eps, side="right").astype(np.int32)
+
+    d = lambda x: cp.asarray(np.ascontiguousarray(x))
+    args_dev = (d(np.asarray(ax["range_time_axis_sec"], dtype=np.float64)), d(t), d(az), d(rg),
+                d(coef_sets.real), d(coef_sets.imag), d(row_lo), d(row_hi))
+    output = cp.zeros((n_sets, n_row, n_col), dtype=cp.complex128)
+    kernel = _get_multi_kernel(n_sets)
+    grid_x = (n_col + BLOCK - 1) // BLOCK
+    f64 = np.float64
+    for row0 in range(0, n_row, rows_per_launch):
+        n_rows = min(rows_per_launch, n_row - row0)
+        kernel((grid_x, n_rows), (BLOCK,), args_dev + (
+            np.int32(n_col), np.int32(n_row), np.int32(row0), np.int32(n_targets),
+            f64(ax["closest_ground_range_m"]), f64(ax["height_m"]),
+            f64(ax["sensor_speed_m_s"]), f64(ax["pulse_width_sec"]),
+            f64(ax["range_fm_rate_hz_s"]), f64(ax["wavelength_m"]),
+            f64(ax["synthetic_aperture_time_sec"]), f64(LIGHT_SPEED_M_S),
+            output))
+    return output

@@ -72,3 +72,11 @@ end_to_end_pipeline/union_pipeline
 
 end_to_end_pipeline/single_point_target/echo_signal/*.npy
 end_to_end_pipeline/single_point_target/focused_image/*.npy
+# Speckle sweep (sarsim/speckle_pipeline.py): ~7 GB of JPGs, YOLO eval sets and raw logs are
+# regenerable; the small summaries (split, chosen params, tune/results tables, variance,
+# speckle stats, per-scene detections, figures, run_all.sh) are tracked
+end_to_end_pipeline/speckle/*/tune/
+end_to_end_pipeline/speckle/*/test/
+end_to_end_pipeline/speckle/*/_eval/
+end_to_end_pipeline/speckle/*/timing.csv
+end_to_end_pipeline/speckle/*/*.log

@@ -1,0 +1,18 @@
+{
+  "tune_ssr_db": 5.0,
+  "n_tune": 100,
+  "params": {
+    "l0": {
+      "alpha": 0.16
+    },
+    "l1": {
+      "alpha": 0.1
+    },
+    "l12tv": {
+      "alpha": 0.13,
+      "xi": 2.0,
+      "tv": 0.03
+    }
+  },
+  "on_grid_edge": {}
+}

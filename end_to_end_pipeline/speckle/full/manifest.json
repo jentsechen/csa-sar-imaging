@@ -1,0 +1,56 @@
+{
+  "created": "2026-10-11T20:03:06",
+  "git_commit": "bc57421b443614969725147d9b235a579d40caa8-dirty",
+  "numpy": "1.26.4",
+  "base_seed": 0,
+  "ssr_levels_db": [
+    "inf",
+    "10.0",
+    "5.0",
+    "0.0",
+    "-inf"
+  ],
+  "margin": 112,
+  "echo": "sarsim.echo.gen_echo_signals (FP64 geometry, FP32 chirp loop)",
+  "tune_ssr_db": 5.0,
+  "n_tune": 100,
+  "chosen_params": {
+    "l0": {
+      "alpha": 0.16
+    },
+    "l1": {
+      "alpha": 0.1
+    },
+    "l12tv": {
+      "alpha": 0.13,
+      "xi": 2.0,
+      "tv": 0.03
+    }
+  },
+  "n_test": 1493,
+  "var_n": 100,
+  "var_seeds": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "var_ssr_db": [
+    5.0,
+    0.0
+  ],
+  "params": {
+    "csa": {},
+    "l0": {
+      "alpha": 0.16
+    },
+    "l1": {
+      "alpha": 0.1
+    },
+    "l12tv": {
+      "alpha": 0.13,
+      "xi": 2.0,
+      "tv": 0.03
+    }
+  }
+}
