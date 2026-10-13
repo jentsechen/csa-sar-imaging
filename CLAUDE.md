@@ -130,6 +130,6 @@ Run `~/claude-config/setup-gh-project.sh` to verify `gh` is authenticated with t
 
 ### Weekly workflow
 
-1. Append to `PROGRESS.md` each session (2–3 lines: date, what was done, key decision)
-2. Commit `PROGRESS.md` alongside code changes
+1. Progress is tracked by commit messages and GitHub issues (no `PROGRESS.md`)
+2. Record experiment results and key decisions in the run's own summary files (e.g. `end_to_end_pipeline/speckle/<run>/results.md`) or as an issue comment
 3. Use `closes #N` in commit messages to auto-close issues
