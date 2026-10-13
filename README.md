@@ -20,6 +20,25 @@ python3 generate_point_target.py
 
 ---
 
+## How to Download Data from Google Drive
+
+### Pre-requests
+```bash
+pip install gdown
+```
+* The file/folder must be shared as "Anyone with the link"
+
+### How to run
+```bash
+gdown "https://drive.google.com/file/d/1a8GhXg2d5RigwRsR03HkcANOiNPz-5Qm/view?usp=sharing" --fuzzy -O compressive_sensing/
+```
+* `--fuzzy`: accept the full share link (no need to extract the file ID)
+* `-O`: output directory (or file name)
+* Download a whole folder: `gdown --folder "<folder link>" -O <dir>/`
+* Resume an interrupted download: add `-c`
+
+---
+
 ## Unsorted Notes
 * How to use json: https://github.com/nlohmann/json
     * Download json.hpp
