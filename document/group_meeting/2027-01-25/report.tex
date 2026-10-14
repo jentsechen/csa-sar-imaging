@@ -1,0 +1,252 @@
+% ══════════════════════════════════════════════════════════════════════════════
+% NTU GSAT DigitalSystemResearchLab — Group Meeting Report
+% Compile with LuaLaTeX:  latexmk   (see .latexmkrc)
+% ══════════════════════════════════════════════════════════════════════════════
+\documentclass[aspectratio=169, 11pt]{beamer}
+\input{../guidelines/dsrlab_beamer_preamble.tex}
+
+\title{Onboard SAR Processing for Ship \\ Detection: Modeling and Evaluation}
+\author{Jen-Tse Chen}
+\date{2027-01-25}
+\advisor{Pei-Yun Tsai}
+
+% Section-outline recap: highlights the current section in black and grays
+% out the rest. Pass 0 for the overall outline (all items black).
+\newcommand{\dsrlabActiveSec}{0}
+\newcommand{\dsrlaboutlineitem}[2]{%
+  \ifnum\dsrlabActiveSec=0
+    \item #2
+  \else
+    \ifnum#1=\dsrlabActiveSec
+      \item #2
+    \else
+      \item {\color{dsrlabGrayLabel}#2}
+    \fi
+  \fi
+}
+\newcommand{\dsrlabSectionOutline}[1]{%
+  \renewcommand{\dsrlabActiveSec}{#1}%
+  \begin{frame}{Outline}
+    \begin{itemize}
+      \dsrlaboutlineitem{1}{Introduction and Motivation}
+      \dsrlaboutlineitem{2}{Evaluation Framework}
+      \dsrlaboutlineitem{3}{SAR Echo and Imaging Model}
+      \dsrlaboutlineitem{4}{Reference}
+    \end{itemize}
+  \end{frame}
+}
+
+\begin{document}
+
+% ── a. Topic ────────────────────────────────────────────────────────────────
+\dsrlabtitlepage
+
+% ── b. Outline ──────────────────────────────────────────────────────────────
+\dsrlabSectionOutline{0}
+
+\dsrlabSectionOutline{1}
+
+% ── c. Introduction ────────────────────────────────────────────────────────
+% Edit the bullet text below, and uncomment + point \includegraphics at your
+% own figure (put image files in the figures/ folder next to this report.tex).
+\begin{frame}{Introduction}
+  \begin{itemize}
+    \item SAR raw data are downlinked for ground-based processing, including SAR focusing, image enhancement, and ship detection.
+    \item Detected ships provide information for maritime surveillance.
+  \end{itemize}
+  \begin{center}
+    \includegraphics[width=0.65\textwidth]{../figures/intro/ground_based_sar_ship_detection.png}
+  \end{center}
+\end{frame}
+
+% ── d. Problem and Motivation ───────────────────────────────────────────────────────────
+\begin{frame}{Problem and Motivation}
+  \begin{itemize}
+    \item Ground-Based Processing
+    \begin{itemize}
+      \item Large raw-data volume
+      \item Limited downlink bandwidth
+      \item Delayed target information
+    \end{itemize}
+    \item Onboard Processing
+    \begin{itemize}
+      \item Reduced data transmission and detection latency
+      \item Challenge: Limited computation, memory, and power
+    \end{itemize}
+    \item Research Goal
+    \begin{itemize}
+      \item Lightweight SAR processing for low-latency ship detection
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\dsrlabSectionOutline{2}
+
+% ── e. Proposed Enhanced SAR Imaging and Evaluation Framework ────────────────
+% Edit the bullet text below, and uncomment + point \includegraphics at your
+% own figure (put image files in the figures/ folder next to this report.tex).
+\begin{frame}{Evaluation Framework}
+  \begin{itemize}
+    \item Research Focus: Enhanced SAR imaging
+    \item Evaluation Task: YOLO-based ship detection
+  \end{itemize}
+  \hspace{-0.7cm}
+  \includegraphics[width=1.1\textwidth]{../figures/pipeline/evaluation_framework.png}
+  \vspace{-0.5cm}
+  \begin{itemize}
+    \item Evaluation Metrics [1]
+    \begin{itemize}
+      \item Precision: $\frac{TP}{TP+FP}$, Recall: $\frac{TP}{TP+FN}$
+
+      {\footnotesize TP: True Positive, FP: False Positive, FN: False Negative}
+
+      \item mAP@0.5: Mean AP across classes at IoU threshold = 0.5
+
+      {\footnotesize IoU = overlap area / union area of predicted and ground-truth boxes}
+    \end{itemize}
+  \end{itemize}
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=south east] at ([xshift=-0.5cm, yshift=1.3cm]current page.south east)
+      {\includegraphics[width=0.13\textwidth]{../figures/pipeline/iou_def.png}};
+  \end{tikzpicture}
+\end{frame}
+
+% ── f. Dataset and Detection Model Setup ───────────────────────────────────
+\begin{frame}{Dataset and Detection Model Setup}
+  \begin{columns}[T]
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item HRSID [2]
+        \begin{itemize}
+          \item High-Resolution SAR Images Dataset
+          \item Training: 3,642 images
+          \item Validation: 1,962 images
+          \item Image size: 800 $\times$ 800 pixels
+        \end{itemize}
+        \item YOLO Detection Model
+        \begin{itemize}
+          \item YOLO11m fine-tuned on HRSID (100 epochs)
+        \end{itemize}
+      \end{itemize}
+      \includegraphics[width=0.9\linewidth]{../figures/yolo/detection_model_setup.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Validation Performance
+        \begin{itemize}
+          \item Precision: 0.910
+          \item Recall: 0.840
+          \item mAP@0.5: 0.922
+        \end{itemize}
+      \end{itemize}
+      \includegraphics[width=0.9\linewidth]{../figures/yolo/map_vs_epoch.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── g. YOLO Ship Detection Results ──────────────────────────────────────────────────
+\begin{frame}{YOLO Ship Detection Results (1)}
+  \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c|c|c|}
+      \hline
+       & \textbf{Overall} & \textbf{Inshore} & \textbf{Offshore} \\
+      \hline
+      Images    & 1,962  & 369   & 1,593 \\
+      \hline
+      Precision & 0.913  & 0.803 & 0.982 \\
+      \hline
+      Recall    & 0.846  & 0.741 & 0.965 \\
+      \hline
+      mAP@0.5   & 0.918  & 0.817 & 0.984 \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+    \item Offshore scenes achieve better detection performance than inshore scenes [3].
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{YOLO Ship Detection Results (2)}
+  \vspace{-0.8cm}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=0.95\textwidth]{../figures/yolo/inshore_example_gt_vs_pred.png}
+      \end{center}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{center}
+        \includegraphics[width=0.95\textwidth]{../figures/yolo/offshore_example_gt_vs_pred.png}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\dsrlabSectionOutline{3}
+
+\begin{frame}{Point-Scatterer Echo Model: Geometry}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \vspace{-0.4cm}
+      \begin{center}
+        \includegraphics[width=\linewidth]{../figures/point_scatterer/point_target_geometry.png}
+      \end{center}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item Target position determines the time-varying slant range $R_k(\eta_m)$.
+        \item $R_k(\eta) = \sqrt{R_{0,k}^2 + (\eta_m+\Delta\eta_k)^2 V_r^2}$
+        \begin{itemize}
+          \item $R_{0,k}\approx R_0+d_k$
+          \item $R_0$: slant range to scene center
+          \item $d_k$: ground-range offset of scatterer $k$, approximated as slant-range offset
+          \item $\eta_m=m\Delta\eta$: slow time
+        \item $\Delta\eta_k$: azimuth-time offset of scatterer $T_k$
+        \end{itemize}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+{
+\setbeamertemplate{frametitle}{%
+  \vspace{0.1cm}
+  \mbox{\insertframetitle}\par
+  \vspace{-0.4cm}
+}
+\begin{frame}
+  \frametitle{Point-Scatterer Echo Model: Signal Synthesis}
+  \begin{itemize}
+    \item Geometry-Dependent Delay and Phase
+    \begin{itemize}
+      \item $\tau_k(\eta_m)=\frac{2R_k(\eta_m)}{c}$, $\phi_k(\eta_m)=-4\pi\frac{R_k(\eta_m)}{\lambda}$
+    \end{itemize}
+    \item Echo Synthesis: $\mathbf{S} = [s_{m,n}]_{M\times N}$
+    $$
+      s_{m,n} = \sum_k A_k\,\mathrm{rect}\!\left(\frac{\tau_n - \tau_k(\eta_m)}{T_r}\right)
+            \cdot e^{j\pi K_r\left(\tau_n - \tau_k(\eta_m)\right)^2}
+            \cdot e^{j\phi_k(\eta_m)}
+    $$
+    \begin{itemize}
+      \item $\eta_m = m\Delta\eta$: slow time, $\tau_n = n\Delta\tau$: fast time
+      \item $A_k$: scattering coefficient of scatterer $k$, $K_r=\frac{B_r}{T_r}$
+
+      {\footnotesize $K_r$: chirp rate, $B_r$: chirp bandwidth (Hz), $T_r$: pulse duration (sec)}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+}
+
+\dsrlabSectionOutline{4}
+
+\begin{frame}{Reference}
+  \setbeamerfont{itemize/enumerate body}{size=\fontsize{11}{13.2}\selectfont}
+  \begin{itemize}
+    \item[{\color{black}[1]}] F. Song, S. Yang and X. Zhou, ``SARES-DEIM: Sparse Mixture-of-Experts Meets DETR for Robust SAR Ship Detection,'' in \textit{IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing (JSTARS)}, 2026.
+    \item[{\color{black}[2]}] S. Wei, X. Zeng, Q. Qu, M. Wang, H. Su and J. Shi, ``HRSID: A High-Resolution SAR Images Dataset for Ship Detection and Instance Segmentation,'' in \textit{IEEE Access}, vol. 8, pp. 120234--120254, 2020.
+    \item[{\color{black}[3]}] T. Zhang \textit{et al.}, ``Balance Scene Learning Mechanism for Offshore and Inshore Ship Detection in SAR Images,'' in \textit{IEEE Geoscience and Remote Sensing Letters}, vol. 19, pp. 1--5, 2022.
+  \end{itemize}
+\end{frame}
+
+\end{document}
