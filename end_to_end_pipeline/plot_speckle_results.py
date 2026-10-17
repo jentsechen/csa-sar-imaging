@@ -2,6 +2,7 @@
 """Figures for the speckle-level sweep (sarsim/speckle_pipeline.py).
 
     speckle/<run>/figures/metrics_vs_ssr.png   Precision / Recall / mAP@0.5 vs SSR, one line per method
+    speckle/<run>/figures/metrics_vs_ssr_regularization.png   the same without CSA (L0 / L1 / L1/2+TV)
     speckle/<run>/figures/example_grid[_<stem>].png         one test scene: SSR level (rows) x method
                                                             (cols), GT (green) and YOLO (red) boxes
     speckle/<run>/figures/example_zoom[_<stem>]_ship<n>.png  the same grid cropped around each GT ship
@@ -39,7 +40,7 @@ MARKER = {"csa": "o", "l0": "s", "l1": "^", "l12tv": "D"}
 INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 
 
-def plot_metrics(run_dir, out):
+def plot_metrics(run_dir, out, methods=METHODS, title_note=""):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -48,7 +49,7 @@ def plot_metrics(run_dir, out):
     fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), facecolor=SURFACE)
     for ax, (key, title) in zip(axes, (("precision", "Precision"), ("recall", "Recall"), ("map50", "mAP@0.5"))):
         ax.set_facecolor(SURFACE)
-        for m in METHODS:
+        for m in methods:
             y = [float(next(r[key] for r in rows if r["ssr"] == s and r["method"] == m)) for s in SSR]
             ax.plot(range(len(SSR)), y, color=COLOR[m], marker=MARKER[m], markersize=7, linewidth=2,
                     markeredgecolor=SURFACE, markeredgewidth=1.5, label=LABEL[m], zorder=3)
@@ -65,8 +66,8 @@ def plot_metrics(run_dir, out):
         for s in ("left", "bottom"):
             ax.spines[s].set_color(GRID)
     axes[2].set_xlim(-0.3, len(SSR) - 1 + 1.1)
-    axes[0].legend(frameon=False, fontsize=9, labelcolor=INK, loc="lower left")
-    fig.suptitle(f"YOLO detection vs 1-look speckle level ({n} test scenes, HRSID, unmasked)",
+    axes[0].legend(frameon=False, fontsize=9, labelcolor=INK, loc="best")
+    fig.suptitle(f"YOLO detection vs 1-look speckle level ({n} test scenes, HRSID, unmasked){title_note}",
                  color=INK, fontsize=12, x=0.01, ha="left")
     fig.tight_layout()
     fig.savefig(out, dpi=200, facecolor=SURFACE)
@@ -198,11 +199,18 @@ def main():
     ap.add_argument("--run", default="full")
     ap.add_argument("--stem", default=None, help="example scene (default: picked by the rule above)")
     ap.add_argument("--max-ships", type=int, default=3, help="ship close-up figures (largest ships first)")
+    ap.add_argument("--metrics-only", action="store_true", help="only the metrics-vs-SSR figures")
     args = ap.parse_args()
     run_dir = os.path.join(BASE, "speckle", args.run)
     out_dir = os.path.join(run_dir, "figures")
     os.makedirs(out_dir, exist_ok=True)
     plot_metrics(run_dir, os.path.join(out_dir, "metrics_vs_ssr.png"))
+    # regularizations only: without CSA the y-axes zoom in on their differences
+    plot_metrics(run_dir, os.path.join(out_dir, "metrics_vs_ssr_regularization.png"),
+                 methods=[m for m in METHODS if m != "csa"], title_note=", regularizations only")
+    if args.metrics_only:
+        print("figures ->", out_dir)
+        return
     stem = args.stem
     if stem is None:
         rows = per_scene(run_dir, os.path.join(run_dir, "per_scene.csv"))
