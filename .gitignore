@@ -80,3 +80,10 @@ end_to_end_pipeline/speckle/*/test/
 end_to_end_pipeline/speckle/*/_eval/
 end_to_end_pipeline/speckle/*/timing.csv
 end_to_end_pipeline/speckle/*/*.log
+
+# Thermal-noise sweep (sarsim/noise_pipeline.py): same policy as the speckle sweep
+end_to_end_pipeline/noise/*/tune/
+end_to_end_pipeline/noise/*/test/
+end_to_end_pipeline/noise/*/_eval/
+end_to_end_pipeline/noise/*/timing.csv
+end_to_end_pipeline/noise/*/*.log

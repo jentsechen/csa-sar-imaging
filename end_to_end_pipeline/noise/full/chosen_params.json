@@ -1,0 +1,131 @@
+{
+  "n_tune": 100,
+  "round": 2,
+  "per_level": {
+    "snrinf": {
+      "l0": {
+        "params": {
+          "alpha": 0.2
+        },
+        "map50": 0.979967,
+        "on_edge": []
+      },
+      "l1": {
+        "params": {
+          "alpha": 0.13
+        },
+        "map50": 0.992572,
+        "on_edge": []
+      },
+      "l12tv": {
+        "params": {
+          "alpha": 0.13,
+          "xi": 2.0,
+          "tv": 0.03
+        },
+        "map50": 0.993089,
+        "on_edge": []
+      }
+    },
+    "snr10": {
+      "l0": {
+        "params": {
+          "alpha": 0.2
+        },
+        "map50": 0.983341,
+        "on_edge": []
+      },
+      "l1": {
+        "params": {
+          "alpha": 0.13
+        },
+        "map50": 0.988368,
+        "on_edge": []
+      },
+      "l12tv": {
+        "params": {
+          "alpha": 0.13,
+          "xi": 3.0,
+          "tv": 0.03
+        },
+        "map50": 0.993323,
+        "on_edge": []
+      }
+    },
+    "snr5": {
+      "l0": {
+        "params": {
+          "alpha": 0.25
+        },
+        "map50": 0.97672,
+        "on_edge": []
+      },
+      "l1": {
+        "params": {
+          "alpha": 0.16
+        },
+        "map50": 0.983753,
+        "on_edge": []
+      },
+      "l12tv": {
+        "params": {
+          "alpha": 0.13,
+          "xi": 3.0,
+          "tv": 0.03
+        },
+        "map50": 0.993171,
+        "on_edge": []
+      }
+    },
+    "snr0": {
+      "l0": {
+        "params": {
+          "alpha": 0.25
+        },
+        "map50": 0.967182,
+        "on_edge": []
+      },
+      "l1": {
+        "params": {
+          "alpha": 0.2
+        },
+        "map50": 0.97869,
+        "on_edge": []
+      },
+      "l12tv": {
+        "params": {
+          "alpha": 0.08,
+          "xi": 3.0,
+          "tv": 0.1
+        },
+        "map50": 0.9901,
+        "on_edge": []
+      }
+    },
+    "snr-5": {
+      "l0": {
+        "params": {
+          "alpha": 0.35
+        },
+        "map50": 0.928758,
+        "on_edge": []
+      },
+      "l1": {
+        "params": {
+          "alpha": 0.3
+        },
+        "map50": 0.937834,
+        "on_edge": []
+      },
+      "l12tv": {
+        "params": {
+          "alpha": 0.08,
+          "xi": 3.0,
+          "tv": 0.03
+        },
+        "map50": 0.979569,
+        "on_edge": []
+      }
+    }
+  }
+}
