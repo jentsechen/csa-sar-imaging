@@ -66,15 +66,9 @@ This repo is tracked in a GitHub Projects v2 board. Claude should manage issues,
 
 ### How Claude should manage the project
 
-**When starting a task:** check the open issue, note its number.
+**Commits are not linked to issues:** write title-only commit messages without `closes #N`, and do not close or update issues unless the user asks. The commands below are for when the user explicitly requests issue or project-board changes.
 
-**When finishing a task:** close the issue via commit message:
-```
-git commit -m "Brief description
-
-closes #N"
-```
-Or close manually: `gh issue close N --repo jentsechen/csa-sar-imaging`
+Close an issue manually: `gh issue close N --repo jentsechen/csa-sar-imaging`
 
 **To set project item status** (Todo → In Progress → Done):
 ```bash
@@ -130,6 +124,6 @@ Run `~/claude-config/setup-gh-project.sh` to verify `gh` is authenticated with t
 
 ### Weekly workflow
 
-1. Progress is tracked by commit messages and GitHub issues (no `PROGRESS.md`)
-2. Record experiment results and key decisions in the run's own summary files (e.g. `end_to_end_pipeline/speckle/<run>/results.md`) or as an issue comment
-3. Use `closes #N` in commit messages to auto-close issues
+1. Progress is tracked by commit messages (no `PROGRESS.md`)
+2. Record experiment results and key decisions in the run's own summary files (e.g. `end_to_end_pipeline/speckle/<run>/results.md`)
+3. Commit messages are a single title line, not linked to issues
