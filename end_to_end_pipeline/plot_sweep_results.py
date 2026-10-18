@@ -50,37 +50,52 @@ MARKER = {"csa": "o", "l0": "s", "l1": "^", "l12tv": "D"}
 INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 
 
-def plot_metrics(run_dir, out, methods=METHODS, title_note=""):
+def plot_metrics(run_dir, out, methods=METHODS, title_note="", ylims=None, paper=False):
+    """paper=True: panels "(a) Precision / (b) Recall / (c) mAP@0.5", one shared x label and one
+    shared legend above the panels (no direct labels); ylims = [(lo, hi)] * 3 fixes the y ranges."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     SSR, key_lv = CFG["levels"], CFG["key"]
     rows = [r for r in csv.DictReader(open(os.path.join(run_dir, "results.csv"))) if r["set"] == CFG["set"]]
     n = rows[0]["n"]
-    fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), facecolor=SURFACE)
-    for ax, (key, title) in zip(axes, (("precision", "Precision"), ("recall", "Recall"), ("map50", "mAP@0.5"))):
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4.1 if paper else 3.8), facecolor=SURFACE)
+    panels = (("precision", "Precision"), ("recall", "Recall"), ("map50", "mAP@0.5"))
+    for i, (ax, (key, title)) in enumerate(zip(axes, panels)):
         ax.set_facecolor(SURFACE)
         for m in methods:
             y = [float(next(r[key] for r in rows if r[key_lv] == s and r["method"] == m)) for s in SSR]
             ax.plot(range(len(SSR)), y, color=COLOR[m], marker=MARKER[m], markersize=7, linewidth=2,
                     markeredgecolor=SURFACE, markeredgewidth=1.5, label=LABEL[m], zorder=3)
-            if key == "map50":  # direct labels at the right end of the headline panel
+            if key == "map50" and not paper:  # direct labels at the right end of the headline panel
                 ax.annotate(LABEL[m], (len(SSR) - 1, y[-1]), xytext=(8, 0), textcoords="offset points",
                             va="center", fontsize=9, color=INK)
-        ax.set_title(title, color=INK, fontsize=11, loc="left")
+        ax.set_title(f"({'abc'[i]}) {title}" if paper else title, color=INK, fontsize=11, loc="center" if paper else "left")
         ax.set_xticks(range(len(SSR)), CFG["labels"])
-        ax.set_xlabel(f"{CFG['name']} (dB)   ← {CFG['weaker']} · {CFG['stronger']} →", color=INK2, fontsize=9)
+        if ylims:
+            ax.set_ylim(*ylims[i])
+        if not paper:
+            ax.set_xlabel(f"{CFG['name']} (dB)   ← {CFG['weaker']} · {CFG['stronger']} →", color=INK2, fontsize=9)
         ax.grid(axis="y", color=GRID, linewidth=0.8)
         ax.tick_params(colors=INK2, labelsize=9)
         for s in ("top", "right"):
             ax.spines[s].set_visible(False)
         for s in ("left", "bottom"):
             ax.spines[s].set_color(GRID)
-    axes[2].set_xlim(-0.3, len(SSR) - 1 + 1.1)
-    axes[0].legend(frameon=False, fontsize=9, labelcolor=INK, loc="best")
-    fig.suptitle(f"YOLO detection vs {CFG['title']} ({n} test scenes, HRSID, unmasked){title_note}",
-                 color=INK, fontsize=12, x=0.01, ha="left")
-    fig.tight_layout()
+    if paper:
+        handles, labels = axes[0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc="upper center", ncol=len(methods), frameon=False, fontsize=10,
+                   labelcolor=INK, bbox_to_anchor=(0.5, 0.945))
+        fig.supxlabel(f"{CFG['name']} (dB)   ← {CFG['weaker']} · {CFG['stronger']} →", color=INK2, fontsize=10)
+        fig.suptitle(f"YOLO detection vs {CFG['title']} ({n} test scenes, HRSID, unmasked){title_note}",
+                     color=INK, fontsize=12, x=0.01, ha="left")
+        fig.tight_layout(rect=(0, 0, 1, 0.9))
+    else:
+        axes[2].set_xlim(-0.3, len(SSR) - 1 + 1.1)
+        axes[0].legend(frameon=False, fontsize=9, labelcolor=INK, loc="best")
+        fig.suptitle(f"YOLO detection vs {CFG['title']} ({n} test scenes, HRSID, unmasked){title_note}",
+                     color=INK, fontsize=12, x=0.01, ha="left")
+        fig.tight_layout()
     fig.savefig(out, dpi=200, facecolor=SURFACE)
     plt.close(fig)
 
@@ -268,10 +283,20 @@ def main():
     run_dir = os.path.join(BASE, CFG["dir"], args.run)
     out_dir = os.path.join(run_dir, "figures")
     os.makedirs(out_dir, exist_ok=True)
-    plot_metrics(run_dir, os.path.join(out_dir, f"metrics_vs_{CFG['key']}.png"))
+    if args.experiment == "noise":  # paper layout: fixed y ranges, shared x label and legend
+        plot_metrics(run_dir, os.path.join(out_dir, "metrics_vs_snr.png"), paper=True,
+                     ylims=[(0.90, 1.00), (0.0, 1.00), (0.0, 1.00)])
+    else:
+        plot_metrics(run_dir, os.path.join(out_dir, f"metrics_vs_{CFG['key']}.png"))
     # regularizations only: without CSA the y-axes zoom in on their differences
-    plot_metrics(run_dir, os.path.join(out_dir, f"metrics_vs_{CFG['key']}_regularization.png"),
-                 methods=[m for m in METHODS if m != "csa"], title_note=", regularizations only")
+    reg = [m for m in METHODS if m != "csa"]
+    if args.experiment == "noise":
+        plot_metrics(run_dir, os.path.join(out_dir, "metrics_vs_snr_regularization.png"), methods=reg,
+                     title_note=", regularizations only", paper=True,
+                     ylims=[(0.90, 1.00), (0.80, 1.00), (0.85, 1.00)])
+    else:
+        plot_metrics(run_dir, os.path.join(out_dir, f"metrics_vs_{CFG['key']}_regularization.png"), methods=reg,
+                     title_note=", regularizations only")
     if args.experiment == "noise":
         plot_tuning(run_dir, os.path.join(out_dir, "metrics_vs_snr_tuning.png"))
     if args.metrics_only:
