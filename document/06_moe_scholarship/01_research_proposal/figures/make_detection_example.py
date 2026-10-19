@@ -8,9 +8,9 @@ and the same hard threshold as end_to_end_pipeline/threshold_union_csa.py.
 
 Usage (from repo root):
     # 1. rank scenes where CSA errs and thresholding recovers the original result
-    python document/moe_scholarship/01_research_proposal/figures/make_detection_example.py --search
+    python document/06_moe_scholarship/01_research_proposal/figures/make_detection_example.py --search
     # 2. render the chosen scene -> detection_{csa,csa_threshold}.png next to this script
-    python document/moe_scholarship/01_research_proposal/figures/make_detection_example.py --stem <stem>
+    python document/06_moe_scholarship/01_research_proposal/figures/make_detection_example.py --stem <stem>
 
 Proposal figure (unmasked scene: the whole original image, sea surface
 included, is used as point targets instead of the GT/pred-box union mask, so
@@ -18,7 +18,7 @@ the CSA background is realistic sea clutter rather than a black frame):
     mkdir -p /tmp/nomask_pt && python -c "import cv2; cv2.imwrite('/tmp/nomask_pt/P0033_1800_2600_4200_5000.png',
         cv2.imread('end_to_end_pipeline/images/P0033_1800_2600_4200_5000.jpg', cv2.IMREAD_GRAYSCALE))"
     python -m sarsim.pipeline --run nomask --algo csa --point-target-dir /tmp/nomask_pt --out-root /tmp/runs
-    python document/moe_scholarship/01_research_proposal/figures/make_detection_example.py --stem P0033_1800_2600_4200_5000 \
+    python document/06_moe_scholarship/01_research_proposal/figures/make_detection_example.py --stem P0033_1800_2600_4200_5000 \
         --roi 655,90,775,210 --csa-dir /tmp/runs/nomask/csa/jpg --no-boxes
 The crop shows the large diagonal ship. Scene-level detection (tp/fp/fn,
 printed to stdout): original 2/0/0, CSA 1/0/1 (misses a small ship at the

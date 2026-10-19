@@ -77,7 +77,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{../../group_meeting/figures/intro/ground_based_sar_ship_detection.png}
+  \includegraphics[width=0.6\textwidth]{../../04_group_meeting/figures/intro/ground_based_sar_ship_detection.png}
   \caption{地面式 SAR 船舶偵測處理流程示意圖。}
 \end{figure}
 
@@ -115,7 +115,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../group_meeting/figures/intro/flow.png}
+  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/intro/flow.png}
   \caption{研究目標概念圖：由 SAR 船舶影像資料集出發，經 speckle noise 注入與點散射體回波模型模擬，送入星載（onboard）處理流程——強化 SAR 成像、去斑、YOLO 船舶偵測——最終產出 Precision/Recall/mAP@0.5 等效能指標（指標定義詳見 3.3 節）。圖中綠色標示已完成之工作項目，灰色標示尚未完成之項目。}
   \label{fig:research-goal-diagram}
 \end{figure}
@@ -153,7 +153,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../group_meeting/figures/pipeline/evaluation_framework.png}
+  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/pipeline/evaluation_framework.png}
   \caption{評估架構管線}
   \label{fig:eval-framework}
 \end{figure}
@@ -183,7 +183,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{../../group_meeting/figures/yolo/map_vs_epoch.png}
+  \includegraphics[width=0.6\textwidth]{../../04_group_meeting/figures/yolo/map_vs_epoch.png}
   \caption{訓練過程中 mAP@0.5 隨 epoch 數的變化。}
 \end{figure}
 
@@ -201,7 +201,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.35\textwidth]{../../group_meeting/figures/pipeline/iou_def.png}
+  \includegraphics[width=0.35\textwidth]{../../04_group_meeting/figures/pipeline/iou_def.png}
   \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
 \end{figure}
 上述指標定義參考自文獻 \cite{sares_deim}。
@@ -230,13 +230,13 @@
   \centering
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/yolo/inshore_example_gt_vs_pred.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/yolo/inshore_example_gt_vs_pred.png}
     \caption*{近岸範例}
   \end{minipage}
   \hfill
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/yolo/offshore_example_gt_vs_pred.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/yolo/offshore_example_gt_vs_pred.png}
     \caption*{離岸範例}
   \end{minipage}
   \caption{真實標註框（GT）與預測框（Pred）比較範例。}
@@ -265,7 +265,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{../../group_meeting/figures/point_scatterer/point_target_geometry.png}
+  \includegraphics[width=0.55\textwidth]{../../04_group_meeting/figures/point_scatterer/point_target_geometry.png}
   \caption{點散射體回波模型幾何關係示意圖。}
 \end{figure}
 
@@ -290,7 +290,7 @@
 $\mathbf{S}$ 與場景反射率 $\mathbf{H}$ 皆為複數值 $M \times N$ matrix。接收到的回波為 $\mathbf{Y} = \mathbf{S} + \mathbf{W}$，其中 $\mathbf{W}$ 為熱噪聲（thermal noise），模型化為 i.i.d.\ circular complex Gaussian；目前實驗中 $\mathbf{W}$ 設為零，即 $\mathbf{Y} = \mathbf{S}$。
 
 % ══════════════════════════════════════════════════════════════════════════════
-% 以下章節內容待自 document/industry_academia_collaboration/midterm/report.tex 移植。
+% 以下章節內容待自 document/05_industry_academia_collaboration/midterm/report.tex 移植。
 
 % ══════════════════════════════════════════════════════════════════════════════
 \begin{thebibliography}{9}

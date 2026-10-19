@@ -1,5 +1,5 @@
 ## Folder Structure
-[Folder Structure](./document/folder_structure.md)
+[Folder Structure](./folder_structure.md)
 
 ---
 
@@ -175,7 +175,7 @@ error of inverse_csa_out: 1.3500874256198407e-08
 ```
 
 ## Multi-Point Target
-[Simulation Result](./document/multi_point_target_sim_result.md)
+[Simulation Result](./document/02_simulation_report/multi_point_target_sim_result.md)
 
 [Performance Metrics](./document/performance_metrics.md)
 

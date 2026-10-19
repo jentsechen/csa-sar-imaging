@@ -1,5 +1,5 @@
 % ══════════════════════════════════════════════════════════════════════════════
-% 期中報告（中文）— 內容移植自 document/group_meeting/2026-08-24/report.tex
+% 期中報告（中文）— 內容移植自 document/04_group_meeting/2026-08-24/report.tex
 % 編譯方式：LuaLaTeX，見 .latexmkrc
 % ══════════════════════════════════════════════════════════════════════════════
 \documentclass[12pt,fontset=none]{ctexart}
@@ -77,7 +77,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{../../group_meeting/figures/intro/ground_based_sar_ship_detection.png}
+  \includegraphics[width=0.6\textwidth]{../../04_group_meeting/figures/intro/ground_based_sar_ship_detection.png}
   \caption{地面式 SAR 船舶偵測處理流程示意圖。}
 \end{figure}
 
@@ -115,7 +115,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../group_meeting/figures/intro/flow.png}
+  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/intro/flow.png}
   \caption{研究目標概念圖：由 SAR 船舶影像資料集出發，經 speckle noise 注入與點散射體回波模型模擬，送入星載（onboard）處理流程——強化 SAR 成像、去斑、YOLO 船舶偵測——最終產出 Precision/Recall/mAP@0.5 等效能指標（指標定義詳見 3.3 節）。圖中綠色標示已完成之工作項目，灰色標示尚未完成之項目。}
   \label{fig:research-goal-diagram}
 \end{figure}
@@ -161,7 +161,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../group_meeting/figures/pipeline/evaluation_framework.png}
+  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/pipeline/evaluation_framework.png}
   \caption{評估架構管線}
   \label{fig:eval-framework}
 \end{figure}
@@ -191,7 +191,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{../../group_meeting/figures/yolo/map_vs_epoch.png}
+  \includegraphics[width=0.6\textwidth]{../../04_group_meeting/figures/yolo/map_vs_epoch.png}
   \caption{訓練過程中 mAP@0.5 隨 epoch 數的變化。}
 \end{figure}
 
@@ -209,7 +209,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.35\textwidth]{../../group_meeting/figures/pipeline/iou_def.png}
+  \includegraphics[width=0.35\textwidth]{../../04_group_meeting/figures/pipeline/iou_def.png}
   \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
 \end{figure}
 上述指標定義參考自文獻 \cite{sares_deim}。
@@ -238,13 +238,13 @@
   \centering
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/yolo/inshore_example_gt_vs_pred.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/yolo/inshore_example_gt_vs_pred.png}
     \caption*{近岸範例}
   \end{minipage}
   \hfill
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/yolo/offshore_example_gt_vs_pred.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/yolo/offshore_example_gt_vs_pred.png}
     \caption*{離岸範例}
   \end{minipage}
   \caption{真實標註框（GT）與預測框（Pred）比較範例。}
@@ -273,7 +273,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{../../group_meeting/figures/point_scatterer/point_target_geometry.png}
+  \includegraphics[width=0.55\textwidth]{../../04_group_meeting/figures/point_scatterer/point_target_geometry.png}
   \caption{點散射體回波模型幾何關係示意圖。}
 \end{figure}
 
@@ -305,14 +305,14 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.5\textwidth]{../../group_meeting/figures/pipeline/sar_imaging_pipeline.png}
+  \includegraphics[width=0.5\textwidth]{../../04_group_meeting/figures/pipeline/sar_imaging_pipeline.png}
   \caption{傳統 SAR 成像管線：點散射體回波模型 $\to$ 傳統 SAR 成像。}
 \end{figure}
 
 CSA 之處理流程共七步驟 \cite{cumming_wong}，如圖 \ref{fig:csa-flow} 所示：
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../group_meeting/figures/pipeline/csa_flow.png}
+  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/pipeline/csa_flow.png}
   \caption{CSA 七步驟處理流程}
   \label{fig:csa-flow}
 \end{figure}
@@ -395,19 +395,19 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
   \centering
   \begin{minipage}{0.32\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/csa_example/input_sar_image.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/csa_example/input_sar_image.png}
     \caption*{原始輸入}
   \end{minipage}
   \hfill
   \begin{minipage}{0.32\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/csa_example/csa_output.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/csa_example/csa_output.png}
     \caption*{CSA 輸出}
   \end{minipage}
   \hfill
   \begin{minipage}{0.32\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/csa_example/csa_threshold_output.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/csa_example/csa_threshold_output.png}
     \caption*{CSA + 門檻化}
   \end{minipage}
   \caption{代表性範例比較。}
@@ -422,13 +422,13 @@ $D(f_\eta)$ 為徙動參數、$K_m$ 為修正後之距離調頻率、$R_{\mathrm
   \centering
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/csa_example/range_cross_section.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/csa_example/range_cross_section.png}
     \caption*{距離向剖面}
   \end{minipage}
   \hfill
   \begin{minipage}{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{../../group_meeting/figures/csa_example/azimuth_cross_section.png}
+    \includegraphics[width=\linewidth]{../../04_group_meeting/figures/csa_example/azimuth_cross_section.png}
     \caption*{方位向剖面}
   \end{minipage}
   \caption{剖面分析比較。}

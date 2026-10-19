@@ -276,4 +276,4 @@ if __name__ == "__main__":
 
     if metrics_by_label:
         write_metrics_tex(metrics_by_label,
-                          tex_path="../document/simulation_report/performance_metrics_table.tex")
+                          tex_path="../document/02_simulation_report/performance_metrics_table.tex")
