@@ -29,29 +29,37 @@ __pycache__/
 /UmbraDataProc/*.json
 
 /venv/
-/document/simulation_report/*
-!/document/simulation_report/*.tex
-!/document/simulation_report/*.pdf
-!/document/simulation_report/.latexmkrc
+/document/02_simulation_report/*
+!/document/02_simulation_report/*.tex
+!/document/02_simulation_report/*.pdf
+!/document/02_simulation_report/.latexmkrc
+!/document/02_simulation_report/*.md
 
-/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*
-!/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.tex
-!/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.pdf
-!/document/group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.latexmkrc
+# Personal meetings: one YYYY-MM-DD folder per meeting; track sources, PDFs, latexmkrc and figures
+/document/03_personal_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*
+!/document/03_personal_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.tex
+!/document/03_personal_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.pdf
+!/document/03_personal_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.latexmkrc
+!/document/03_personal_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/figures/
 
-/document/industry_academia_collaboration/*/*
-!/document/industry_academia_collaboration/*/*.tex
-!/document/industry_academia_collaboration/*/*.pdf
-!/document/industry_academia_collaboration/*/.latexmkrc
-!/document/industry_academia_collaboration/*/figures/
+/document/04_group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*
+!/document/04_group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.tex
+!/document/04_group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/*.pdf
+!/document/04_group_meeting/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/.latexmkrc
+
+/document/05_industry_academia_collaboration/*/*
+!/document/05_industry_academia_collaboration/*/*.tex
+!/document/05_industry_academia_collaboration/*/*.pdf
+!/document/05_industry_academia_collaboration/*/.latexmkrc
+!/document/05_industry_academia_collaboration/*/figures/
 
 # MOE scholarship application: track sources, PDFs, figures, Makefile; ignore LaTeX build files
-/document/moe_scholarship/**/*.aux
-/document/moe_scholarship/**/*.log
-/document/moe_scholarship/**/*.out
-/document/moe_scholarship/**/*.fls
-/document/moe_scholarship/**/*.fdb_latexmk
-/document/moe_scholarship/**/*.synctex.gz
+/document/06_moe_scholarship/**/*.aux
+/document/06_moe_scholarship/**/*.log
+/document/06_moe_scholarship/**/*.out
+/document/06_moe_scholarship/**/*.fls
+/document/06_moe_scholarship/**/*.fdb_latexmk
+/document/06_moe_scholarship/**/*.synctex.gz
 
 /ship_detect/results/
 /ship_detect/test_data/
@@ -89,7 +97,7 @@ end_to_end_pipeline/noise/*/timing.csv
 end_to_end_pipeline/noise/*/*.log
 
 # Derivation notes: track sources, PDFs and README; ignore LaTeX build files
-/document/derivations/*
-!/document/derivations/*.tex
-!/document/derivations/*.pdf
-!/document/derivations/README.md
+/document/01_derivations/*
+!/document/01_derivations/*.tex
+!/document/01_derivations/*.pdf
+!/document/01_derivations/README.md
