@@ -87,3 +87,9 @@ end_to_end_pipeline/noise/*/test/
 end_to_end_pipeline/noise/*/_eval/
 end_to_end_pipeline/noise/*/timing.csv
 end_to_end_pipeline/noise/*/*.log
+
+# Derivation notes: track sources, PDFs and README; ignore LaTeX build files
+/document/derivations/*
+!/document/derivations/*.tex
+!/document/derivations/*.pdf
+!/document/derivations/README.md

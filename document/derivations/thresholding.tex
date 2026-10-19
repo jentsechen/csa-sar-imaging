@@ -1,0 +1,147 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\emergencystretch=3em
+
+\theoremstyle{definition}
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\C}{\mathbb{C}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\sgn}{sgn}
+
+\title{Thresholding Operators for Complex Images}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Problem and Reduction to a Magnitude Problem}
+
+Let $\mathbf z = (z_1,\dots,z_N)^{\mathsf T}\in\C^N$ be the observed complex image and
+$\mathbf x\in\C^N$ the estimate. For $w\in\C$, $|w|$ is the modulus and
+$\sgn(w) = w/|w|$ ($\sgn(0)=0$). In polar form,
+$x_i = \rho_i e^{j\theta_i}$ and $z_i = m_i e^{j\varphi_i}$, with $\rho_i,m_i\ge0$.
+For $\lambda>0$,
+\begin{equation}\label{eq:problem}
+  \hat{\mathbf x} = \argmin_{\mathbf x\in\C^N}
+  \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x),
+\end{equation}
+where $\lVert\mathbf v\rVert_2^2 = \sum_i |v_i|^2$ and $R:\C^N\to[0,\infty)$ is a regularizer.
+
+\begin{lemma}[Separability]\label{lem:sep}
+Assume $R$ is separable over the entries, $R(\mathbf x) = \sum_{i=1}^N R_i(x_i)$ with
+$R_i:\C\to[0,\infty)$. The data term is separable as well,
+$\lVert\mathbf x-\mathbf z\rVert_2^2 = \sum_i|x_i-z_i|^2$, so the objective of~\eqref{eq:problem}
+is $\sum_i J_i(x_i)$ with $J_i(x) = \tfrac12|x-z_i|^2 + \lambda R_i(x)$, and each
+$\hat x_i = \argmin_{x\in\C} J_i(x)$ is found independently.
+\end{lemma}
+
+Drop the index $i$. With $x=\rho e^{j\theta}$ and $z = m e^{j\varphi}$,
+\begin{equation}\label{eq:cos}
+  |x - z|^2 = \rho^2 + m^2 - 2\rho m\cos(\theta-\varphi).
+\end{equation}
+
+\begin{lemma}[Phase]\label{lem:phase}
+Assume further that each $R_i$ depends only on the modulus, $R_i(x) = r(|x|)$ for some
+$r:[0,\infty)\to[0,\infty)$ with $r(0)=0$. Then for fixed $\rho>0$ the penalty does not depend
+on $\theta$, and~\eqref{eq:cos} is smallest at $\theta=\varphi$, where $|x-z|^2 = (\rho-m)^2$.
+\end{lemma}
+
+Combining Lemmas~\ref{lem:sep} and~\ref{lem:phase}, the minimizer keeps the phase of $z$ and
+thresholds its magnitude:
+\begin{equation}\label{eq:mag}
+  \hat x = \sgn(z)\,\hat\rho,\qquad
+  \hat\rho = \argmin_{\rho\ge 0}\; g(\rho),\qquad
+  g(\rho) = \tfrac12(\rho - m)^2 + \lambda r(\rho),\quad m = |z| .
+\end{equation}
+
+\section{$\ell_1$: Soft Thresholding}
+
+$R(\mathbf x) = \lVert\mathbf x\rVert_1 = \sum_i |x_i|$ satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \rho$.
+Then $g(\rho) = \tfrac12(\rho-m)^2 + \lambda\rho$ is convex on $\rho\ge0$, with
+$g'(\rho) = \rho - m + \lambda$.
+If $m>\lambda$, then $g'=0$ at $\rho = m-\lambda>0$.
+If $m\le\lambda$, then $g'>0$ for all $\rho>0$, so the minimizer is $\rho=0$.
+Hence $\hat\rho = \max(m-\lambda,0)$:
+\begin{equation}\label{eq:soft}
+  \mathcal S_\lambda(z) = \sgn(z)\,\max(|z|-\lambda,\,0)
+  = \begin{cases} \bigl(|z|-\lambda\bigr)\dfrac{z}{|z|}, & |z|>\lambda,\\[1ex] 0, & |z|\le\lambda.\end{cases}
+\end{equation}
+Retained entries are shrunk by $\lambda$ in magnitude.
+
+\section{$\ell_0$: Hard Thresholding}
+
+$R(\mathbf x) = \lVert\mathbf x\rVert_0 = \#\{i: x_i\neq 0\}$ counts the nonzero entries. Since
+$x_i\neq0 \Leftrightarrow |x_i|>0$, it satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \mathbf 1[\rho>0]$, and
+$g(\rho) = \tfrac12(\rho-m)^2 + \lambda\,\mathbf 1[\rho>0]$. Compare the two cases:
+$\rho=0$ gives $g(0) = \tfrac12 m^2$; for $\rho>0$ the penalty is constant, so the
+best value is $\rho = m$, with $g(m) = \lambda$. $\rho=m$ is better iff
+$\lambda<\tfrac12 m^2$, i.e.\ $m>\sqrt{2\lambda}$:
+\begin{equation}\label{eq:hard}
+  \mathcal H_{\sqrt{2\lambda}}(z) = \begin{cases} z, & |z|>\sqrt{2\lambda},\\ 0, & |z|\le\sqrt{2\lambda}.\end{cases}
+\end{equation}
+At $|z|=\sqrt{2\lambda}$, both $0$ and $z$ are minimizers; \eqref{eq:hard} picks $0$.
+Retained entries are unchanged.
+
+\section{$\ell_{1/2}$: Half Thresholding}
+
+$R(\mathbf x) = \lVert\mathbf x\rVert_{1/2}^{1/2} = \sum_i |x_i|^{1/2}$ satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \sqrt\rho$, and
+$g(\rho) = \tfrac12(\rho-m)^2 + \lambda\sqrt\rho$. Let $\mu = 2\lambda$ and minimize
+$2g(\rho) = (\rho-m)^2 + \mu\sqrt\rho$.
+
+\paragraph{Stationary Point.}
+For $\rho>0$, $\tfrac{d}{d\rho}\bigl[(\rho-m)^2+\mu\sqrt\rho\bigr] = 2(\rho-m)+\tfrac{\mu}{2\sqrt\rho}$.
+With $u=\sqrt\rho$, setting it to zero gives
+\begin{equation}\label{eq:cubic}
+  u^3 - m\,u + \tfrac{\mu}{4} = 0 .
+\end{equation}
+Its largest root, the local minimum of $g$, is
+$u = 2\sqrt{m/3}\,\cos(\psi/3)$ with $\psi = \arccos\bigl(-\tfrac{\mu}{8}(\tfrac m3)^{-3/2}\bigr)$.
+With $\phi = \pi-\psi$,
+\begin{equation}\label{eq:half-rho}
+  \rho^\ast = u^2 = \frac{2m}{3}\Bigl[1+\cos\Bigl(\frac{2\pi}{3}-\frac{2}{3}\phi\Bigr)\Bigr],
+  \qquad \phi = \arccos\Bigl(\frac{\mu}{8}\Bigl(\frac m3\Bigr)^{-3/2}\Bigr).
+\end{equation}
+
+\paragraph{Cut-Off.}
+$\rho^\ast$ beats $\rho=0$ iff $(\rho^\ast-m)^2+\mu\sqrt{\rho^\ast} < m^2$. At the cut-off $m=t$,
+equality holds together with~\eqref{eq:cubic}. Substituting $m = u^2+\mu/(4u)$ from~\eqref{eq:cubic}:
+\[
+  \bigl(\tfrac{\mu}{4u}\bigr)^2 + \mu u = \bigl(u^2+\tfrac{\mu}{4u}\bigr)^2
+  \;\Longleftrightarrow\; u^3 = \tfrac{\mu}{2},
+\]
+so
+\begin{equation}\label{eq:half-t}
+  t = u^2+\frac{\mu}{4u} = \frac32\Bigl(\frac{\mu}{2}\Bigr)^{2/3}
+  = \frac{\sqrt[3]{54}}{4}\,(2\lambda)^{2/3},
+\end{equation}
+and at the cut-off $\rho^\ast = (\mu/2)^{2/3} = \tfrac23 t$.
+
+\paragraph{Result.}
+\begin{equation}\label{eq:half}
+  \mathcal T_\lambda(z) = \begin{cases}
+    \sgn(z)\,\dfrac{2|z|}{3}\Bigl[1+\cos\Bigl(\dfrac{2\pi}{3}-\dfrac{2}{3}\phi(|z|)\Bigr)\Bigr], & |z|>t,\\[1.5ex]
+    0, & |z|\le t,\end{cases}
+  \qquad \phi(m) = \arccos\Bigl(\frac{\lambda}{4}\Bigl(\frac m3\Bigr)^{-3/2}\Bigr).
+\end{equation}
+The output jumps from $0$ to $\tfrac23 t$ at the cut-off, and the shrinkage
+$m-\rho^\ast \approx \lambda/(2\sqrt m)$ vanishes for large $m$.
+
+\section{Summary}
+
+Each operator keeps the phase and thresholds the magnitude, $\hat x = \sgn(z)\,f(|z|)$:
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+ & cut-off $t$ on $|z|$ & $|\hat x|$ for $|z|>t$ & jump at $t$ \\
+\midrule
+$\ell_1$ & $\lambda$ & $|z|-\lambda$ & none \\
+$\ell_0$ & $\sqrt{2\lambda}$ & $|z|$ & $0\to t$ \\
+$\ell_{1/2}$ & $\tfrac{\sqrt[3]{54}}{4}(2\lambda)^{2/3}$ & Eq.~\eqref{eq:half-rho} & $0\to\tfrac23 t$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
