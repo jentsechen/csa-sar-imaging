@@ -37,7 +37,8 @@ import numpy as np
 
 from .pipeline import exclude_cpus
 from .pipeline import git_commit
-from .speckle_pipeline import ALPHAS_THRESHOLD, IMAGES, MARGIN, METHODS, PIPE, Context, Timer, config_name, to_gray
+from .speckle_pipeline import (ALPHAS_THRESHOLD, IMAGES, MARGIN, METHODS, PIPE, Context, IterLog, Timer, config_name,
+                               iteration_sample, summarize_iterations, to_gray)
 
 SNR_LEVELS = [float("inf"), 10.0, 5.0, 0.0, -5.0]
 GRID0 = {
@@ -197,6 +198,7 @@ def cmd_tune(args):
     stems = load_split(args)["tune"][: args.n]
     out = os.path.join(run_dir(args), "tune")
     timer = Timer(os.path.join(run_dir(args), "timing.csv"), "tune")
+    iters = IterLog(os.path.join(run_dir(args), "iterations.csv"), "tune")
     state_path = os.path.join(run_dir(args), "tune_grid.json")
     grids = load_state(state_path)
     results_path = os.path.join(run_dir(args), "tune_results.csv")
@@ -228,11 +230,12 @@ def cmd_tune(args):
                 h = noisy(cp, crop, w, v, p)
                 for m, prm in todo[snr_name(v)]:
                     t0 = time.perf_counter()
-                    img, _ = apply(cp, m, h, prm, MARGIN)
+                    img, info = apply(cp, m, h, prm, MARGIN)
                     d = os.path.join(out, snr_name(v), config_name(m, prm))
                     os.makedirs(d, exist_ok=True)
                     cv2.imwrite(os.path.join(d, stem + ".jpg"), to_gray(cp, img))
                     timer.log(stem, m, time.perf_counter() - t0)
+                    iters.log(stem, args.seed, snr_name(v), m, config_name(m, prm), info, time.perf_counter() - t0)
             del crop, w
             cp.get_default_memory_pool().free_all_blocks()
             print(f"  tune round {rnd + 1} [{i + 1}/{len(stems)}] {stem}", flush=True)
@@ -300,6 +303,7 @@ def cmd_run(args):
     var_seeds = [int(v) for v in args.var_seeds.split(",") if v.strip()]
     var_snr = [float(v) for v in args.var_snr.split(",") if v.strip()]
     timer = Timer(os.path.join(run_dir(args), "timing.csv"), "run")
+    iters = IterLog(os.path.join(run_dir(args), "iterations.csv"), "run")
     write_manifest(args, {"n_test": len(stems), "var_n": len(var_stems), "var_seeds": var_seeds,
                           "var_snr_db": var_snr, "params_C": params_c, "params_A": params_a})
     base = os.path.join(run_dir(args), "test")
@@ -335,10 +339,11 @@ def cmd_run(args):
             if sd not in fields:
                 fields[sd] = cp.asarray(noise_field(stem, crop.shape, sd))
             t0 = time.perf_counter()
-            img, _ = apply(cp, m, noisy(cp, crop, fields[sd], v, p), prm, MARGIN)
+            img, info = apply(cp, m, noisy(cp, crop, fields[sd], v, p), prm, MARGIN)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             cv2.imwrite(path, to_gray(cp, img))
             timer.log(stem, m, time.perf_counter() - t0)
+            iters.log(stem, sd, snr_name(v), m, d, info, time.perf_counter() - t0)
         del crop, fields
         cp.get_default_memory_pool().free_all_blocks()
         print(f"  run [{i + 1}/{len(stems)}] {stem}", flush=True)
@@ -404,6 +409,41 @@ def cmd_eval(args):
     print(text)
 
 
+def cmd_iters(args):
+    """Iteration counts of L1/2 & TV on a sample of test scenes with the parameters actually used
+    (C: per level; A: tuned at SNR = inf), no JPG / YOLO: iterations_sample.csv + iterations.md."""
+    import cupy as cp
+    from .refine import apply
+    ctx = Context(cp)
+    params_c, params_a = load_params(args)
+    stems = iteration_sample(load_split(args)["test"], args.n_sample)
+    path = os.path.join(run_dir(args), "iterations_sample.csv")
+    if os.path.exists(path):
+        os.remove(path)
+    log = IterLog(path, "sample")
+    for i, stem in enumerate(stems):
+        amp = ctx.load_amp(stem)
+        crop = clean_crop(ctx, amp)
+        p = scene_power(cp, crop)
+        w = cp.asarray(noise_field(stem, crop.shape, args.seed))
+        for v in SNR_LEVELS:
+            h = noisy(cp, crop, w, v, p)
+            jobs = [("C", params_c[snr_name(v)]["l12tv"])] + ([("A", params_a["l12tv"])] if v != float("inf") else [])
+            for tag, prm in jobs:
+                t0 = time.perf_counter()
+                _, info = apply(cp, "l12tv", h, prm, MARGIN)
+                cp.cuda.Stream.null.synchronize()
+                log.log(stem, args.seed, snr_name(v), "l12tv", f"{tag}:{config_name('l12tv', prm)}", info,
+                        time.perf_counter() - t0)
+        del crop, w
+        cp.get_default_memory_pool().free_all_blocks()
+        if (i + 1) % 20 == 0:
+            print(f"  iters [{i + 1}/{len(stems)}]", flush=True)
+    log.f.close()
+    text = summarize_iterations(path, os.path.join(run_dir(args), "iterations.md"), group=("level", "config"))
+    print(f"{len(stems)} test scenes (random sample, seed 0), tolerance 1e-4, cap 300\n" + text)
+
+
 def cmd_report(args):
     rows = list(csv.DictReader(open(os.path.join(run_dir(args), "timing.csv"))))
     lines = ["| phase | step | calls | mean (s) | total (h) |", "|---|---|---|---|---|"]
@@ -421,7 +461,7 @@ def cmd_report(args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["split", "validate", "tune", "run", "eval", "report"])
+    ap.add_argument("cmd", choices=["split", "validate", "tune", "run", "eval", "report", "iters"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--seed", type=int, default=0, help="base noise seed")
     ap.add_argument("--split-seed", type=int, default=0)
@@ -431,11 +471,12 @@ def main():
     ap.add_argument("--var-n", type=int, default=0, help="first N test scenes also get --var-seeds")
     ap.add_argument("--var-seeds", default="1,2,3,4")
     ap.add_argument("--var-snr", default="5,0")
+    ap.add_argument("--n-sample", type=int, default=100, help="iters: test scenes sampled")
     ap.add_argument("--exclude-cpus", default="1,7")
     args = ap.parse_args()
     exclude_cpus(args.exclude_cpus)
     {"split": cmd_split, "validate": cmd_validate, "tune": cmd_tune, "run": cmd_run, "eval": cmd_eval,
-     "report": cmd_report}[args.cmd](args)
+     "report": cmd_report, "iters": cmd_iters}[args.cmd](args)
 
 
 if __name__ == "__main__":

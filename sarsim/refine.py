@@ -73,7 +73,8 @@ def l12tv(xp, h, t, xi, lam_tv, delta=0.125, tv_steps=20, n_iter=300, tol=1e-4):
     (ship sizes vary per scene); no CAMP Onsager term (no measurement residual
     with full sampling); fixed lam_tv (the paper adapts it to the noise
     variance); tv_steps dual steps per iteration with delta = 1/8 (stable).
-    Returns (X, n_iter_run)."""
+    Returns (X, n_iter_run, final relative change); n_iter_run == n_iter with a final change
+    >= tol means the iteration cap was hit before convergence."""
     x = h
     z1 = xp.zeros_like(h)
     z2 = xp.zeros_like(h)
@@ -94,23 +95,27 @@ def l12tv(xp, h, t, xi, lam_tv, delta=0.125, tv_steps=20, n_iter=300, tol=1e-4):
         rel = float(xp.linalg.norm(x_new - x)) / max(float(xp.linalg.norm(x)), 1e-300)
         x = x_new
         if rel < tol:
-            return x, k + 1
-    return x, n_iter
+            return x, k + 1, rel
+    return x, n_iter, rel
 
 
 def apply(xp, method, crop, params, margin):
     """Refine a (scene + 2*margin)^2 complex crop with method in {csa, l0, l1, l12tv};
-    returns the scene crop (margin removed) and the number of iterations."""
+    returns the scene crop (margin removed) and dict(n_iter, rel, converged): the iteration
+    count, the last relative change of X and whether it stopped below the tolerance
+    (one-step methods: 0 or 1 iteration, always converged)."""
     scene = (slice(margin, crop.shape[0] - margin), slice(margin, crop.shape[1] - margin))
+    one_step = lambda n: {"n_iter": n, "rel": 0.0, "converged": True}
     if method == "csa":
-        return crop[scene], 0
+        return crop[scene], one_step(0)
     peak = float(xp.abs(crop[scene]).max())
     t = params["alpha"] * peak
     if method == "l0":
-        return l0(xp, crop[scene], t), 1
+        return l0(xp, crop[scene], t), one_step(1)
     if method == "l1":
-        return l1(xp, crop[scene], t), 1
+        return l1(xp, crop[scene], t), one_step(1)
     if method == "l12tv":
-        out, n = l12tv(xp, crop, t, params["xi"], params["tv"] * peak)
-        return out[scene], n
+        tol = 1e-4
+        out, n, rel = l12tv(xp, crop, t, params["xi"], params["tv"] * peak, tol=tol)
+        return out[scene], {"n_iter": n, "rel": rel, "converged": rel < tol}
     raise ValueError(method)

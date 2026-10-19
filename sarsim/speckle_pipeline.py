@@ -78,6 +78,54 @@ class Timer:
         self.f.flush()
 
 
+class IterLog:
+    """Per-call iteration record of the iterative refinement (L1/2 & TV): iterations.csv."""
+
+    FIELDS = ["phase", "stem", "seed", "level", "method", "config", "n_iter", "final_rel", "converged", "seconds"]
+
+    def __init__(self, path, phase):
+        new = not os.path.exists(path)
+        self.f = open(path, "a", newline="")
+        self.w = csv.writer(self.f)
+        self.phase = phase
+        if new:
+            self.w.writerow(self.FIELDS)
+
+    def log(self, stem, seed, level, method, config, info, seconds):
+        if method != "l12tv":
+            return
+        self.w.writerow([self.phase, stem, seed, level, method, config, info["n_iter"], f"{info['rel']:.3e}",
+                         int(info["converged"]), f"{seconds:.4f}"])
+        self.f.flush()
+
+
+def summarize_iterations(csv_path, md_path, group=("phase", "level", "config")):
+    """Iteration-count distribution per group -> markdown table."""
+    rows = list(csv.DictReader(open(csv_path)))
+    groups = {}
+    for r in rows:
+        groups.setdefault(tuple(r[g] for g in group), []).append(r)
+    lines = ["| " + " | ".join(group) + " | calls | mean | median | p95 | min | max | hit cap | s/call |",
+             "|" + "---|" * (len(group) + 8)]
+    for key in sorted(groups):
+        v = groups[key]
+        n = np.array([int(r["n_iter"]) for r in v])
+        cap = sum(1 for r in v if r["converged"] == "0")
+        sec = np.mean([float(r["seconds"]) for r in v])
+        lines.append("| " + " | ".join(key) + f" | {len(n)} | {n.mean():.1f} | {np.median(n):.0f} | "
+                     f"{np.percentile(n, 95):.0f} | {n.min()} | {n.max()} | {cap} | {sec:.3f} |")
+    text = "\n".join(lines) + "\n"
+    with open(md_path, "w") as f:
+        f.write(text)
+    return text
+
+
+def iteration_sample(stems, n, seed=0):
+    """Deterministic random sample of n scenes (sorted)."""
+    rng = np.random.default_rng(seed)
+    return sorted(rng.choice(stems, min(n, len(stems)), replace=False).tolist())
+
+
 class Context:
     """GPU state shared by every scene: imaging axes and CSA."""
 
@@ -212,6 +260,7 @@ def cmd_tune(args):
     stems = load_split(args)["tune"][: args.n]
     out = os.path.join(run_dir(args), "tune")
     timer = Timer(os.path.join(run_dir(args), "timing.csv"), "tune")
+    iters = IterLog(os.path.join(run_dir(args), "iterations.csv"), "tune")
     configs = [("csa", {})] + [(m, p) for m in ("l0", "l1", "l12tv") for p in TUNE_GRID[m]]
     for i, stem in enumerate(stems):
         if all(os.path.exists(os.path.join(out, config_name(m, p), stem + ".jpg")) for m, p in configs):
@@ -228,10 +277,12 @@ def cmd_tune(args):
             if os.path.exists(os.path.join(d, stem + ".jpg")):
                 continue  # resume / grid extension: already computed (deterministic)
             t0 = time.perf_counter()
-            img, _ = apply(cp, method, crop, params, MARGIN)
+            img, info = apply(cp, method, crop, params, MARGIN)
             os.makedirs(d, exist_ok=True)
             cv2.imwrite(os.path.join(d, stem + ".jpg"), to_gray(cp, img))
             timer.log(stem, method, time.perf_counter() - t0)
+            iters.log(stem, args.seed, ssr_name(args.tune_ssr), method, config_name(method, params), info,
+                      time.perf_counter() - t0)
         cp.get_default_memory_pool().free_all_blocks()
         print(f"  tune [{i + 1}/{len(stems)}] {stem}", flush=True)
 
@@ -285,6 +336,7 @@ def cmd_run(args):
     var_seeds = [int(v) for v in args.var_seeds.split(",") if v.strip()]
     var_ssr = [float(v) for v in args.var_ssr.split(",") if v.strip()]
     timer = Timer(os.path.join(run_dir(args), "timing.csv"), "run")
+    iters = IterLog(os.path.join(run_dir(args), "iterations.csv"), "run")
     write_manifest(args, {"n_test": len(stems), "var_n": len(var_stems), "var_seeds": var_seeds,
                           "var_ssr_db": var_ssr, "params": params})
     stats_path = os.path.join(run_dir(args), "speckle_stats.csv")
@@ -316,11 +368,13 @@ def cmd_run(args):
                 crop = mixed(h0, hs[seed], ssr)
                 for method in METHODS:
                     t0 = time.perf_counter()
-                    img, _ = apply(cp, method, crop, params[method], MARGIN)
+                    img, info = apply(cp, method, crop, params[method], MARGIN)
                     d = os.path.join(run_dir(args), "test", f"seed{seed}", ssr_name(ssr), method)
                     os.makedirs(d, exist_ok=True)
                     cv2.imwrite(os.path.join(d, stem + ".jpg"), to_gray(cp, img))
                     timer.log(stem, method, time.perf_counter() - t0)
+                    iters.log(stem, seed, ssr_name(ssr), method, config_name(method, params[method]), info,
+                              time.perf_counter() - t0)
         stats_f.flush()
         del h0, hs
         cp.get_default_memory_pool().free_all_blocks()
@@ -384,6 +438,36 @@ def cmd_eval(args):
         print(vtext)
 
 
+def cmd_iters(args):
+    """Iteration counts of L1/2 & TV with the chosen parameters on a sample of test scenes (no
+    JPG / YOLO): iterations_sample.csv + iterations.md."""
+    import cupy as cp
+    from .refine import apply
+    ctx = Context(cp)
+    with open(os.path.join(run_dir(args), "chosen_params.json")) as f:
+        prm = json.load(f)["params"]["l12tv"]
+    stems = iteration_sample(load_split(args)["test"], args.n_sample)
+    path = os.path.join(run_dir(args), "iterations_sample.csv")
+    if os.path.exists(path):
+        os.remove(path)
+    log = IterLog(path, "sample")
+    for i, stem in enumerate(stems):
+        amp = ctx.load_amp(stem)
+        h0, hs, _ = ctx.images(stem, amp, [args.seed])
+        for v in SSR_LEVELS:
+            t0 = time.perf_counter()
+            _, info = apply(cp, "l12tv", mixed(h0, hs[args.seed], v), prm, MARGIN)
+            cp.cuda.Stream.null.synchronize()
+            log.log(stem, args.seed, ssr_name(v), "l12tv", config_name("l12tv", prm), info, time.perf_counter() - t0)
+        del h0, hs
+        cp.get_default_memory_pool().free_all_blocks()
+        if (i + 1) % 20 == 0:
+            print(f"  iters [{i + 1}/{len(stems)}]", flush=True)
+    log.f.close()
+    text = summarize_iterations(path, os.path.join(run_dir(args), "iterations.md"), group=("level", "config"))
+    print(f"{len(stems)} test scenes (random sample, seed 0), tolerance 1e-4, cap 300\n" + text)
+
+
 def cmd_report(args):
     """Mean seconds per step from timing.csv and an extrapolation to the full experiment."""
     rows = list(csv.DictReader(open(os.path.join(run_dir(args), "timing.csv"))))
@@ -433,7 +517,7 @@ def cmd_report(args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["split", "validate", "tune", "run", "eval", "report"])
+    ap.add_argument("cmd", choices=["split", "validate", "tune", "run", "eval", "report", "iters"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--seed", type=int, default=0, help="base speckle seed")
     ap.add_argument("--split-seed", type=int, default=0)
@@ -444,11 +528,12 @@ def main():
     ap.add_argument("--var-seeds", default="1,2,3,4")
     ap.add_argument("--var-ssr", default="5,0")
     ap.add_argument("--stem", default=None, help="validate: scene (default: first test scene)")
-    ap.add_argument("--exclude-cpus", default="1")
+    ap.add_argument("--n-sample", type=int, default=100, help="iters: test scenes sampled")
+    ap.add_argument("--exclude-cpus", default="1,7")
     args = ap.parse_args()
     exclude_cpus(args.exclude_cpus)
     {"split": cmd_split, "validate": cmd_validate, "tune": cmd_tune, "run": cmd_run, "eval": cmd_eval,
-     "report": cmd_report}[args.cmd](args)
+     "report": cmd_report, "iters": cmd_iters}[args.cmd](args)
 
 
 if __name__ == "__main__":
