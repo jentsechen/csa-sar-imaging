@@ -8,8 +8,10 @@ pipeline script").
 
 ## Pipeline
 
-The echo + imaging stages now run on the GPU via [`sarsim`](../sarsim/README.md)
-(recommended); the original C++ wrappers are kept below as the legacy path.
+The echo + imaging stages run on the GPU via [`sarsim`](../sarsim/README.md).
+The legacy C++ wrappers (`gen_echo_signal_union_batch.py`,
+`csa_to_jpg_union_batch.py`) were removed on 2026-10-19; they are in the git
+history before that date.
 
 ```
 images/<stem>.jpg  (1593 scenes, HRSID val)
@@ -27,20 +29,7 @@ images/<stem>.jpg  (1593 scenes, HRSID val)
        -> union_pipeline/runs/<run>/csa/jpg/<stem>.jpg
        -> union_pipeline/runs/<run>/csa/power/<stem>.npy  (float32 linear power)
 
-  Legacy C++ path:
-  -> [gen_echo_signal_union_batch.py]
-       point_target_location/<stem>.png -> <stem>.json (if not already written)
-       (no additional intensity threshold -- the box union IS the mask)
-       -> union_pipeline/echo_signal/<stem>.npy
-       (azi_win_en=False; runtime capped via --max-seconds, predicted from
-       nonzero pixel count at ~0.0462 s/px)
-
-  -> [csa_to_jpg_union_batch.py]
-       TestMultiPointTarget focus    -> union_pipeline/focused_image/<stem>.npy
-       TestMultiPointTarget calc_mag -> union_pipeline/focused_image/<stem>_mag_db.npy
-       crop + 30dB clip + normalize  -> union_pipeline/csa_jpg/<stem>.jpg
-
-  -> [eval_union_masked.py] / [eval_union_csa.py] -> Precision/Recall/mAP@0.5
+  -> [eval_union_csa.py] -> Precision/Recall/mAP@0.5
 ```
 
 ## Scripts (run in order)
@@ -49,33 +38,33 @@ images/<stem>.jpg  (1593 scenes, HRSID val)
 |---|---|---|---|
 | `select_images.py` | `sar_ship_detect/HRSID_YOLO/images/val` | `images/`, `labels/`, `selected_images.txt` | Random sample (seed=0), `--region offshore` restricts to the official HRSID offshore split |
 | `mask_outside_gt_pred_union.py` | `original_eval/images`, `original_eval/labels` | `union_masked/images/*.jpg`, `union_pipeline/point_target_location/*.png` (`--json`: also `*.json`), `union_masked/nonzero_pct.csv` | Runs inference once on the original images; zeroes pixels outside GT∪Pred box union and writes the result both as JPG (for YOLO) and lossless PNG (point targets). Point targets must not come from the JPG: its ringing adds ~11% spurious low-amplitude scatterers outside the boxes |
-| `eval_union_masked.py` | `union_masked/images` | `union_masked_eval/` (YOLO val run) | Sanity check: confirms masking alone doesn't change detection metrics |
-| `gen_echo_signal_union_batch.py --max-seconds N` (legacy) | `union_pipeline/point_target_location/*.png` | `union_pipeline/point_target_location/*.json`, `union_pipeline/echo_signal/*.npy`, `union_pipeline/echo_signal_timing.csv`, `union_pipeline/skipped_scenes.txt` | Wraps `../build/gen_echo_signal`; writes its own `input_par.json` with `azi_win_en=False`; scenes whose predicted runtime exceeds `--max-seconds` are skipped |
-| `csa_to_jpg_union_batch.py --n N` (legacy) | `union_pipeline/echo_signal/*.npy` | `union_pipeline/focused_image/*.npy`, `union_pipeline/focused_image/*_mag_db.npy`, `union_pipeline/csa_jpg/*.jpg` | Wraps `../build/TestMultiPointTarget focus` + `calc_mag`; crops center 800x800, 30dB dynamic range |
 | `python -m sarsim.pipeline --run R --algo csa` (from repo root; recommended) | `union_pipeline/point_target_location/*.png` | `union_pipeline/runs/R/{csa/jpg,csa/power,metrics.csv,manifest.json}` | Echo CUDA kernel -> CuPy CSA -> JPG on the GPU, no echo/focused `.npy` written; ~4 min for all 1593 scenes. Several `--algo` share each echo. See `../sarsim/README.md` |
 | `eval_union_csa.py [--csa-dir DIR --name NAME]` | `images/`, `DIR` (default `union_pipeline/csa_jpg/`), `labels/` | `original_union_eval/`, `NAME_union_eval/` | Precision/Recall/mAP@0.5, original vs union-mask-CSA, over exactly the stems present in `DIR` |
 
-`gen_echo_signal_union_batch.py`, `csa_to_jpg_union_batch.py` and
-`sarsim.pipeline` only process scenes not yet done, so interrupted runs (e.g.
+`sarsim.pipeline` only processes scenes not yet done, so interrupted runs (e.g.
 after a disconnect) resume without recomputation.
 
-**Faulty CPU:** every segfault on this workstation happens on CPU 1 (core 4);
-`sarsim` avoids it automatically, other long jobs should run under
-`taskset -c 0,2-23`. See `../gpu_prototype/README.md`.
+The speckle and thermal-noise sweeps (`python -m sarsim.speckle_pipeline` /
+`sarsim.noise_pipeline`) write to `speckle/<run>/` and `noise/<run>/`; their
+figures come from `plot_sweep_results.py`.
+
+**Faulty CPUs:** segfaults on this workstation happen on CPU 1 (core 4) and
+CPU 7 (core 44). Launch long jobs under `taskset -c 0,2-6,8-23`; the in-process
+`--exclude-cpus` is not enough on its own, since libraries start threads at
+import time. See `../gpu_prototype/README.md`.
 
 ## Directories
 
 - `images/`, `labels/` — the selected source JPGs + ground-truth YOLO labels
 - `original_eval/` — the same images repackaged as a YOLO eval set (images+labels symlinks); source for the union mask
 - `union_masked/` — masked JPGs + per-image nonzero-pixel-percentage CSV
-- `union_masked_eval/` — temp YOLO eval set for `union_masked/images`
 - `union_pipeline/` — working dir for the echo/imaging stages:
-  - `point_target_location/` (`<stem>.png`, lossless masked image; ~12 MB total), `input_par.json` (azi_win_en=False) — shared input to both paths
-  - `runs/<run>/` — `sarsim.pipeline` outputs (JPG, float32 power, metrics, manifest)
+  - `point_target_location/` (`<stem>.png`, lossless masked image; ~12 MB total), `input_par.json` (azi_win_en=False)
+  - `runs/<run>/` — `sarsim.pipeline` outputs (JPG, float32 power, metrics, manifest). The `union_png` power crops were deleted on 2026-10-19 (3.8 GB, unused); rerun `sarsim.pipeline` to regenerate them
   - `reference/` — two scenes' C++ point-target JSON (JPEG-derived, as used then) + echo + focused `.npy`, used by `python -m sarsim.validate`
   - `csa_jpg/` — legacy C++ JPGs (1583 scenes; `P0062_3500_4300_1800_2600` is corrupt, see below)
-  - `echo_signal/`, `focused_image/` — legacy C++ intermediates, 164 MB/scene; deleted 2026-09-28 (~670 GB), recreated only if the legacy scripts are rerun
-- `*_union_eval/` — temp YOLO eval sets built by `eval_union_csa*.py` (git-ignored)
+- `speckle/<run>/`, `noise/<run>/` — speckle / thermal-noise sweeps: summaries and figures are tracked; the JPGs (`tune/`, `test/`) and YOLO eval sets (`_eval/`) are git-ignored and were deleted on 2026-10-19 after the results were recorded (rerun the pipeline to regenerate)
+- `*_union_eval/` — temp YOLO eval sets built by `eval_union_csa.py` (git-ignored)
 
 ## Status
 
@@ -136,8 +125,7 @@ not under `end_to_end_pipeline/`).
 
 | Script | Input | Output | Notes |
 |---|---|---|---|
-| `threshold_union_csa.py --threshold T` | `union_pipeline/csa_jpg/*.jpg` | `union_pipeline/csa_jpg_t<T>/*.jpg` | Thresholds all completed scenes; `T` tested so far: 80, 100, 120 |
-| `eval_union_csa_threshold.py --threshold T` | `images/`, `union_pipeline/csa_jpg/`, `union_pipeline/csa_jpg_t<T>/` | `original_union_eval/`, `union_csa_union_eval/`, `union_csa_t<T>_union_eval/` | Precision/Recall/mAP@0.5, three-way: original vs union_csa (no threshold) vs union_csa_t\<T\> |
+| `threshold_union_csa.py --threshold T` | `union_pipeline/csa_jpg/*.jpg` | `union_pipeline/csa_jpg_t<T>/*.jpg` | Thresholds all completed scenes; `T` tested so far: 80, 100, 120. `csa_jpg_t120/` was deleted on 2026-10-19; rerun this to regenerate it for the plots below |
 | `find_threshold_diff_images.py --threshold T` | same as above | `../diagram/thresholding/union_csa/per_image_diff_t<T>.json` | Per-image GT/prediction IoU matching (TP/FP/FN) for all three sets; prints scenes where thresholding changes the detection outcome, and flags candidates where it recovers toward original without exceeding it |
 
 ### Cross-section plotting (`crosssection_plots/`)
