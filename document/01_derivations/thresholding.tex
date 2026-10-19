@@ -11,24 +11,24 @@
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator{\sgn}{sgn}
 
-\title{Thresholding Operators for Complex Images}
-\date{}
 
 \begin{document}
-\maketitle
+\begin{center}
+{\LARGE Thresholding Operators for Complex Images}
+\end{center}
 
 \section{Problem and Reduction to a Magnitude Problem}
 
 Let $\mathbf z = (z_1,\dots,z_N)^{\mathsf T}\in\C^N$ be the observed complex image and
 $\mathbf x\in\C^N$ the estimate. For $w\in\C$, $|w|$ is the modulus and
-$\sgn(w) = w/|w|$ ($\sgn(0)=0$). In polar form,
-$x_i = \rho_i e^{j\theta_i}$ and $z_i = m_i e^{j\varphi_i}$, with $\rho_i,m_i\ge0$.
-For $\lambda>0$,
+$\sgn(w) = w/|w|$ ($\sgn(0)=0$). For $\lambda>0$,
 \begin{equation}\label{eq:problem}
   \hat{\mathbf x} = \argmin_{\mathbf x\in\C^N}
   \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x),
 \end{equation}
 where $\lVert\mathbf v\rVert_2^2 = \sum_i |v_i|^2$ and $R:\C^N\to[0,\infty)$ is a regularizer.
+The weight $\lambda$ is real: the objective must be real-valued to be minimized, since $\C$ has no
+ordering, and $\lambda>0$ sets the trade-off between the data term and the nonnegative penalty.
 
 \begin{lemma}[Separability]\label{lem:sep}
 Assume $R$ is separable over the entries, $R(\mathbf x) = \sum_{i=1}^N R_i(x_i)$ with
@@ -38,23 +38,44 @@ is $\sum_i J_i(x_i)$ with $J_i(x) = \tfrac12|x-z_i|^2 + \lambda R_i(x)$, and eac
 $\hat x_i = \argmin_{x\in\C} J_i(x)$ is found independently.
 \end{lemma}
 
-Drop the index $i$. With $x=\rho e^{j\theta}$ and $z = m e^{j\varphi}$,
-\begin{equation}\label{eq:cos}
-  |x - z|^2 = \rho^2 + m^2 - 2\rho m\cos(\theta-\varphi).
-\end{equation}
+Drop the index $i$.
 
 \begin{lemma}[Phase]\label{lem:phase}
 Assume further that each $R_i$ depends only on the modulus, $R_i(x) = r(|x|)$ for some
-$r:[0,\infty)\to[0,\infty)$ with $r(0)=0$. Then for fixed $\rho>0$ the penalty does not depend
-on $\theta$, and~\eqref{eq:cos} is smallest at $\theta=\varphi$, where $|x-z|^2 = (\rho-m)^2$.
+$r:[0,\infty)\to[0,\infty)$ with $r(0)=0$. This holds for the penalties used here: a norm on $\C^N$ is
+absolutely homogeneous, $\lVert\alpha\mathbf x\rVert = |\alpha|\,\lVert\mathbf x\rVert$ for $\alpha\in\C$, so with
+$\alpha=e^{j\theta}$ it is invariant to phase rotation; $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$ and
+$\lVert\mathbf x\rVert_{1/2}^{1/2}$ are all defined through $|x_i|$. Then, for a fixed modulus $|x|$, the
+penalty is constant and $|x-z|$ is smallest when $x$ has the phase of $z$, where
+\begin{equation}\label{eq:bound}
+  |x-z|^2 = (|x|-|z|)^2 .
+\end{equation}
 \end{lemma}
+
+\begin{proof}[Proof in polar form]
+Write $x=\rho e^{j\theta}$ and $z = m e^{j\varphi}$, with $\rho,m\ge0$. By the law of cosines,
+\begin{equation}\label{eq:cos}
+  |x - z|^2 = \rho^2 + m^2 - 2\rho m\cos(\theta-\varphi) \;\ge\; (\rho-m)^2,
+\end{equation}
+with equality iff $\cos(\theta-\varphi)=1$, i.e.\ $\theta=\varphi$ (for $\rho,m>0$).
+\end{proof}
+
+\begin{proof}[Proof in rectangular form]
+Write $x=a+jb$ and $z=c+jd$. Then
+\[
+  |x-z|^2 = |x|^2 + |z|^2 - 2\,\mathrm{Re}(x\bar z),\qquad \mathrm{Re}(x\bar z) = ac+bd .
+\]
+By the Cauchy--Schwarz inequality, $ac+bd \le \sqrt{a^2+b^2}\,\sqrt{c^2+d^2} = |x|\,|z|$, so
+$|x-z|^2 \ge (|x|-|z|)^2$, with equality iff $(a,b) = \kappa\,(c,d)$ for some $\kappa\ge0$, i.e.\ $x$ is a
+nonnegative multiple of $z$ and has its phase.
+\end{proof}
 
 Combining Lemmas~\ref{lem:sep} and~\ref{lem:phase}, the minimizer keeps the phase of $z$ and
 thresholds its magnitude:
 \begin{equation}\label{eq:mag}
   \hat x = \sgn(z)\,\hat\rho,\qquad
   \hat\rho = \argmin_{\rho\ge 0}\; g(\rho),\qquad
-  g(\rho) = \tfrac12(\rho - m)^2 + \lambda r(\rho),\quad m = |z| .
+  g(\rho) = \tfrac12(\rho - m)^2 + \lambda r(\rho),\quad \rho = |x|,\ m = |z| .
 \end{equation}
 
 \section{$\ell_1$: Soft Thresholding}
