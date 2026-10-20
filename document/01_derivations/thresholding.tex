@@ -17,98 +17,72 @@
 {\LARGE Thresholding Operators for Complex Images}
 \end{center}
 
-\section{Problem and Reduction to a Magnitude Problem}
+\section{Summary}\label{sec:summary}
 
-Let $\mathbf z = (z_1,\dots,z_N)^{\mathsf T}\in\C^N$ be the observed complex image and
-$\mathbf x\in\C^N$ the estimate. For $w\in\C$, $|w|$ is the modulus and
-$\sgn(w) = w/|w|$ ($\sgn(0)=0$). For $\lambda>0$,
-\begin{equation}\label{eq:problem}
-  \hat{\mathbf x} = \argmin_{\mathbf x\in\C^N}
-  \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x),
-\end{equation}
-where $\lVert\mathbf v\rVert_2^2 = \sum_i |v_i|^2$ and $R:\C^N\to[0,\infty)$ is a regularizer.
-The weight $\lambda$ is real: the objective must be real-valued to be minimized, since $\C$ has no
-ordering, and $\lambda>0$ sets the trade-off between the data term and the nonnegative penalty.
-
-\begin{lemma}[Separability]\label{lem:sep}
-Assume $R$ is separable over the entries, $R(\mathbf x) = \sum_{i=1}^N R_i(x_i)$ with
-$R_i:\C\to[0,\infty)$. The data term is separable as well,
-$\lVert\mathbf x-\mathbf z\rVert_2^2 = \sum_i|x_i-z_i|^2$, so the objective of~\eqref{eq:problem}
-is $\sum_i J_i(x_i)$ with $J_i(x) = \tfrac12|x-z_i|^2 + \lambda R_i(x)$, and each
-$\hat x_i = \argmin_{x\in\C} J_i(x)$ is found independently.
-\end{lemma}
-
-Drop the index $i$.
-
-\begin{lemma}[Phase]\label{lem:phase}
-Assume further that each $R_i$ depends only on the modulus, $R_i(x) = r(|x|)$ for some
-$r:[0,\infty)\to[0,\infty)$ with $r(0)=0$. This holds for the penalties used here: a norm on $\C^N$ is
-absolutely homogeneous, $\lVert\alpha\mathbf x\rVert = |\alpha|\,\lVert\mathbf x\rVert$ for $\alpha\in\C$, so with
-$\alpha=e^{j\theta}$ it is invariant to phase rotation; $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$ and
-$\lVert\mathbf x\rVert_{1/2}^{1/2}$ are all defined through $|x_i|$. Then, for a fixed modulus $|x|$, the
-penalty is constant and $|x-z|$ is smallest when $x$ has the phase of $z$, where
-\begin{equation}\label{eq:bound}
-  |x-z|^2 = (|x|-|z|)^2 .
-\end{equation}
-\end{lemma}
-
-\begin{proof}[Proof in polar form]
-Write $x=\rho e^{j\theta}$ and $z = m e^{j\varphi}$, with $\rho,m\ge0$. By the law of cosines,
-\begin{equation}\label{eq:cos}
-  |x - z|^2 = \rho^2 + m^2 - 2\rho m\cos(\theta-\varphi) \;\ge\; (\rho-m)^2,
-\end{equation}
-with equality iff $\cos(\theta-\varphi)=1$, i.e.\ $\theta=\varphi$ (for $\rho,m>0$).
-\end{proof}
-
-\begin{proof}[Proof in rectangular form]
-Write $x=a+jb$ and $z=c+jd$. Then
+\paragraph{Problem formulation.}
 \[
-  |x-z|^2 = |x|^2 + |z|^2 - 2\,\mathrm{Re}(x\bar z),\qquad \mathrm{Re}(x\bar z) = ac+bd .
+  \hat{\mathbf x} = \argmin_{\mathbf x\in\C^N}\ \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x)
 \]
-By the Cauchy--Schwarz inequality, $ac+bd \le \sqrt{a^2+b^2}\,\sqrt{c^2+d^2} = |x|\,|z|$, so
-$|x-z|^2 \ge (|x|-|z|)^2$, with equality iff $(a,b) = \kappa\,(c,d)$ for some $\kappa\ge0$, i.e.\ $x$ is a
-nonnegative multiple of $z$ and has its phase.
-\end{proof}
+\begin{itemize}
+  \item $\mathbf z\in\C^N$: observed complex image.
+  \item $\mathbf x\in\C^N$: estimate.
+  \item $R(\mathbf x)$: sparsity-promoting penalty, $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$ or $\lVert\mathbf x\rVert_{1/2}^{1/2}$.
+  \item $\lambda>0$: weight between the data term and the penalty; real, since the objective must be
+        real-valued to be minimized.
+\end{itemize}
 
-Combining Lemmas~\ref{lem:sep} and~\ref{lem:phase}, the minimizer keeps the phase of $z$ and
-thresholds its magnitude:
-\begin{equation}\label{eq:mag}
-  \hat x = \sgn(z)\,\hat\rho,\qquad
-  \hat\rho = \argmin_{\rho\ge 0}\; g(\rho),\qquad
-  g(\rho) = \tfrac12(\rho - m)^2 + \lambda r(\rho),\quad \rho = |x|,\ m = |z| .
-\end{equation}
+\paragraph{Separability.} If $R(\mathbf x) = \sum_i R_i(x_i)$,
+\begin{align*}
+  \min_{\mathbf x\in\C^N}\ \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x)
+  &= \min_{\mathbf x\in\C^N}\ \sum_{i=1}^N \Bigl[\tfrac12|x_i - z_i|^2 + \lambda R_i(x_i)\Bigr] \\
+  &= \sum_{i=1}^N\ \min_{x_i\in\C}\ \Bigl[\tfrac12|x_i - z_i|^2 + \lambda R_i(x_i)\Bigr],
+\end{align*}
+so each $\hat x_i$ is found independently. Below, the index $i$ is dropped ($x=x_i$, $z=z_i$, $R=R_i$):
+\[
+  \hat x = \argmin_{x\in\C}\ \tfrac12|x-z|^2 + \lambda R(x).
+\]
 
-\section{$\ell_1$: Soft Thresholding}
+\paragraph{Phase.} If $R(x) = r(|x|)$ (true for $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$, $\lVert\mathbf x\rVert_{1/2}^{1/2}$,
+defined through $|x_i|$), then for fixed $|x|$ the penalty is constant and $|x-z|^2 \ge (|x|-|z|)^2$,
+with equality iff $x$ has the phase of $z$:
+\begin{itemize}
+  \item Polar, $x=\rho e^{j\theta}$, $z=me^{j\varphi}$:
+        $|x-z|^2 = \rho^2+m^2-2\rho m\cos(\theta-\varphi) \ge (\rho-m)^2$, \ ``$=$'' iff $\theta=\varphi$.
+  \item Rectangular, $x=a+jb$, $z=c+jd$:
+        $|x-z|^2 = |x|^2+|z|^2-2(ac+bd) \ge (|x|-|z|)^2$, since $ac+bd\le|x||z|$ (Cauchy--Schwarz),
+        \ ``$=$'' iff $(a,b)=\kappa(c,d)$, $\kappa\ge0$.
+  \item Triangle inequality: $|x-z| \ge \bigl||x|-|z|\bigr|$, \ ``$=$'' iff $x=\kappa z$, $\kappa\ge0$.
+\end{itemize}
+Hence, with $\rho=|x|$ and $m=|z|$,
+\[
+  g(\rho) = \tfrac12\bigl(|x|-|z|\bigr)^2 + \lambda r(|x|) = \tfrac12(\rho-m)^2 + \lambda r(\rho),\qquad
+  \hat\rho = \argmin_{\rho\ge0}\ g(\rho),\qquad \hat x = \sgn(z)\,\hat\rho .
+\]
 
-$R(\mathbf x) = \lVert\mathbf x\rVert_1 = \sum_i |x_i|$ satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \rho$.
-Then $g(\rho) = \tfrac12(\rho-m)^2 + \lambda\rho$ is convex on $\rho\ge0$, with
-$g'(\rho) = \rho - m + \lambda$.
-If $m>\lambda$, then $g'=0$ at $\rho = m-\lambda>0$.
-If $m\le\lambda$, then $g'>0$ for all $\rho>0$, so the minimizer is $\rho=0$.
-Hence $\hat\rho = \max(m-\lambda,0)$:
-\begin{equation}\label{eq:soft}
-  \mathcal S_\lambda(z) = \sgn(z)\,\max(|z|-\lambda,\,0)
-  = \begin{cases} \bigl(|z|-\lambda\bigr)\dfrac{z}{|z|}, & |z|>\lambda,\\[1ex] 0, & |z|\le\lambda.\end{cases}
-\end{equation}
-Retained entries are shrunk by $\lambda$ in magnitude.
+\paragraph{$\ell_1$: soft thresholding.} $r(\rho)=\rho$, $g(\rho)=\tfrac12(\rho-m)^2+\lambda\rho$, $g'(\rho)=\rho-m+\lambda$:
+\begin{itemize}
+  \item $m>\lambda$: $g'(\rho)=0 \Rightarrow \hat\rho = m-\lambda$.
+  \item $m\le\lambda$: $g'(\rho)>0$ for $\rho>0 \Rightarrow \hat\rho = 0$.
+\end{itemize}
+\[
+  \mathcal S_\lambda(z) = \sgn(z)\,\max(|z|-\lambda,\,0).
+\]
 
-\section{$\ell_0$: Hard Thresholding}
+\paragraph{$\ell_0$: hard thresholding.} $r(\rho)=\mathbf 1[\rho>0]$, $g(\rho)=\tfrac12(\rho-m)^2+\lambda\,\mathbf 1[\rho>0]$:
+\begin{itemize}
+  \item $\rho=0$: $g(0)=\tfrac12 m^2$.
+  \item $\rho>0$: best $\rho=m$, $g(m)=\lambda$.
+  \item $\hat\rho = m$ iff $\lambda<\tfrac12m^2$, i.e.\ $m>\sqrt{2\lambda}$ ($\hat\rho=0$ at equality).
+\end{itemize}
+\[
+  \mathcal H_{\sqrt{2\lambda}}(z) = z\cdot\mathbf 1\bigl[|z|>\sqrt{2\lambda}\bigr].
+\]
 
-$R(\mathbf x) = \lVert\mathbf x\rVert_0 = \#\{i: x_i\neq 0\}$ counts the nonzero entries. Since
-$x_i\neq0 \Leftrightarrow |x_i|>0$, it satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \mathbf 1[\rho>0]$, and
-$g(\rho) = \tfrac12(\rho-m)^2 + \lambda\,\mathbf 1[\rho>0]$. Compare the two cases:
-$\rho=0$ gives $g(0) = \tfrac12 m^2$; for $\rho>0$ the penalty is constant, so the
-best value is $\rho = m$, with $g(m) = \lambda$. $\rho=m$ is better iff
-$\lambda<\tfrac12 m^2$, i.e.\ $m>\sqrt{2\lambda}$:
-\begin{equation}\label{eq:hard}
-  \mathcal H_{\sqrt{2\lambda}}(z) = \begin{cases} z, & |z|>\sqrt{2\lambda},\\ 0, & |z|\le\sqrt{2\lambda}.\end{cases}
-\end{equation}
-At $|z|=\sqrt{2\lambda}$, both $0$ and $z$ are minimizers; \eqref{eq:hard} picks $0$.
-Retained entries are unchanged.
+% Content to be provided.
 
-\section{$\ell_{1/2}$: Half Thresholding}
+\section{$\ell_{1/2}$: Half Thresholding (To Be Organized)}
 
-$R(\mathbf x) = \lVert\mathbf x\rVert_{1/2}^{1/2} = \sum_i |x_i|^{1/2}$ satisfies Lemmas~\ref{lem:sep} and~\ref{lem:phase} with $r(\rho) = \sqrt\rho$, and
+$R(\mathbf x) = \lVert\mathbf x\rVert_{1/2}^{1/2} = \sum_i |x_i|^{1/2}$ satisfies the Separability and Phase conditions of Section~\ref{sec:summary} with $r(\rho) = \sqrt\rho$, and
 $g(\rho) = \tfrac12(\rho-m)^2 + \lambda\sqrt\rho$. Let $\mu = 2\lambda$ and minimize
 $2g(\rho) = (\rho-m)^2 + \mu\sqrt\rho$.
 
@@ -150,7 +124,7 @@ and at the cut-off $\rho^\ast = (\mu/2)^{2/3} = \tfrac23 t$.
 The output jumps from $0$ to $\tfrac23 t$ at the cut-off, and the shrinkage
 $m-\rho^\ast \approx \lambda/(2\sqrt m)$ vanishes for large $m$.
 
-\section{Summary}
+\section{Comparison of Thresholding Operators (To Be Organized)}
 
 Each operator keeps the phase and thresholds the magnitude, $\hat x = \sgn(z)\,f(|z|)$:
 \begin{center}
