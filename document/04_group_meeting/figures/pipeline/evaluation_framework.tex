@@ -1,0 +1,48 @@
+% Evaluation framework figure (TikZ).
+% Coordinates in drawio-style px (1 unit = 0.02 cm, y pointing down). Requires tikz.
+% Usage: \resizebox{<width>}{!}{\input{../figures/pipeline/evaluation_framework.tex}}
+\begin{tikzpicture}[
+    x=0.02cm, y=-0.02cm,
+    font=\fontsize{8.5}{10}\linespread{1}\selectfont\sffamily,
+    line width=0.6pt,
+    box/.style={draw, rounded corners=1.5mm, minimum width=2cm, minimum height=0.8cm,
+                inner xsep=3pt, inner ysep=2pt, align=center},
+    lbl/.style={align=center, inner sep=0pt},
+    flow/.style={-stealth},
+  ]
+  \definecolor{efOrange}{HTML}{FFE6CC}
+  \definecolor{efGreen}{HTML}{D5E8D4}
+  \definecolor{efOrangeText}{HTML}{D79B00}
+  \definecolor{efGreenText}{HTML}{82B366}
+  \definecolor{efBlue}{HTML}{0000FF}
+  \definecolor{efRed}{HTML}{FF0000}
+
+  % Domain backgrounds
+  \fill[efOrange] (160,80) rectangle (350,200);
+  \fill[efGreen]  (350,80) rectangle (500,200);
+  \fill[efOrange] (500,80) rectangle (640,200);
+  \node[lbl, text=efOrangeText, font=\fontsize{8.5}{10}\linespread{1}\selectfont\sffamily\bfseries] at (250,190) {Image Domain};
+  \node[lbl, text=efGreenText,  font=\fontsize{8.5}{10}\linespread{1}\selectfont\sffamily\bfseries] at (425,190) {Raw Echo Domain};
+  \node[lbl, text=efOrangeText, font=\fontsize{8.5}{10}\linespread{1}\selectfont\sffamily\bfseries] at (570,190) {Image Domain};
+
+  % Onboard processing frame and labels
+  \draw[efBlue] (430,100) rectangle (690,170);
+  \node[lbl, text=efBlue] at (510,90)  {Onboard Processing};
+  \node[lbl, text=efRed]  at (500,110) {Research Focus};
+
+  % Blocks
+  \node[lbl] (data) at (210,140) {SAR Ship\\Image Dataset};
+  \node[box, fill=white]               (echo) at (350,140) {Point-Scatterer\\Echo Model};
+  \node[box, fill=white, draw=efRed]   (img)  at (490,140) {Enhanced SAR\\Imaging};
+  \node[box, fill=white]               (yolo) at (630,140) {YOLO-based\\Ship Detection};
+  \node[box, fill=white, minimum width=1.8cm]
+                                       (eval) at (765,140) {Performance\\Evaluation};
+  \node[lbl]         (out)  at (880,140) {Precision/\\Recall/\\mAP@0.5};
+
+  % Flow
+  \draw[flow] (260,140) -- (echo.west) node[midway, above=1pt] {$\mathbf{H}$};
+  \draw[flow] (echo.east) -- (img.west) node[midway, above=1pt] {$\mathbf{Y}$};
+  \draw[flow] (img.east) -- (yolo.west) node[midway, above=1pt] {$\hat{\mathbf{H}}$};
+  \draw[flow] (yolo.east) -- (eval.west);
+  \draw[flow] (eval.east) -- (840,140);
+\end{tikzpicture}

@@ -8,6 +8,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
+\usepackage{tikz}
 \usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
 \usepackage{caption}
@@ -153,7 +154,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{../../04_group_meeting/figures/pipeline/evaluation_framework.png}
+  \resizebox{\textwidth}{!}{\input{../../04_group_meeting/figures/pipeline/evaluation_framework.tex}}
   \caption{評估架構管線}
   \label{fig:eval-framework}
 \end{figure}
@@ -201,7 +202,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.35\textwidth]{../../04_group_meeting/figures/pipeline/iou_def.png}
+  \resizebox{0.35\textwidth}{!}{\input{../../04_group_meeting/figures/pipeline/iou_def.tex}}
   \caption{IoU 定義示意圖：GT 為真實標註框，Pred 為預測框，IoU＝交集（Intersection）面積除以聯集（Union）面積。}
 \end{figure}
 上述指標定義參考自文獻 \cite{sares_deim}。
