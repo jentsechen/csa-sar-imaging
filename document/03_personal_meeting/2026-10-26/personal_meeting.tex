@@ -22,6 +22,80 @@
 {\large October 26, 2026}
 \end{center}
 
-% Content
+\section{Thresholding Derivation}
+
+\subsection{Clarifications}
+\begin{enumerate}
+  \item \textbf{$\lambda$ is real because minimization compares values.}
+        Minimizing requires ordering objective values, and $\C$ has no ordering, so the objective
+        $\tfrac12\lVert\mathbf x-\mathbf z\rVert_2^2+\lambda R(\mathbf x)$ must be real; with $R(\mathbf x)\ge0$ real,
+        $\lambda$ must be real. This is unrelated to the phase assumption $R(x)=r(|x|)$:
+        $\lambda$ would still be real for a phase-dependent penalty.
+  \item \textbf{The phase of $\hat x$ equals that of $z$ because of a lower bound.}
+        For fixed $|x|$ the penalty is fixed and $|x-z|^2\ge(|x|-|z|)^2$; the bound is attained iff $x$ has the
+        phase of $z$, so the minimizer takes that phase. The polar form, the rectangular form and the triangle
+        inequality all give this same bound and equality condition (Section~\ref{sec:thr-summary}, Phase).
+\end{enumerate}
+
+\subsection{Derivation Summary}\label{sec:thr-summary}
+
+\paragraph{Problem formulation.}
+\[
+  \hat{\mathbf x} = \argmin_{\mathbf x\in\C^N}\ \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x)
+\]
+\begin{itemize}
+  \item $\mathbf z\in\C^N$: observed complex image.
+  \item $\mathbf x\in\C^N$: estimate.
+  \item $R(\mathbf x)$: sparsity-promoting penalty, $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$ or $\lVert\mathbf x\rVert_{1/2}^{1/2}$.
+  \item $\lambda>0$: weight between the data term and the penalty; real, since the objective must be
+        real-valued to be minimized.
+\end{itemize}
+
+\paragraph{Separability.} If $R(\mathbf x) = \sum_i R_i(x_i)$,
+\begin{align*}
+  \min_{\mathbf x\in\C^N}\ \tfrac12\lVert \mathbf x - \mathbf z\rVert_2^2 + \lambda R(\mathbf x)
+  &= \min_{\mathbf x\in\C^N}\ \sum_{i=1}^N \Bigl[\tfrac12|x_i - z_i|^2 + \lambda R_i(x_i)\Bigr] \\
+  &= \sum_{i=1}^N\ \min_{x_i\in\C}\ \Bigl[\tfrac12|x_i - z_i|^2 + \lambda R_i(x_i)\Bigr],
+\end{align*}
+so each $\hat x_i$ is found independently. Below, the index $i$ is dropped ($x=x_i$, $z=z_i$, $R=R_i$):
+\[
+  \hat x = \argmin_{x\in\C}\ \tfrac12|x-z|^2 + \lambda R(x).
+\]
+
+\paragraph{Phase.} If $R(x) = r(|x|)$ (true for $\lVert\mathbf x\rVert_1$, $\lVert\mathbf x\rVert_0$, $\lVert\mathbf x\rVert_{1/2}^{1/2}$,
+defined through $|x_i|$), then for fixed $|x|$ the penalty is constant and $|x-z|^2 \ge (|x|-|z|)^2$,
+with equality iff $x$ has the phase of $z$:
+\begin{itemize}
+  \item Polar, $x=\rho e^{j\theta}$, $z=me^{j\varphi}$:
+        $|x-z|^2 = \rho^2+m^2-2\rho m\cos(\theta-\varphi) \ge (\rho-m)^2$, \ ``$=$'' iff $\theta=\varphi$.
+  \item Rectangular, $x=a+jb$, $z=c+jd$:
+        $|x-z|^2 = |x|^2+|z|^2-2(ac+bd) \ge (|x|-|z|)^2$, since $ac+bd\le|x||z|$ (Cauchy--Schwarz),
+        \ ``$=$'' iff $(a,b)=\kappa(c,d)$, $\kappa\ge0$.
+  \item Triangle inequality: $|x-z| \ge \bigl||x|-|z|\bigr|$, \ ``$=$'' iff $x=\kappa z$, $\kappa\ge0$.
+\end{itemize}
+Hence, with $\rho=|x|$ and $m=|z|$,
+\[
+  g(\rho) = \tfrac12\bigl(|x|-|z|\bigr)^2 + \lambda r(|x|) = \tfrac12(\rho-m)^2 + \lambda r(\rho),\qquad
+  \hat\rho = \argmin_{\rho\ge0}\ g(\rho),\qquad \hat x = \sgn(z)\,\hat\rho .
+\]
+
+\paragraph{$\ell_1$: soft thresholding.} $r(\rho)=\rho$, $g(\rho)=\tfrac12(\rho-m)^2+\lambda\rho$, $g'(\rho)=\rho-m+\lambda$:
+\begin{itemize}
+  \item $m>\lambda$: $g'(\rho)=0 \Rightarrow \hat\rho = m-\lambda$.
+  \item $m\le\lambda$: $g'(\rho)>0$ for $\rho>0 \Rightarrow \hat\rho = 0$.
+\end{itemize}
+\[
+  \mathcal S_\lambda(z) = \sgn(z)\,\max(|z|-\lambda,\,0).
+\]
+
+\paragraph{$\ell_0$: hard thresholding.} $r(\rho)=\mathbf 1[\rho>0]$, $g(\rho)=\tfrac12(\rho-m)^2+\lambda\,\mathbf 1[\rho>0]$:
+\begin{itemize}
+  \item $\rho=0$: $g(0)=\tfrac12 m^2$.
+  \item $\rho>0$: best $\rho=m$, $g(m)=\lambda$.
+  \item $\hat\rho = m$ iff $\lambda<\tfrac12m^2$, i.e.\ $m>\sqrt{2\lambda}$ ($\hat\rho=0$ at equality).
+\end{itemize}
+\[
+  \mathcal H_{\sqrt{2\lambda}}(z) = z\cdot\mathbf 1\bigl[|z|>\sqrt{2\lambda}\bigr].
+\]
 
 \end{document}
