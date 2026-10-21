@@ -61,6 +61,16 @@ __pycache__/
 /document/06_moe_scholarship/**/*.fdb_latexmk
 /document/06_moe_scholarship/**/*.synctex.gz
 
+# TSMC scholarship application: track sources, figures and the renamed PDFs; ignore LaTeX build files
+/document/07_tsmc_scholarship/**/*.aux
+/document/07_tsmc_scholarship/**/*.log
+/document/07_tsmc_scholarship/**/*.out
+/document/07_tsmc_scholarship/**/*.fls
+/document/07_tsmc_scholarship/**/*.fdb_latexmk
+/document/07_tsmc_scholarship/**/*.synctex.gz
+# Only the officially named PDFs at the folder root are tracked
+/document/07_tsmc_scholarship/*/*.pdf
+
 /ship_detect/results/
 /ship_detect/test_data/
 !.gitkeep
