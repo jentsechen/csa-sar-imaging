@@ -1,21 +1,246 @@
 % ══════════════════════════════════════════════════════════════════════════════
 % 台積電獎學金申請：博士學位研究計畫書
-% 編譯方式：LuaLaTeX，見 .latexmkrc
+% 內容移植自 document/06_moe_scholarship/01_research_proposal/proposal.tex；
+% 圖 1 由 figures/make_example.py 產生。
+% 編譯方式：LuaLaTeX，見 .latexmkrc；編譯成功後自動複製為
+% ../4. 博士學位研究計畫書_台灣大學_陳仁澤.pdf
 % ══════════════════════════════════════════════════════════════════════════════
 \documentclass[11pt,fontset=none]{ctexart}
 
-\usepackage[margin=0.8in, top=0.7in, bottom=0.7in]{geometry}
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=0.8in, top=0.7in, bottom=0.8in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{tabularx}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning, fit, backgrounds, arrows.meta}
 
+% ── Shared fonts and Traditional-Chinese labels ───────────────────────────────
 \input{../common/preamble.tex}
+
+% ── Compact spacing so the proposal fits in three pages ───────────────────────
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+\ctexset{
+  section    = {format=\large\bfseries, beforeskip=8pt, afterskip=3pt},
+  subsection = {format=\normalsize\bfseries, beforeskip=5pt, afterskip=2pt},
+}
+\captionsetup{font=small, skip=3pt}
+\setlength{\parskip}{3pt}
+\linespread{1.15}\selectfont  % ctex default (1.3) is too loose for a 3-page limit
+
+% Gantt-chart cells: main effort / ramp-up
+\newcommand{\G}{\cellcolor{gray!55}}
+\newcommand{\Ga}{\cellcolor{gray!25}}
+
+% plain: no running header, page number centered at the bottom
+\pagestyle{plain}
 
 \begin{document}
 
+% ── 標頭 ────────────────────────────────────────────────────────────────────────
 \begin{center}
   {\Large\bfseries 博士學位研究計畫書\par}
+  \vspace{2pt}
+  {\large 研究主題：星載即時 SAR 成像與船舶偵測之數位硬體架構——演算法與架構協同設計\par}
 \end{center}
 
-% 內容待補
+% ══════════════════════════════════════════════════════════════════════════════
+\section{研究背景與動機}
+
+合成孔徑雷達（Synthetic Aperture Radar, SAR）是一種主動發射微波的成像雷達，裝設於繞地球運行之衛星上（即星載 SAR），不受日夜與天候影響，可對大範圍海面進行觀測，廣泛應用於船舶監控等海事任務。傳統任務中，衛星僅負責接收雷達回波，並將原始回波下傳至地面站，再於地面完成成像與船舶偵測。由於原始資料量大、下傳頻寬有限，目標資訊送達海事監控端時存在明顯延遲。若改在衛星上即時處理，僅需下傳偵測到的船舶資訊，即可消除此瓶頸；但衛星酬載之運算能力與功耗有其限制，如何在有限資源下達成即時處理，是星上處理的主要挑戰；針對此應用設計專用之數位硬體架構，是提升處理效率的可行方向之一。
+
+SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之間必須將整批資料轉置，資料須在各運算模組與記憶體之間大量往返，因此星上處理之效能與功耗主要受限於資料存取，而非單純的運算量。另一方面，海面場景天然具稀疏性：背景均勻、反射率低，船舶則為少數強散射點。本研究利用壓縮感測（Compressed Sensing, CS）理論 \cite{donoho_cs, candes_cs}，在由回波重建影像時加入場景稀疏之先驗，將以雜訊為主之背景像素壓制為零並保留船舶目標，不僅改善偵測表現，也使後續處理只需儲存與運算少數非零像素，從而減少資料搬移與功耗。不同於既有稀疏 SAR 成像研究僅以影像品質評估 \cite{sparse_sar_imaging, zhang_reweighted, liu_compound_reg}，本研究同時以\textbf{船舶偵測效能}與\textbf{硬體成本}衡量各種演算法選擇。
+
+\textbf{總體目標：}以演算法與架構協同設計之方式，發展一套適合星上即時處理之 SAR 成像與船舶偵測數位硬體架構，於 FPGA 上完成原型驗證，並以 cell-based 合成分析其速度、面積與功耗。
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{已完成之初步成果}
+
+\begin{itemize}
+  \item 評估框架：建立端對端處理鏈——SAR 船舶影像（HRSID \cite{hrsid}）$\to$ 點散射體回波模型 $\to$ CSA（Chirp Scaling Algorithm）成像 \cite{cumming_wong} $\to$ 稀疏重建 $\to$ YOLO 船舶偵測 $\to$ 偵測效能評估，可用以衡量每一項演算法或硬體簡化對偵測結果之影響。
+  \item 稀疏重建大幅提升偵測效能：於 CSA 成像後，以 $L_{1/2}$ 稀疏正則化結合全變分（total variation, TV）正則化進行稀疏重建 \cite{liu_compound_reg}。於 1,493 張離岸測試影像之模擬中，在未加入任何雜訊之情況下，整體偵測準確度由 76.1\%（僅 CSA）提升至 97.3\%。
+  \item 強雜訊下仍維持偵測效能：進一步於模擬中加入雷達接收雜訊或 speckle 雜訊後，僅 CSA 之偵測準確度明顯下降，本方法仍維持高偵測準確度；在雜訊最強之情況下，偵測準確度由 55.9\% 提升至 94.3\%，範例如圖 \ref{fig:refinement}。
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.22\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/example_csa_snr-5.png}
+    \caption*{傳統成像（CSA）}
+  \end{minipage}
+  \hspace{0.04\textwidth}
+  \begin{minipage}{0.22\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/example_l12tv_snr-5.png}
+    \caption*{本研究方法（$L_{1/2}$ + TV）}
+  \end{minipage}
+  \caption{強雜訊（訊號雜訊比 $-5$ dB）下之成像範例：稀疏重建壓制背景雜訊，同時保留船體結構。}
+  \label{fig:refinement}
+\end{figure}
+
+\newpage
+% ══════════════════════════════════════════════════════════════════════════════
+\section{三年研究規劃}
+
+本研究分為三個階段：第一年決定適合硬體之演算法，第二年設計數位硬體架構，第三年於 FPGA 實作並以 cell-based 合成分析硬體成本。研究架構如圖 \ref{fig:arch}：上方為研究標的——星載即時成像與偵測處理鏈，下方三層為各年度工作項目，前一年度之成果作為下一年度之輸入；各項工作之時程如圖 \ref{fig:gantt}。
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      font=\footnotesize,
+      chain/.style={draw, rounded corners=2pt, align=center, minimum width=2.5cm,
+                    minimum height=0.8cm, fill=blue!8},
+      task/.style={draw, rounded corners=2pt, align=center, minimum width=3.9cm,
+                   minimum height=0.65cm, fill=white, inner sep=2pt},
+      yr/.style={align=center, minimum width=1.7cm, font=\footnotesize\bfseries},
+      arr/.style={-{Stealth[length=2mm]}, thick},
+      band/.style={draw, rounded corners=4pt, inner sep=4pt},
+    ]
+    % ── 研究標的：星載處理鏈 ──
+    \node[chain] (c1) at (0.05,0)  {回波模擬};
+    \node[chain] (c2) at (3.05,0)  {SAR 成像};
+    \node[chain] (c3) at (6.05,0)  {稀疏重建};
+    \node[chain] (c4) at (9.05,0)  {船舶偵測};
+    \node[chain] (c5) at (12.05,0) {偵測表現與\\硬體成本評估};
+    \foreach \a/\b in {c1/c2, c2/c3, c3/c4, c4/c5} \draw[arr] (\a) -- (\b);
+    \draw[arr, dashed] (c5.north) -- ++(0,0.3) -| node[pos=0.25, above]{回饋演算法與架構選擇} (c3.north);
+    % ── 年度工作 ──
+    \foreach \y/\lab/\col/\ta/\tb/\tc [count=\i] in {
+        -1.35/第一年\\演算法發展/green!8/Speckle 建模與模擬/稀疏重建方法比較/硬體導向演算法評估,
+        -2.45/第二年\\架構設計/orange!10/運算模組與資料流設計/稀疏感知架構/定點數與位元寬度分析,
+        -3.55/第三年\\實作與分析/red!8/FPGA 原型實作與驗證/Cell-based 合成分析/系統效能評估} {
+      \coordinate (L\i) at (-1.15,\y);
+      \node[yr] (l\i) at (-0.3,\y) {\lab};
+      \node[task] (t1\i) at (2.75,\y)  {\ta};
+      \node[task] (t2\i) at (7.05,\y)  {\tb};
+      \node[task] (t3\i) at (11.35,\y) {\tc};
+      \begin{scope}[on background layer]
+        \node[band, fill=\col, fit=(L\i)(t1\i)(t3\i)] (b\i) {};
+      \end{scope}
+    }
+  \end{tikzpicture}
+  \caption{研究架構圖：上方為星載即時成像與偵測處理鏈，下方為三年度之工作項目。}
+  \label{fig:arch}
+\end{figure}
+
+\subsection{第一年：演算法發展}
+\begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
+  \item Speckle 建模與模擬：以真實星載 SAR 影像統計 speckle 雜訊之分布特性，將其加入回波模擬中，使模擬資料更貼近實際衛星影像。
+  \item 稀疏重建方法比較：比較多種稀疏正則化方法 \cite{zhang_reweighted, liu_compound_reg}，並由「成像後再稀疏化」延伸為直接由回波進行迭代式稀疏重建 \cite{fista, fang_approx_obs}，以船舶偵測表現評估各方法。
+  \item 硬體導向演算法評估：分析各方法之運算量、迭代次數、資料存取方式與運算規律性，挑選偵測表現與硬體成本兼顧之演算法，作為第二年架構設計之依據。
+\end{enumerate}
+
+\subsection{第二年：架構設計}
+\begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
+  \item 運算模組與資料流設計：將成像與稀疏重建拆解為快速傅立葉轉換、相位補償、門檻化等運算模組，設計模組間之管線化資料流，並規劃距離向與方位向處理之間資料轉置之緩衝配置，以減少資料搬移。
+  \item 稀疏感知架構：利用稀疏重建後影像僅剩少數非零像素之特性，設計只儲存與處理非零像素之資料格式與運算方式，降低成像至偵測之間的資料量與運算量。
+  \item 定點數與位元寬度分析：以位元精確（bit-accurate）模型模擬硬體運算，評估各模組位元寬度對成像品質與偵測結果之影響，決定兼顧準確度與硬體成本之位元配置。
+\end{enumerate}
+
+\subsection{第三年：實作與分析}
+\begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
+  \item FPGA 原型實作與驗證：以 RTL 實作第二年之架構，於 FPGA 平台上與輕量化船舶偵測模型串接為完整之星上處理流程，並以模擬資料及真實衛星資料驗證硬體結果與軟體模型一致。
+  \item Cell-based 合成分析：以標準元件庫進行邏輯合成，分析各種架構選擇（如平行度、緩衝配置、稀疏感知與否、位元寬度）在速度、面積與功耗上的差異，找出最適合星上處理之設計。
+  \item 系統效能評估：量測處理速度、延遲與功耗，並與 CPU/GPU 實作比較；最後整理研究成果並發表論文。
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{預期貢獻}
+
+（1）提出以船舶偵測表現與硬體成本共同衡量稀疏 SAR 成像之評估方法，而非僅以影像品質指標；（2）以演算法與架構協同設計，分析偵測表現、運算量、位元寬度與資料搬移之間的取捨關係；（3）提出利用場景稀疏性之星上成像與偵測數位硬體架構，以 FPGA 原型驗證其功能，並以 cell-based 合成量化其速度、面積與功耗。
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{時程與查核點}
+
+\begin{figure}[H]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{2.2pt}
+  \renewcommand{\arraystretch}{0.95}
+  \begin{tabular}{l@{\hspace{8pt}}*{12}{>{\centering\arraybackslash}p{1.1em}}}
+    \toprule
+     & \multicolumn{4}{c}{第一年} & \multicolumn{4}{c}{第二年} & \multicolumn{4}{c}{第三年} \\
+    \cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}
+    工作項目（季） & 1 & 2 & 3 & 4 & 1 & 2 & 3 & 4 & 1 & 2 & 3 & 4 \\
+    \midrule
+    Speckle 建模與模擬     & \G & \G & \Ga & & & & & & & & & \\
+    稀疏重建方法比較       & & \G & \G & \G & & & & & & & & \\
+    硬體導向演算法評估     & & & \G & \G & \Ga & & & & & & & \\
+    運算模組與資料流設計   & & & & \Ga & \G & \G & \G & & & & & \\
+    稀疏感知架構           & & & & & \G & \G & \G & & & & & \\
+    定點數與位元寬度分析   & & & & & & \G & \G & \G & & & & \\
+    FPGA 原型實作與驗證    & & & & & & & & \Ga & \G & \G & \G & \\
+    Cell-based 合成分析    & & & & & & & & & \G & \G & \G & \\
+    系統效能評估           & & & & & & & & & & \G & \G & \G \\
+    \bottomrule
+  \end{tabular}
+  \caption{三年時程甘特圖（深色：主要工作期間，淺色：前置/交疊期間）。}
+  \label{fig:gantt}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \footnotesize
+  \caption{查核點與交付成果。}
+  \label{tab:milestones}
+  \begin{tabularx}{\textwidth}{c l X}
+    \toprule
+    年度 & 查核點 & 交付成果 \\
+    \midrule
+    1 & 含 speckle 之評估框架 & 經實際資料驗證之 speckle 模型；以星載參數完成近岸與離岸影像之模擬 \\
+      & 演算法選定 & 完成稀疏重建方法於偵測表現與硬體成本上之比較，選定硬體實作之演算法 \\
+    \midrule
+    2 & 架構設計 & 完成運算模組、資料流與稀疏感知架構之設計 \\
+      & 位元精確模型 & 完成定點數模型與位元寬度配置，作為硬體實作之參考 \\
+    \midrule
+    3 & FPGA 原型 & 成像、稀疏重建與船舶偵測於 FPGA 平台上運行並通過驗證 \\
+      & 合成分析與系統評估 & 完成各架構選擇之速度、面積與功耗比較，以及與 CPU/GPU 之效能比較；期刊/研討會論文發表 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{multicols}{2}
+\footnotesize
+\begin{thebibliography}{99}
+\setlength{\itemsep}{0pt}
+
+\bibitem{donoho_cs}
+D. L. Donoho, ``Compressed Sensing,'' \textit{IEEE Trans. Inf. Theory}, vol. 52, no. 4, pp. 1289--1306, 2006.
+
+\bibitem{candes_cs}
+E. J. Cand\`es \textit{et al.}, ``Robust Uncertainty Principles: Exact Signal Reconstruction from Highly Incomplete Frequency Information,'' \textit{IEEE Trans. Inf. Theory}, vol. 52, no. 2, pp. 489--509, 2006.
+
+\bibitem{sparse_sar_imaging}
+H. Bi \textit{et al.}, ``From Theory to Application: Real-Time Sparse SAR Imaging,'' \textit{IEEE Trans. Geosci. Remote Sens.}, vol. 58, no. 4, pp. 2928--2936, 2020.
+
+\bibitem{zhang_reweighted}
+Y. Zhang \textit{et al.}, ``Undistorted and Consistent Enhancement of Automotive SAR Image via Multi-Segment-Reweighted Regularization,'' \textit{Remote Sens.}, vol. 17, no. 9, 1483, 2025.
+
+\bibitem{liu_compound_reg}
+M. Liu \textit{et al.}, ``A Sparse SAR Imaging Method for Low-Oversampled Staggered Mode via Compound Regularization,'' \textit{Remote Sens.}, vol. 16, no. 8, 1459, 2024.
+
+\bibitem{hrsid}
+S. Wei \textit{et al.}, ``HRSID: A High-Resolution SAR Images Dataset for Ship Detection and Instance Segmentation,'' \textit{IEEE Access}, vol. 8, pp. 120234--120254, 2020.
+
+\bibitem{cumming_wong}
+I. G. Cumming and F. H. Wong, \textit{Digital Processing of Synthetic Aperture Radar Data: Algorithms and Implementation}, Artech House, 2005.
+
+\bibitem{fista}
+A. Beck and M. Teboulle, ``A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems,'' \textit{SIAM J. Imaging Sci.}, vol. 2, no. 1, pp. 183--202, 2009.
+
+\bibitem{fang_approx_obs}
+J. Fang \textit{et al.}, ``Fast Compressed Sensing SAR Imaging Based on Approximated Observation,'' \textit{IEEE JSTARS}, vol. 7, no. 1, pp. 352--363, 2014.
+
+\end{thebibliography}
+\end{multicols}
 
 \end{document}
