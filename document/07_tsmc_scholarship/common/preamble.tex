@@ -5,16 +5,20 @@
 % 版面（geometry、行距、頁碼）由各份文件自行設定。
 % ══════════════════════════════════════════════════════════════════════════════
 
+% ── JFM=zhtw (common/jfm-zhtw.lua): ctex's default JFM assumes simplified-
+% Chinese glyphs (punctuation at the left of the em box), but the Traditional-
+% Chinese fonts below centre ，：；。 etc., so compressed punctuation overlaps the
+% next character. zhtw keeps those marks full width.
 % ── CJK font: DFKai-SB (標楷體) on Windows, falling back to AR PL KaitiM Big5
 % when DFKai-SB isn't installed (same setup as the midterm report).
 \IfFontExistsTF{DFKai-SB}{%
-  \setCJKmainfont{DFKai-SB}
-  \setCJKsansfont{DFKai-SB}
-  \setCJKmonofont{DFKai-SB}
+  \setCJKmainfont{DFKai-SB}[JFM=zhtw]
+  \setCJKsansfont{DFKai-SB}[JFM=zhtw]
+  \setCJKmonofont{DFKai-SB}[JFM=zhtw]
 }{%
-  \setCJKmainfont{AR PL KaitiM Big5}
-  \setCJKsansfont{AR PL KaitiM Big5}
-  \setCJKmonofont{AR PL KaitiM Big5}
+  \setCJKmainfont{AR PL KaitiM Big5}[JFM=zhtw]
+  \setCJKsansfont{AR PL KaitiM Big5}[JFM=zhtw]
+  \setCJKmonofont{AR PL KaitiM Big5}[JFM=zhtw]
 }
 
 % ── Traditional-Chinese wording overrides ──────────────────────────────────────

@@ -7,3 +7,5 @@ $lualatex = 'lualatex --shell-escape %O %S';
 # both end up running the same (correct) engine.
 $pdflatex = 'lualatex --shell-escape %O %S';
 $success_cmd = 'cp results.pdf "../7. 碩士論文成果_台灣大學_陳仁澤.pdf"';
+# Find the shared Traditional-Chinese JFM (common/jfm-zhtw.lua)
+ensure_path('TEXINPUTS', '../common//');
