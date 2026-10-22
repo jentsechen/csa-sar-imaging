@@ -71,15 +71,14 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
 
 \begin{figure}[H]
   \centering
-  \begin{minipage}{0.22\textwidth}
+  \begin{minipage}{0.27\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/example_csa_snr-5.png}
+    \includegraphics[width=0.75\linewidth]{figures/example_csa_snr-5.png}
     \caption*{傳統成像（CSA）}
   \end{minipage}
-  \hspace{0.04\textwidth}
-  \begin{minipage}{0.22\textwidth}
+  \begin{minipage}{0.27\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/example_l12tv_snr-5.png}
+    \includegraphics[width=0.75\linewidth]{figures/example_l12tv_snr-5.png}
     \caption*{本研究方法（$L_{1/2}$ + TV）}
   \end{minipage}
   \caption{強雜訊（訊號雜訊比 $-5$ dB）下之成像範例：稀疏重建壓制背景雜訊，同時保留船體結構。}
@@ -90,7 +89,7 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
 % ══════════════════════════════════════════════════════════════════════════════
 \section{三年研究規劃}
 
-本研究分為三個階段：第一年決定適合硬體之演算法，第二年設計數位硬體架構，第三年於 FPGA 實作並以 cell-based 合成分析硬體成本。研究架構如圖 \ref{fig:arch}：上方為研究標的——星載即時成像與偵測處理鏈，下方三層為各年度工作項目，前一年度之成果作為下一年度之輸入；各項工作之時程如圖 \ref{fig:gantt}。
+本研究分為三個階段：第一年決定適合硬體之演算法，第二年設計數位硬體架構並於 FPGA 上驗證主要運算模組，第三年整合為完整系統並以 cell-based 合成分析硬體成本。研究架構如圖 \ref{fig:arch}：上方為研究標的——星載即時成像與偵測處理鏈，下方三層為各年度工作項目，前一年度之成果作為下一年度之輸入；各項工作之時程如圖 \ref{fig:gantt}。
 
 \begin{figure}[H]
   \centering
@@ -114,9 +113,9 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
     \draw[arr, dashed] (c5.north) -- ++(0,0.3) -| node[pos=0.25, above]{回饋演算法與架構選擇} (c3.north);
     % ── 年度工作 ──
     \foreach \y/\lab/\col/\ta/\tb/\tc [count=\i] in {
-        -1.35/第一年\\演算法發展/green!8/Speckle 建模與模擬/稀疏重建方法比較/硬體導向演算法評估,
-        -2.45/第二年\\架構設計/orange!10/運算模組與資料流設計/稀疏感知架構/定點數與位元寬度分析,
-        -3.55/第三年\\實作與分析/red!8/FPGA 原型實作與驗證/Cell-based 合成分析/系統效能評估} {
+        -1.35/第一年\\演算法發展/green!8/雜訊建模與模擬/稀疏重建方法比較/硬體導向演算法評估,
+        -2.45/第二年\\架構與驗證/orange!10/運算模組與資料流設計/稀疏感知架構/定點數分析與子模組驗證,
+        -3.55/第三年\\整合與分析/red!8/系統整合與 FPGA 原型/Cell-based 合成分析/系統效能評估} {
       \coordinate (L\i) at (-1.15,\y);
       \node[yr] (l\i) at (-0.3,\y) {\lab};
       \node[task] (t1\i) at (2.75,\y)  {\ta};
@@ -133,21 +132,21 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
 
 \subsection{第一年：演算法發展}
 \begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
-  \item Speckle 建模與模擬：以真實星載 SAR 影像統計 speckle 雜訊之分布特性，將其加入回波模擬中，使模擬資料更貼近實際衛星影像。
-  \item 稀疏重建方法比較：比較多種稀疏正則化方法 \cite{zhang_reweighted, liu_compound_reg}，並由「成像後再稀疏化」延伸為直接由回波進行迭代式稀疏重建 \cite{fista, fang_approx_obs}，以船舶偵測表現評估各方法。
+  \item 雜訊建模與模擬：於回波模擬中加入雷達接收雜訊 \cite{gao2024} 與 speckle 等雜訊，並參考真實星載 SAR 影像之統計特性設定雜訊模型與強度，使模擬資料更貼近實際衛星影像。
+  \item 稀疏重建方法比較：比較多種稀疏正則化方法 \cite{zhang_reweighted, liu_compound_reg}，並由「成像後再稀疏化」延伸為直接由回波進行迭代式稀疏重建，以船舶偵測表現評估各方法。
   \item 硬體導向演算法評估：分析各方法之運算量、迭代次數、資料存取方式與運算規律性，挑選偵測表現與硬體成本兼顧之演算法，作為第二年架構設計之依據。
 \end{enumerate}
 
-\subsection{第二年：架構設計}
+\subsection{第二年：架構設計與子模組驗證}
 \begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
   \item 運算模組與資料流設計：將成像與稀疏重建拆解為快速傅立葉轉換、相位補償、門檻化等運算模組，設計模組間之管線化資料流，並規劃距離向與方位向處理之間資料轉置之緩衝配置，以減少資料搬移。
   \item 稀疏感知架構：利用稀疏重建後影像僅剩少數非零像素之特性，設計只儲存與處理非零像素之資料格式與運算方式，降低成像至偵測之間的資料量與運算量。
-  \item 定點數與位元寬度分析：以位元精確（bit-accurate）模型模擬硬體運算，評估各模組位元寬度對成像品質與偵測結果之影響，決定兼顧準確度與硬體成本之位元配置。
+  \item 定點數分析與子模組驗證：以位元精確（bit-accurate）模型模擬硬體運算，決定兼顧準確度與硬體成本之位元配置；並以 RTL 實作主要運算模組（如快速傅立葉轉換、相位補償、門檻化），以位元精確模型為比對基準於 FPGA 上逐一驗證，再將子模組之合成結果回饋至架構設計。
 \end{enumerate}
 
-\subsection{第三年：實作與分析}
+\subsection{第三年：系統整合與分析}
 \begin{enumerate}[label=(\arabic*), leftmargin=2.2em]
-  \item FPGA 原型實作與驗證：以 RTL 實作第二年之架構，於 FPGA 平台上與輕量化船舶偵測模型串接為完整之星上處理流程，並以模擬資料及真實衛星資料驗證硬體結果與軟體模型一致。
+  \item 系統整合與 FPGA 原型：將第二年驗證之子模組整合為完整之成像與稀疏重建流程，並與輕量化船舶偵測模型串接為完整之星上處理流程，以模擬資料及真實衛星資料驗證硬體結果與軟體模型一致。
   \item Cell-based 合成分析：以標準元件庫進行邏輯合成，分析各種架構選擇（如平行度、緩衝配置、稀疏感知與否、位元寬度）在速度、面積與功耗上的差異，找出最適合星上處理之設計。
   \item 系統效能評估：量測處理速度、延遲與功耗，並與 CPU/GPU 實作比較；最後整理研究成果並發表論文。
 \end{enumerate}
@@ -171,13 +170,13 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
     \cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}
     工作項目（季） & 1 & 2 & 3 & 4 & 1 & 2 & 3 & 4 & 1 & 2 & 3 & 4 \\
     \midrule
-    Speckle 建模與模擬     & \G & \G & \Ga & & & & & & & & & \\
+    雜訊建模與模擬         & \G & \G & \Ga & & & & & & & & & \\
     稀疏重建方法比較       & & \G & \G & \G & & & & & & & & \\
     硬體導向演算法評估     & & & \G & \G & \Ga & & & & & & & \\
     運算模組與資料流設計   & & & & \Ga & \G & \G & \G & & & & & \\
     稀疏感知架構           & & & & & \G & \G & \G & & & & & \\
-    定點數與位元寬度分析   & & & & & & \G & \G & \G & & & & \\
-    FPGA 原型實作與驗證    & & & & & & & & \Ga & \G & \G & \G & \\
+    定點數分析與子模組驗證 & & & & & & \G & \G & \G & & & & \\
+    系統整合與 FPGA 原型   & & & & & & & & \Ga & \G & \G & \G & \\
     Cell-based 合成分析    & & & & & & & & & \G & \G & \G & \\
     系統效能評估           & & & & & & & & & & \G & \G & \G \\
     \bottomrule
@@ -195,13 +194,13 @@ SAR 成像需先後沿距離向與方位向處理整張影像，兩個方向之�
     \toprule
     年度 & 查核點 & 交付成果 \\
     \midrule
-    1 & 含 speckle 之評估框架 & 經實際資料驗證之 speckle 模型；以星載參數完成近岸與離岸影像之模擬 \\
+    1 & 含雜訊之評估框架 & 完成雷達接收雜訊與 speckle 等雜訊之模擬，並參考真實影像統計特性設定雜訊強度；以星載參數完成近岸與離岸影像之模擬 \\
       & 演算法選定 & 完成稀疏重建方法於偵測表現與硬體成本上之比較，選定硬體實作之演算法 \\
     \midrule
     2 & 架構設計 & 完成運算模組、資料流與稀疏感知架構之設計 \\
-      & 位元精確模型 & 完成定點數模型與位元寬度配置，作為硬體實作之參考 \\
+      & 子模組驗證 & 完成定點數模型與位元寬度配置；主要運算模組通過 FPGA 驗證 \\
     \midrule
-    3 & FPGA 原型 & 成像、稀疏重建與船舶偵測於 FPGA 平台上運行並通過驗證 \\
+    3 & FPGA 原型 & 完整之成像、稀疏重建與船舶偵測流程於 FPGA 平台上運行並通過驗證 \\
       & 合成分析與系統評估 & 完成各架構選擇之速度、面積與功耗比較，以及與 CPU/GPU 之效能比較；期刊/研討會論文發表 \\
     \bottomrule
   \end{tabularx}
@@ -234,11 +233,8 @@ S. Wei \textit{et al.}, ``HRSID: A High-Resolution SAR Images Dataset for Ship D
 \bibitem{cumming_wong}
 I. G. Cumming and F. H. Wong, \textit{Digital Processing of Synthetic Aperture Radar Data: Algorithms and Implementation}, Artech House, 2005.
 
-\bibitem{fista}
-A. Beck and M. Teboulle, ``A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems,'' \textit{SIAM J. Imaging Sci.}, vol. 2, no. 1, pp. 183--202, 2009.
-
-\bibitem{fang_approx_obs}
-J. Fang \textit{et al.}, ``Fast Compressed Sensing SAR Imaging Based on Approximated Observation,'' \textit{IEEE JSTARS}, vol. 7, no. 1, pp. 352--363, 2014.
+\bibitem{gao2024}
+S. Gao \textit{et al.}, ``A Robust Super-Resolution Gridless Imaging Framework for UAV-Borne SAR Tomography,'' \textit{IEEE Trans. Geosci. Remote Sens.}, vol. 62, 5210917, 2024.
 
 \end{thebibliography}
 \end{multicols}
