@@ -1,21 +1,95 @@
 % ══════════════════════════════════════════════════════════════════════════════
-% 台積電獎學金申請：個人完整履歷表
-% 編譯方式：LuaLaTeX，見 .latexmkrc
+% 台積電獎學金申請：個人完整履歷表（單頁，無頁碼）
+% 內容擴充自 document/06_moe_scholarship/03_other_documents/profile.tex。
+% 編譯方式：LuaLaTeX，見 .latexmkrc；編譯成功後自動複製為
+% ../1. 個人完整履歷表_台灣大學_陳仁澤.pdf
 % ══════════════════════════════════════════════════════════════════════════════
 \documentclass[11pt,fontset=none]{ctexart}
 
-\usepackage[margin=0.8in, top=0.7in, bottom=0.7in]{geometry}
+\usepackage[margin=0.8in, top=0.6in, bottom=0.6in]{geometry}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 
 \input{../common/preamble.tex}
 
+% Same compact style as the other TSMC documents
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+\ctexset{
+  section = {format=\large\bfseries, beforeskip=8pt, afterskip=3pt},
+}
+\setlength{\parskip}{3pt}
+\linespread{1.15}\selectfont
+
+% Entry heading: organization/role on the left, period on the right
+\newcommand{\entry}[2]{\noindent\textbf{#1}\hfill #2\par}
+
+\pagestyle{empty}
+
 \begin{document}
 
 \begin{center}
   {\Large\bfseries 個人完整履歷表\par}
+  \vspace{4pt}
+  {\large 陳仁澤\par}
+  \vspace{2pt}
+  Email：\href{mailto:d14k42007@ntu.edu.tw}{d14k42007@ntu.edu.tw}\quad 電話：0906-699-650
 \end{center}
 
-% 內容待補
+% ══════════════════════════════════════════════════════════════════════════════
+\section{學歷}
+
+\entry{國立臺灣大學\ 重點科技研究學院\ 積體電路設計與自動化學位學程\ 博士班}{2026/2--迄今}
+\begin{itemize}
+  \item 指導教授：蔡佩芸教授
+  \item 研究方向：星載即時 SAR 成像與船舶偵測之數位硬體架構
+\end{itemize}
+\entry{國立清華大學\ 通訊工程研究所\ 碩士}{2020/9--2022/8}
+\begin{itemize}
+  \item 指導教授：吳仁銘教授
+  \item 碩士論文：波束成型輔助之低軌道衛星合作式定位系統用於用戶終端
+\end{itemize}
+\entry{國立清華大學\ 電機資訊學院學士班\ 學士（曾獲書卷獎）}{2016/9--2020/6}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{業界經歷}
+
+\entry{創未來科技股份有限公司\ 數位系統設計工程師}{2022/9--2026/8}
+\begin{itemize}
+  \item 演算法設計：主導合成孔徑雷達（Synthetic Aperture Radar, SAR）數位前端之訊號處理演算法開發，包括濾波、等化、波束成型、資料壓縮與射頻校準；並建立與硬體逐位元一致之軟體模型，作為硬體實作之驗證基準。
+  \item 硬體電路（RTL）實作：以 Verilog 實作上述演算法，在 FPGA 資源與時脈限制下進行架構取捨與效能最佳化。
+  \item FPGA 整合驗證：負責 SAR 數位前端於 FPGA 上之系統整合與控制流程設計，並完成資料正確性與效能驗證。
+  \item 與博士研究之關聯：博士研究計畫中之位元精確模型、RTL 子模組驗證與 FPGA 系統整合，皆為本人於業界已執行之開發流程。
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{研究經歷}
+
+\entry{日本國立情報學研究所（National Institute of Informatics, NII）\ 遠端研究實習}{2021/10--2022/8}
+\begin{itemize}
+  \item 由 Megumi Kaneko 教授指導，研究物聯網多接收站之訊號分配，成果發表於 IEEE ICC 2023。
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{論文發表}
+
+\begin{enumerate}[label={[\arabic*]}, leftmargin=2.2em]
+  \item \textbf{J. -T. Chen}, M. Kaneko and A. Guitton, ``An Auction-Based
+    Assignment Method for LoRa Multi-Gateway Networks,'' ICC 2023 - IEEE
+    International Conference on Communications, Rome, Italy, 2023,
+    pp.~2191-2196.
+  \item \textbf{J. -T. Chen}, B. -H. Yeh and J. -M. Wu, ``Cooperative
+    Beamforming-Assisted LEO Satellite Positioning for V2X,'' 2023 VTS Asia
+    Pacific Wireless Communications Symposium (APWCS), Tainan city, Taiwan,
+    2023, pp.~1-5.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{專業技能}
+
+\begin{itemize}
+  \item 硬體設計：Verilog, Xilinx Vivado, Synopsys Design Compiler
+  \item FPGA 平台：AMD Xilinx Zynq UltraScale+ RFSoC (ZU49DR), Versal AI Core (VCK190)
+  \item 程式語言：C/C++, Python, Tcl, Bash script
+\end{itemize}
 
 \end{document}
