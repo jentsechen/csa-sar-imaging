@@ -14,6 +14,12 @@
 \newcommand{\C}{\mathbb{C}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\TV}{TV}
+\newcommand{\x}{\mathbf h}
+\newcommand{\y}{\mathbf y}
+\newcommand{\zo}{\mathbf z_1}
+\newcommand{\zt}{\mathbf z_2}
+\newcommand{\bPhi}{\boldsymbol\Phi}
 
 
 \begin{document}
@@ -97,5 +103,104 @@ Hence, with $\rho=|x|$ and $m=|z|$,
 \[
   \mathcal H_{\sqrt{2\lambda}}(z) = z\cdot\mathbf 1\bigl[|z|>\sqrt{2\lambda}\bigr].
 \]
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{$L_{1/2}$\&TV Problem Splitting}
+
+Compound-regularized linear inverse problem \cite{liu2024}, with
+echo $\y = \mathrm{vec}(\mathbf Y)$, scene $\x = \mathrm{vec}(\mathbf H)$ ($\mathbf Y, \mathbf H \in \mathbb C^{M\times N}$, $M$ azimuth and $N$ range samples; $\mathrm{vec}$ stacks the columns), CSA matrix $\bPhi$ with $\x_{\mathrm{CSA}} = \bPhi\y$, so the echo model is $\bPhi^{-1}$;
+total variation $\TV(\cdot)$ \cite{rudin1992} and penalty weights $\lambda_1, \lambda_2 > 0$. Introducing auxiliary variables \cite{wang2008}
+and then the Lagrangian with multipliers $\xi_1, \xi_2 > 0$ (kept fixed):
+\begin{align}
+  \hat\x
+  &= \argmin_{\x}\ \bigl\lVert \y - \bPhi^{-1}\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \x \rVert_{1/2} + \lambda_2 \TV(\x) \label{eq:orig} \\[4pt]
+  &= \argmin_{\x,\zo,\zt}\ \bigl\lVert \y - \bPhi^{-1}\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \zo \rVert_{1/2} + \lambda_2 \TV(\zt)
+     \quad \text{s.t.}\ \ \lVert \x - \zo \rVert_2^2 = 0,\ \ \lVert \x - \zt \rVert_2^2 = 0
+     \label{eq:split} \\
+  &\qquad \text{\small(introduce auxiliary variables $\zo, \zt$: $\lVert\x-\mathbf z\rVert_2^2 = 0 \iff \mathbf z = \x$)} \notag \\[4pt]
+  &\approx \argmin_{\x,\zo,\zt}\ \underbrace{\bigl\lVert \y - \bPhi^{-1}\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \zo \rVert_{1/2} + \lambda_2 \TV(\zt)
+     + \xi_1 \lVert \x - \zo \rVert_2^2 + \xi_2 \lVert \x - \zt \rVert_2^2}_{\Gamma(\x,\zo,\zt)} \label{eq:lag} \\
+  &\qquad \text{\small(Lagrangian: move the constraints into the objective)} \notag
+\end{align}
+The minimization over $(\x,\zo,\zt)$ returns its $\x$-component. With $\xi_1, \xi_2$ fixed,
+$\xi\lVert\x-\mathbf z\rVert_2^2$ penalizes a copy that drifts away from $\x$ \cite{wang2008}, so \eqref{eq:lag} approximates \eqref{eq:split}.
+
+Alternating minimization of $\Gamma$ (one variable at a time, the others at their latest values; terms without that variable are constants)
+splits \eqref{eq:lag} into three subproblems:
+\begin{align}
+  \x^{(k+1)}
+  &= \argmin_{\x}\ \Gamma\bigl(\x, \zo^{(k)}, \zt^{(k)}\bigr)
+   = \argmin_{\x}\ \bigl\lVert \y - \bPhi^{-1}\x \bigr\rVert_2^2
+     + \xi_1 \bigl\lVert \x - \zo^{(k)} \bigr\rVert_2^2 + \xi_2 \bigl\lVert \x - \zt^{(k)} \bigr\rVert_2^2 , \label{eq:x} \\
+  \zo^{(k+1)}
+  &= \argmin_{\zo}\ \Gamma\bigl(\x^{(k+1)}, \zo, \zt^{(k)}\bigr)
+   = \argmin_{\zo}\ \xi_1 \bigl\lVert \zo - \x^{(k+1)} \bigr\rVert_2^2 + \lambda_1 \lVert \zo \rVert_{1/2} , \label{eq:z1} \\
+  \zt^{(k+1)}
+  &= \argmin_{\zt}\ \Gamma\bigl(\x^{(k+1)}, \zo^{(k+1)}, \zt\bigr)
+   = \argmin_{\zt}\ \xi_2 \bigl\lVert \zt - \x^{(k+1)} \bigr\rVert_2^2 + \lambda_2 \TV(\zt) . \label{eq:z2}
+\end{align}
+\begin{itemize}
+  \item \eqref{eq:x}: quadratic in $\x$, solved in closed form below.
+  \item \eqref{eq:z1}: $L_{1/2}$ denoising of $\x^{(k+1)}$, solved entrywise by half thresholding \cite{xu2012}.
+  \item \eqref{eq:z2}: TV denoising of $\x^{(k+1)}$, solved by Chambolle's projection algorithm \cite{chambolle2004}.
+\end{itemize}
+In practice $\xi_1 = \xi_2 = \xi$. Dividing by $\xi$, \eqref{eq:z1} minimizes
+$\lVert \zo - \x^{(k+1)} \rVert_2^2 + (\lambda_1/\xi) \lVert \zo \rVert_{1/2}$ and \eqref{eq:z2} minimizes
+$\tfrac12 \lVert \zt - \x^{(k+1)} \rVert_2^2 + \bigl(\lambda_2/(2\xi)\bigr) \TV(\zt)$,
+so the effective weights $\lambda_1/\xi$ and $\lambda_2/(2\xi)$ are tuned through $\lambda_1, \lambda_2$.
+
+% References of this section only: printed as its last subsection
+\subsection{References}
+\begingroup
+\renewcommand{\section}[2]{}% drop thebibliography's own \section* heading
+\begin{thebibliography}{9}
+\bibitem{liu2024}
+M. Liu, J. Pan, J. Zhu, Z. Chen, B. Zhang, and Y. Wu, ``A sparse SAR imaging method for low-oversampled staggered mode via compound regularization,'' \emph{Remote Sens.}, vol.~16, no.~8, Art.~no.~1459, 2024.
+\bibitem{rudin1992}
+L. I. Rudin, S. Osher, and E. Fatemi, ``Nonlinear total variation based noise removal algorithms,'' \emph{Physica D}, vol.~60, no.~1--4, pp.~259--268, 1992.
+\bibitem{wang2008}
+Y. Wang, J. Yang, W. Yin, and Y. Zhang, ``A new alternating minimization algorithm for total variation image reconstruction,'' \emph{SIAM J.\ Imaging Sci.}, vol.~1, no.~3, pp.~248--272, 2008.
+\bibitem{xu2012}
+Z. Xu, X. Chang, F. Xu, and H. Zhang, ``$L_{1/2}$ regularization: A thresholding representation theory and a fast solver,'' \emph{IEEE Trans.\ Neural Netw.\ Learn.\ Syst.}, vol.~23, no.~7, pp.~1013--1027, 2012.
+\bibitem{chambolle2004}
+A. Chambolle, ``An algorithm for total variation minimization and applications,'' \emph{J.\ Math.\ Imaging Vis.}, vol.~20, pp.~89--97, 2004.
+\end{thebibliography}
+\endgroup
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Subproblem Derivation}
+
+\subsection{Subproblem 1: Image Update}
+
+$\bPhi$ is unitary ($\bPhi^{-1} = \bPhi^H$), so $\lVert \y - \bPhi^{-1}\x \rVert_2^2 = \lVert \bPhi^H(\x_{\mathrm{CSA}} - \x) \rVert_2^2 = \lVert \x_{\mathrm{CSA}} - \x \rVert_2^2$.
+Writing each squared norm as a sum over the $MN$ entries, with $[v_n]_{n=1}^{MN}$ the vector with entries $v_n$:
+\begin{align}
+  \x^{(k+1)}
+  &= \argmin_{\x}\ \bigl\lVert \y - \bPhi^{-1}\x \bigr\rVert_2^2
+     + \xi_1 \bigl\lVert \x - \zo^{(k)} \bigr\rVert_2^2 + \xi_2 \bigl\lVert \x - \zt^{(k)} \bigr\rVert_2^2 \notag \\
+  &= \argmin_{\x}\ \bigl\lVert \x_{\mathrm{CSA}} - \x \bigr\rVert_2^2
+     + \xi_1 \bigl\lVert \x - \zo^{(k)} \bigr\rVert_2^2 + \xi_2 \bigl\lVert \x - \zt^{(k)} \bigr\rVert_2^2 \notag \\
+  &\qquad \text{\small($\bPhi$ unitary)} \notag \\[2pt]
+  &= \argmin_{\x}\ \sum_{n=1}^{MN} \Bigl[\, \bigl|h_{\mathrm{CSA},n} - h_n\bigr|^2 + \xi_1 \bigl|h_n - z^{(k)}_{1,n}\bigr|^2 + \xi_2 \bigl|h_n - z^{(k)}_{2,n}\bigr|^2 \,\Bigr] \notag \\
+  &\qquad \text{\small($\lVert\mathbf v\rVert_2^2 = \sum_n |v_n|^2$)} \notag \\[2pt]
+  &= \argmin_{\x}\ \sum_{n=1}^{MN} \Bigl[\, \bigl(\mathrm{Re}\{h_n\} - \mathrm{Re}\{h_{\mathrm{CSA},n}\}\bigr)^2
+       + \bigl(\mathrm{Im}\{h_n\} - \mathrm{Im}\{h_{\mathrm{CSA},n}\}\bigr)^2 \notag \\
+  &\hphantom{{}= \argmin_{\x}\ \sum_{n=1}^{MN} \Bigl[\,}
+       + \xi_1 \bigl(\mathrm{Re}\{h_n\} - \mathrm{Re}\{z^{(k)}_{1,n}\}\bigr)^2
+       + \xi_1 \bigl(\mathrm{Im}\{h_n\} - \mathrm{Im}\{z^{(k)}_{1,n}\}\bigr)^2 \notag \\
+  &\hphantom{{}= \argmin_{\x}\ \sum_{n=1}^{MN} \Bigl[\,}
+       + \xi_2 \bigl(\mathrm{Re}\{h_n\} - \mathrm{Re}\{z^{(k)}_{2,n}\}\bigr)^2
+       + \xi_2 \bigl(\mathrm{Im}\{h_n\} - \mathrm{Im}\{z^{(k)}_{2,n}\}\bigr)^2 \,\Bigr] \notag \\
+  &\qquad \text{\small($|u - h_n|^2 = (\mathrm{Re}\{h_n\} - \mathrm{Re}\{u\})^2 + (\mathrm{Im}\{h_n\} - \mathrm{Im}\{u\})^2$)} \notag \\[2pt]
+  &= \frac{1}{1+\xi_1+\xi_2} \Bigl[\, \mathrm{Re}\bigl\{h_{\mathrm{CSA},n} + \xi_1 z^{(k)}_{1,n} + \xi_2 z^{(k)}_{2,n}\bigr\}
+       + j\, \mathrm{Im}\bigl\{h_{\mathrm{CSA},n} + \xi_1 z^{(k)}_{1,n} + \xi_2 z^{(k)}_{2,n}\bigr\} \,\Bigr]_{n=1}^{MN} \notag \\
+  &\qquad \text{\small(the sum separates into $2MN$ one-dimensional quadratics, one in each $\mathrm{Re}\{h_n\}$ and $\mathrm{Im}\{h_n\}$;} \notag \\
+  &\qquad \text{\small\phantom{(}minimize each by setting its derivative to zero)} \notag \\[2pt]
+  &= \frac{\x_{\mathrm{CSA}} + \xi_1\zo^{(k)} + \xi_2\zt^{(k)}}{1+\xi_1+\xi_2} . \label{eq:xsol} \\
+  &\qquad \text{\small($\mathrm{Re}\{c\} + j\,\mathrm{Im}\{c\} = c$ for each entry)} \notag
+\end{align}
 
 \end{document}
