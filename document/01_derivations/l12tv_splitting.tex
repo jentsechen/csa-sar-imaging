@@ -1,0 +1,71 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\emergencystretch=3em
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\TV}{TV}
+\newcommand{\x}{\mathbf x}
+\newcommand{\y}{\mathbf y}
+\newcommand{\zo}{\mathbf z_1}
+\newcommand{\zt}{\mathbf z_2}
+
+\begin{document}
+\begin{center}
+{\LARGE Splitting the $L_{1/2}$\&TV Problem into Three Subproblems}
+\end{center}
+
+Compound-regularized linear inverse problem \cite{liu2024}, with echo data $\y_f$, observation operator $\boldsymbol\Phi$,
+scene $\x$, total variation $\TV(\cdot)$ \cite{rudin1992} and penalty weights $\lambda_1, \lambda_2 > 0$. Introducing auxiliary variables \cite{wang2008}
+and then the Lagrangian with multipliers $\xi_1, \xi_2 > 0$ (kept fixed):
+\begin{align}
+  \hat\x
+  &= \argmin_{\x}\ \bigl\lVert \y_f - \boldsymbol\Phi\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \x \rVert_{1/2} + \lambda_2 \TV(\x) \label{eq:orig} \\[4pt]
+  &= \argmin_{\x,\zo,\zt}\ \bigl\lVert \y_f - \boldsymbol\Phi\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \zo \rVert_{1/2} + \lambda_2 \TV(\zt)
+     \quad \text{s.t.}\ \ \lVert \x - \zo \rVert_2^2 = 0,\ \ \lVert \x - \zt \rVert_2^2 = 0
+     \label{eq:split} \\
+  &\qquad \text{\small(introduce auxiliary variables $\zo, \zt$: $\lVert\x-\mathbf z\rVert_2^2 = 0 \iff \mathbf z = \x$)} \notag \\[4pt]
+  &\approx \argmin_{\x,\zo,\zt}\ \underbrace{\bigl\lVert \y_f - \boldsymbol\Phi\x \bigr\rVert_2^2
+     + \lambda_1 \lVert \zo \rVert_{1/2} + \lambda_2 \TV(\zt)
+     + \xi_1 \lVert \x - \zo \rVert_2^2 + \xi_2 \lVert \x - \zt \rVert_2^2}_{\Gamma(\x,\zo,\zt)} \label{eq:lag} \\
+  &\qquad \text{\small(Lagrangian: move the constraints into the objective)} \notag
+\end{align}
+The minimization over $(\x,\zo,\zt)$ returns its $\x$-component. With $\xi_1, \xi_2$ fixed,
+$\xi\lVert\x-\mathbf z\rVert_2^2$ penalizes a copy that drifts away from $\x$ \cite{wang2008}, so \eqref{eq:lag} approximates \eqref{eq:split}.
+
+Alternating minimization of $\Gamma$ (one variable at a time, the others at their latest values; terms without that variable are constants)
+splits \eqref{eq:lag} into three subproblems:
+\begin{align}
+  \x^{(k+1)}
+  &= \argmin_{\x}\ \Gamma\bigl(\x, \zo^{(k)}, \zt^{(k)}\bigr)
+   = \argmin_{\x}\ \bigl\lVert \y_f - \boldsymbol\Phi\x \bigr\rVert_2^2
+     + \xi_1 \bigl\lVert \x - \zo^{(k)} \bigr\rVert_2^2 + \xi_2 \bigl\lVert \x - \zt^{(k)} \bigr\rVert_2^2 , \label{eq:x} \\
+  \zo^{(k+1)}
+  &= \argmin_{\zo}\ \Gamma\bigl(\x^{(k+1)}, \zo, \zt^{(k)}\bigr)
+   = \argmin_{\zo}\ \xi_1 \bigl\lVert \zo - \x^{(k+1)} \bigr\rVert_2^2 + \lambda_1 \lVert \zo \rVert_{1/2} , \label{eq:z1} \\
+  \zt^{(k+1)}
+  &= \argmin_{\zt}\ \Gamma\bigl(\x^{(k+1)}, \zo^{(k+1)}, \zt\bigr)
+   = \argmin_{\zt}\ \xi_2 \bigl\lVert \zt - \x^{(k+1)} \bigr\rVert_2^2 + \lambda_2 \TV(\zt) . \label{eq:z2}
+\end{align}
+\begin{itemize}
+  \item \eqref{eq:x}: quadratic in $\x$, solved by a linear system.
+  \item \eqref{eq:z1}: $L_{1/2}$ denoising of $\x^{(k+1)}$, solved entrywise by half thresholding \cite{xu2012}.
+  \item \eqref{eq:z2}: TV denoising of $\x^{(k+1)}$, solved by Chambolle's projection algorithm \cite{chambolle2004}.
+\end{itemize}
+
+\begin{thebibliography}{9}
+\bibitem{liu2024}
+M. Liu, J. Pan, J. Zhu, Z. Chen, B. Zhang, and Y. Wu, ``A sparse SAR imaging method for low-oversampled staggered mode via compound regularization,'' \emph{Remote Sens.}, vol.~16, no.~8, Art.~no.~1459, 2024.
+\bibitem{rudin1992}
+L. I. Rudin, S. Osher, and E. Fatemi, ``Nonlinear total variation based noise removal algorithms,'' \emph{Physica D}, vol.~60, no.~1--4, pp.~259--268, 1992.
+\bibitem{wang2008}
+Y. Wang, J. Yang, W. Yin, and Y. Zhang, ``A new alternating minimization algorithm for total variation image reconstruction,'' \emph{SIAM J.\ Imaging Sci.}, vol.~1, no.~3, pp.~248--272, 2008.
+\bibitem{xu2012}
+Z. Xu, X. Chang, F. Xu, and H. Zhang, ``$L_{1/2}$ regularization: A thresholding representation theory and a fast solver,'' \emph{IEEE Trans.\ Neural Netw.\ Learn.\ Syst.}, vol.~23, no.~7, pp.~1013--1027, 2012.
+\bibitem{chambolle2004}
+A. Chambolle, ``An algorithm for total variation minimization and applications,'' \emph{J.\ Math.\ Imaging Vis.}, vol.~20, pp.~89--97, 2004.
+\end{thebibliography}
+
+\end{document}
