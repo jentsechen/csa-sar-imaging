@@ -1,0 +1,82 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\emergencystretch=3em
+
+\newcommand{\bPhi}{\boldsymbol\Phi}
+\newcommand{\y}{\mathbf y}
+\newcommand{\h}{\mathbf h}
+\DeclareMathOperator{\vect}{vec}
+\DeclareMathOperator{\diag}{diag}
+
+\begin{document}
+\begin{center}
+{\LARGE The CSA Operator Is Unitary}
+\end{center}
+
+\paragraph{Setting.} Echo $\mathbf Y$ and image $\mathbf H$ are complex $M\times N$ matrices ($M$ azimuth, $N$ range samples).
+$\vect(\cdot)$ stacks the columns into one vector,
+\begin{equation}
+  \y = \vect(\mathbf Y) = \begin{bmatrix} \mathbf Y_{:,1} \\ \vdots \\ \mathbf Y_{:,N} \end{bmatrix} \in \mathbb C^{MN},
+  \qquad \h = \vect(\mathbf H) \in \mathbb C^{MN},
+\end{equation}
+which only rearranges entries, so $\lVert \mathbf Y \rVert_F = \lVert \y \rVert_2$.
+CSA \cite{cumming2005} is linear, so it is a matrix $\bPhi$: $\h_{\mathrm{CSA}} = \bPhi\y$.
+
+\paragraph{CSA in matrix form.} Azimuth FFT, chirp scaling, range FFT, range compression and bulk RCMC, range IFFT,
+azimuth compression and residual phase compensation, azimuth IFFT:
+\begin{equation}\label{eq:csa}
+  \bPhi = \mathbf F_a^{-1}\mathbf P_3\,\mathbf F_r^{-1}\mathbf P_2\,\mathbf F_r\mathbf P_1\,\mathbf F_a,
+\end{equation}
+\begin{itemize}
+  \item $\mathbf F_a = \mathbf I_N \otimes \mathbf F_M$: azimuth FFT (within each column);
+        $\mathbf F_r = \mathbf F_N \otimes \mathbf I_M$: range FFT (within each row);
+        $\mathbf F_K$: $K$-point DFT matrix, $\otimes$: Kronecker product.
+  \item $\mathbf P_1$: chirp scaling; $\mathbf P_2$: range compression and bulk RCMC;
+        $\mathbf P_3$: azimuth compression and residual phase compensation.
+\end{itemize}
+A product of unitary matrices is unitary, so it suffices that every factor in \eqref{eq:csa} is.
+
+\paragraph{Phase multiplications $\mathbf P_1, \mathbf P_2, \mathbf P_3$.} Each is a Hadamard product with a unit-magnitude array,
+e.g.\ $\mathbf X_{\mathrm{out}} = \mathbf E_1 \odot \mathbf X_{\mathrm{in}}$ with $[\mathbf E_1]_{m,n} = e^{j\phi_1(f_{a,m},\tau_n)}$, $\phi_1$ real.
+After vectorization,
+\begin{equation}
+  \mathbf P_1 = \diag\bigl(\vect(\mathbf E_1)\bigr) = \diag\bigl(e^{j\phi_{1,1}}, \dots, e^{j\phi_{1,MN}}\bigr)
+  \;\Rightarrow\;
+  \mathbf P_1^H\mathbf P_1 = \diag\bigl(|e^{j\phi_{1,1}}|^2, \dots, |e^{j\phi_{1,MN}}|^2\bigr) = \mathbf I ;
+\end{equation}
+$\mathbf P_2, \mathbf P_3$ differ only in the phase function.
+
+\paragraph{DFTs $\mathbf F_a, \mathbf F_r$.} The normalized $\mathbf F_K$ is unitary, and a Kronecker product of unitary matrices is unitary.
+An unnormalized forward FFT (factor $\sqrt K$) with an inverse FFT divided by $K$ (factor $1/\sqrt K$) is also fine:
+each axis has one FFT and one IFFT, so the factors cancel.
+
+\paragraph{Conclusion.}
+\begin{equation}\label{eq:unitary}
+  \bPhi^H\bPhi = \bPhi\bPhi^H = \mathbf I, \qquad \bPhi^{-1} = \bPhi^H .
+\end{equation}
+
+\paragraph{Consequence: the echo-domain fidelity equals the image-domain fidelity.}
+With the echo model $\mathcal A = \mathcal I^{-1}$ (inverse CSA), $\vect(\mathcal A(\mathbf H)) = \bPhi^{-1}\h$ and $\y = \bPhi^{-1}\h_{\mathrm{CSA}}$:
+\begin{align}
+  \bigl\lVert \mathbf Y - \mathcal A(\mathbf H) \bigr\rVert_F^2
+  &= \bigl\lVert \y - \bPhi^{-1}\h \bigr\rVert_2^2
+   && \text{(vectorization preserves the norm)} \notag \\
+  &= \bigl\lVert \bPhi^{H}(\h_{\mathrm{CSA}} - \h) \bigr\rVert_2^2
+   && \text{($\y = \bPhi^{-1}\h_{\mathrm{CSA}}$, $\bPhi^{-1} = \bPhi^H$)} \notag \\
+  &= (\h_{\mathrm{CSA}} - \h)^H \bPhi\bPhi^H (\h_{\mathrm{CSA}} - \h)
+   && \text{($\lVert\mathbf v\rVert_2^2 = \mathbf v^H\mathbf v$)} \notag \\
+  &= \bigl\lVert \h_{\mathrm{CSA}} - \h \bigr\rVert_2^2
+   = \bigl\lVert \mathbf H_{\mathrm{CSA}} - \mathbf H \bigr\rVert_F^2
+   && \text{(by \eqref{eq:unitary})} .
+\end{align}
+So a sparse reconstruction from the echo is the same problem as one on the CSA image, which separates into per-pixel problems.
+Invertibility alone is not enough: for a non-unitary $\bPhi$ the fidelity is the weighted norm
+$\lVert \bPhi^{-1}(\h_{\mathrm{CSA}} - \h) \rVert_2^2$, which couples the pixels.
+
+\begin{thebibliography}{9}
+\bibitem{cumming2005}
+I. G. Cumming and F. H. Wong, \emph{Digital Processing of Synthetic Aperture Radar Data: Algorithms and Implementation}. Norwood, MA, USA: Artech House, 2005.
+\end{thebibliography}
+
+\end{document}
