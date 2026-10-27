@@ -1,0 +1,121 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup[table]{position=top,skip=6pt}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\emergencystretch=3em
+
+
+\begin{document}
+\begin{center}
+{\LARGE Personal Meeting}\\[0.4em]
+{\large November 2, 2026}
+\end{center}
+
+\section{HRSID Pixel Scale}
+
+The echo simulation uses each HRSID pixel value directly as a scatterer amplitude, which requires two properties
+of the pixel value to be confirmed: (1) linear, not logarithmic; (2) amplitude, not amplitude squared.
+
+\paragraph{Product specifications.}
+\begin{itemize}
+  \item HRSID is cropped from Sentinel-1B, TerraSAR-X and TanDEM-X panoramas \cite{hrsid}.
+  \item Sentinel-1 Level-1 GRD: $\beta^0 = DN^2/A_\beta^2$, so the stored DN is amplitude \cite{s1cal}.
+  \item TerraSAR-X/TanDEM-X detected products: $\beta^0 = k_s\,DN^2$, so DN is amplitude \cite{tsxcal}.
+  \item How HRSID converted the products to 8-bit images is not documented.
+\end{itemize}
+
+\paragraph{Data.} 975,864 homogeneous $32\times32$ sea patches from 1593 offshore scenes, each compared with synthetic speckle
+at the same mean levels, integer rounding and JPEG compression.
+
+\paragraph{Test 1: linear vs.\ log.} Let $x$ be the grey value of one pixel in a homogeneous sea patch. The complex return of
+a pixel is a sum of many scatterers with random phases, a zero-mean complex Gaussian $s \sim \mathcal{CN}(0,\sigma^2)$, so
+$s = \sigma u$ with $u \sim \mathcal{CN}(0,1)$: the backscatter only sets the scale $\sigma$. Taking the magnitude keeps the scale
+out, $|\sigma u| = \sigma|u|$ and $|\sigma u|^2 = \sigma^2|u|^2$, so in linear units
+\[
+  x = c\, n, \qquad
+  \begin{cases}
+    \text{amplitude: } c = \sigma,\ \ n = |u| \sim \text{Rayleigh (Nakagami for } L \text{ looks)},\\
+    \text{intensity: } c = \sigma^2,\ n = |u|^2 \sim \text{exponential (Gamma for } L \text{ looks)},
+  \end{cases}
+\]
+where the distribution of $n$ does not depend on $c$.
+Within a patch $c$ is a constant, so the mean and the standard deviation scale with $c$:
+\begin{gather*}
+  \mathrm{mean}(x) = E[c\,n] = c\,E[n], \\
+  \mathrm{Var}(x) = E\bigl[(c\,n - c\,E[n])^2\bigr] = c^2\,\mathrm{Var}(n)
+  \;\Rightarrow\; \mathrm{std}(x) = c\,\mathrm{std}(n) \quad (c > 0).
+\end{gather*}
+In both cases $c$ cancels in the ratio
+\[
+  \frac{\mathrm{std}(x)}{\mathrm{mean}(x)} = \frac{c\,\mathrm{std}(n)}{c\,E[n]} = \frac{\mathrm{std}(n)}{E[n]} = \mathrm{CV}
+  \;\Rightarrow\; \log\mathrm{std}(x) = \log\mathrm{mean}(x) + \log\mathrm{CV},
+\]
+with the coefficient of variation CV fixed by the distribution (about 0.52 for Rayleigh, 1 for exponential, $1/\sqrt L$ for Gamma),
+so the slope of $\log(\mathrm{std})$ vs.\ $\log(\mathrm{mean})$ over the patches is $k = 1$ whether the pixel is amplitude or intensity.
+After a log mapping, $x = \alpha\log(c\,n) + \beta = \alpha\log c + \alpha\log n + \beta$. Within a patch $c$ is a constant, so
+\begin{gather*}
+  \mathrm{mean}(x) = \alpha\log c + \alpha\,E[\log n] + \beta, \\
+  \mathrm{Var}(x) = E\bigl[(\alpha\log n - \alpha\,E[\log n])^2\bigr] = \alpha^2\,\mathrm{Var}(\log n)
+  \;\Rightarrow\; \mathrm{std}(x) = \alpha\,\mathrm{std}(\log n) \quad (\alpha > 0).
+\end{gather*}
+The mean moves with $c$ but the standard deviation does not, so $\log\mathrm{std}(x) = \text{const}$ over the patches and $k = 0$.
+
+
+\begin{table}[H]
+\centering
+\caption{Test 1: slope $k$ and intercept $b$ of $\log\mathrm{std}(x) = k\log\mathrm{mean}(x) + b$.}
+\begin{tabular}{|l|c|c|}
+\hline
+ & slope $k$ & intercept $b$ \\
+\hline
+linear (amplitude or intensity), theory & 1 & $\log\mathrm{CV}$ \\
+\hline
+log, theory & 0 & $\log(\alpha\,\mathrm{std}(\log n))$ \\
+\hline
+HRSID sea (fit) & 1.17 & $-1.17$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Test 2: amplitude vs.\ intensity.} Assumes linear pixel values (Test 1). For $L$-look speckle the number of looks $L$
+is estimated twice from the same patches, from $E[x^2]/E[x]^2$ and from $\mathrm{Var}(\ln x)$; the two estimates agree only
+under the right hypothesis.
+
+\begin{table}[H]
+\centering
+\caption{Test 2: two estimates of $L$ under each hypothesis.}
+\begin{tabular}{|l|c|c|}
+\hline
+ & $L$, amplitude hypothesis & $L$, intensity hypothesis \\
+\hline
+HRSID sea & 1.10 / 1.15 & 4.03 / 3.46 \\
+\hline
+synthetic 1-look amplitude & 0.91 / 0.97 & 3.32 / 2.78 \\
+\hline
+synthetic 4-look intensity & 0.98 / 1.08 & 3.60 / 3.19 \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Conclusion.}
+\begin{itemize}
+  \item Linear: confirmed ($k = 1.17$, far from the dB range).
+  \item Amplitude: favoured but not proven. The two $L$ estimates agree within 4\,\% under amplitude and 15\,\% under intensity,
+        and amplitude is more consistent in 113 of 123 panoramas; 4-look intensity is hard to tell from 1-look amplitude.
+\end{itemize}
+
+\begin{thebibliography}{9}
+\bibitem{hrsid}
+S. Wei, X. Zeng, Q. Qu, M. Wang, H. Su, and J. Shi, ``HRSID: A high-resolution SAR images dataset for ship detection and instance segmentation,'' \emph{IEEE Access}, vol.~8, pp.~120234--120254, 2020.
+\bibitem{s1cal}
+ESA, ``Radiometric calibration of Sentinel-1 Level-1 products,'' Sentinel Online. [Online]. Available: \url{https://sentinels.copernicus.eu/web/sentinel/radiometric-calibration-of-level-1-products}
+\bibitem{tsxcal}
+Airbus Defence and Space, ``Radiometric calculations for TerraSAR-X data,'' Tech.\ Note TSXX-ITD-TN-0049.
+\end{thebibliography}
+
+\end{document}
