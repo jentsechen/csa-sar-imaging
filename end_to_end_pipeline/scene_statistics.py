@@ -82,11 +82,6 @@ def fit_rayleigh(h):
     return float(np.exp(r.x))
 
 
-def rayleigh_binned(sigma):
-    e = np.arange(257.0)
-    return np.diff(1.0 - np.exp(-e ** 2 / (2.0 * sigma ** 2)))
-
-
 def quantile(h, q):
     return int(np.searchsorted(np.cumsum(h) / h.sum(), q))
 
@@ -97,7 +92,7 @@ def summary(h):
             **{f"p{int(q * 1000) / 10:g}": quantile(h, q) for q in (0.5, 0.9, 0.99, 0.999)}}
 
 
-def plot(hist, sigma, n_scenes, path):
+def plot(hist, n_scenes, path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -111,10 +106,6 @@ def plot(hist, sigma, n_scenes, path):
             label=f"sea clutter ({sea.sum() / 1e9:.2f}e9 pixels, guard {GUARD} px)")
     ax.step(v, 100 * ship / ship.sum(), where="post", color=COLOR["ship"], lw=2,
             label=f"ship ({ship.sum() / 1e6:.2f}e6 pixels, segmentation polygons)")
-    ax.plot(v + 0.5, 100 * rayleigh_binned(sigma), color=COLOR["sea"], lw=1.2, ls="--",
-            label=f"Rayleigh fit to sea, σ = {sigma:.1f}")
-    ax.annotate("sea tail heavier\nthan Rayleigh", (85, 100 * sea[85] / sea.sum()), xytext=(103, 2e-3),
-                fontsize=9, color=INK2, arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8))
     ax.annotate(f"{ship[255] / ship.sum():.0%} of ship pixels clipped at 255", (255, 100 * ship[255] / ship.sum()),
                 textcoords="offset points", xytext=(-190, -4), fontsize=9, color=INK2)
     ax.set_yscale("log")
@@ -152,7 +143,7 @@ def main():
     os.makedirs(os.path.join(OUT, "figures"), exist_ok=True)
     with open(os.path.join(OUT, "stats.json"), "w") as f:
         json.dump(stats, f, indent=1)
-    plot(hist, sigma, len(stems), os.path.join(OUT, "figures", "amplitude_hist.png"))
+    plot(hist, len(stems), os.path.join(OUT, "figures", "amplitude_hist.png"))
     print(json.dumps({k: v for k, v in stats.items() if k != "hist"}, indent=1))
 
 

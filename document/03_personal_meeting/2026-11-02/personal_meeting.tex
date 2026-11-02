@@ -91,6 +91,10 @@ amplitude \cite{s1cal,tsxcal}, so the HRSID pixel value is taken as amplitude.
   \item Amplitude: according to the product specifications.
 \end{itemize}
 
+% References of this section only: printed as its last subsection
+\subsection{References}
+\begingroup
+\renewcommand{\section}[2]{}% drop thebibliography's own \section* heading
 \begin{thebibliography}{9}
 \bibitem{hrsid}
 S. Wei, X. Zeng, Q. Qu, M. Wang, H. Su, and J. Shi, ``HRSID: A high-resolution SAR images dataset for ship detection and instance segmentation,'' \emph{IEEE Access}, vol.~8, pp.~120234--120254, 2020.
@@ -99,5 +103,35 @@ N. Miranda and P.~J. Meadows, ``Radiometric calibration of S-1 Level-1 products 
 \bibitem{tsxcal}
 Airbus Defence and Space, ``Radiometric calibration of TerraSAR-X data: Beta naught and sigma naught coefficient calculation,'' Tech.\ Note TSXX-ITD-TN-0049, Issue~3.00, Mar.\ 2014. [Online]. Available: \url{https://dep1doc.gfz-potsdam.de/attachments/download/365/r465_9_tsx-x-itd-tn-0049-radiometric_calculations_i3.00.pdf}
 \end{thebibliography}
+\endgroup
+
+\section{Ship and Sea Amplitude Distribution}
+
+\paragraph{Labels.} Besides the bounding box, every HRSID ship has a segmentation polygon that follows the hull
+(Fig.~\ref{fig:label_example}a). The box also covers sea: the polygon fills on average only half of its box (0.34 for the large ship in this
+example). The polygons split the pixels into two classes (Fig.~\ref{fig:label_example}b): ship = inside a polygon, and
+sea = farther than 10 pixels from every polygon. The 10-pixel guard band between them, which holds the ship edges, is not
+used.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/label_example.png}
+\caption{HRSID labels of scene P0126\_1200\_2000\_3000\_3800: (a) box and segmentation polygon, (b) pixel classes.}
+\label{fig:label_example}
+\end{figure}
+
+\paragraph{Amplitude histogram.} Fig.~\ref{fig:amplitude_hist} shows the amplitude distribution of the two classes over all
+1593 offshore scenes, each normalized to its own class. The two distributions are clearly different:
+\begin{itemize}
+  \item Sea (99.35\,\% of the pixels): concentrated at low amplitude, median 13, and falls off quickly above about 40.
+  \item Ship (0.20\,\% of the pixels): spread from about 20 to 255, median 115; 12\,\% of the ship pixels are clipped at 255.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/amplitude_hist.png}
+\caption{Amplitude distribution of sea and ship pixels (log scale).}
+\label{fig:amplitude_hist}
+\end{figure}
 
 \end{document}
